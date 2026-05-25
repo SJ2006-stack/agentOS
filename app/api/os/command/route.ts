@@ -1,15 +1,15 @@
 export const dynamic = "force-dynamic";
 
-import { OPENROUTER_KEY_FAULT } from "@/lib/ai/faults";
+import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
-import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
+import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
 import {
   incrementalStreamResponse,
   streamChatWithTools,
-} from "@/lib/ai/openrouter-agent";
-import { parseShellCommand, type ShellCommand } from "@/lib/os/types";
+} from "@/lib/ai/gemini-agent";
+import { parseShellCommand, isBuildDemoTask, type ShellCommand } from "@/lib/os/types";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import { isHydraConfigured } from "@/lib/hydradb/client";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@/lib/hydradb/memory";
 import { createTaskId } from "@/lib/os/pipeline";
 import { runCpuPipeline } from "@/lib/ai/run-cpu";
+import { runBuildDemo } from "@/lib/os/run-build-demo";
 import {
   getAgentTemplate,
   listAllAgentTemplates,
@@ -161,14 +162,14 @@ async function handleJsonCommand(
 
     case "status": {
       const hydra = isHydraConfigured();
-      const openRouter = isOpenRouterConfigured();
+      const gemini = isGeminiConfigured();
       const recent = hydra
         ? await recallPreferences({ query: "status", max_results: 3 })
         : { chunks: [], queryPaths: [] };
       return Response.json({
         ok: true,
         type: "status",
-        openRouter,
+        gemini,
         hydra,
         memoryChunks: recent.chunks.length,
         activeAgents: getActiveAgents(),
@@ -287,13 +288,13 @@ export async function POST(req: Request) {
     (parsed.type === "spawn_agent" &&
       agentNeedsLlm(parsed.templateId, "spawn"));
 
-  if (needsLlm && !isOpenRouterConfigured()) {
+  if (needsLlm && !isGeminiConfigured()) {
     if (wantsJson) {
       return jsonCommandFault(
-        OPENROUTER_KEY_FAULT.replace(/^\[fault\]\s*/, "").trim()
+        GEMINI_KEY_FAULT.replace(/^\[fault\]\s*/, "").trim()
       );
     }
-    return new Response(OPENROUTER_KEY_FAULT, {
+    return new Response(GEMINI_KEY_FAULT, {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }
@@ -308,6 +309,14 @@ export async function POST(req: Request) {
       setCurrentTaskId(taskId);
       if (isHydraConfigured()) {
         void writeUserInteraction(command, `submit task ${taskId}`, taskId);
+      }
+      if (isBuildDemoTask(parsed.task)) {
+        return incrementalStreamResponse(
+          `[kernel] build demo queued: ${taskId}\n`,
+          async (write) => {
+            await runBuildDemo(taskId, parsed.task, origin, write);
+          }
+        );
       }
       return incrementalStreamResponse(
         `[kernel] task queued: ${taskId}\n`,
@@ -346,14 +355,14 @@ export async function POST(req: Request) {
     case "status": {
       return incrementalStreamResponse("[kernel] status…\n", async (write) => {
         const hydra = isHydraConfigured();
-        const openRouter = isOpenRouterConfigured();
+        const gemini = isGeminiConfigured();
         const recent = hydra
           ? await recallPreferences({ query: "status", max_results: 3 })
           : { chunks: [], queryPaths: [] };
         const active = getActiveAgents();
         const lines = [
           "[kernel] DevFactory OS status",
-          `[kernel] OpenRouter: ${openRouter ? "configured" : "missing OPENROUTER_API_KEY"}`,
+          `[kernel] Gemini: ${gemini ? "configured" : "missing GEMINI_API_KEY"}`,
           `[kernel] HydraDB: ${hydra ? "connected" : "disconnected"}`,
           `[kernel] memory chunks: ${recent.chunks.length}`,
           `[kernel] active agents: ${active.length ? active.join(", ") : "(none)"}`,

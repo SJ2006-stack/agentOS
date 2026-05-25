@@ -97,7 +97,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
             exit={{ scale: 0.96, y: 8, opacity: 0 }}
             style={{ backgroundColor: "#0D1520" }}
           >
-            <header className="flex shrink-0 items-center justify-between border-b border-[#1E2D3D] px-5 py-4">
+            <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[#1E2D3D] px-5 py-4">
               <div className="flex items-center gap-2.5 text-[#00FFB2]">
                 <span className="inline-block h-2 w-2 rounded-full bg-[#00FFB2] shadow-[0_0_8px_#00FFB2]" />
                 <span className="text-left text-[#00FFB2]">
@@ -117,38 +117,34 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
 
             <div className="flex min-h-0 flex-1 flex-col overflow-auto p-6 sm:p-8">
               {screen === "choice" ? (
-                <div className="flex flex-1 flex-col items-center py-4 text-center sm:py-6">
-                  <h2 className="font-mono text-lg tracking-wide text-[#E2E8F0] sm:text-xl">
+                <div className="flex w-full flex-1 flex-col items-stretch py-4 sm:py-6">
+                  <h2 className="text-center font-mono text-lg tracking-wide text-[#E2E8F0] sm:text-xl">
                     Low-level DOOM
                   </h2>
-                  <p className="mt-3 max-w-lg text-sm leading-relaxed text-[#94A3B8]">
+                  <p className="mx-auto mt-3 max-w-lg text-center text-sm leading-relaxed text-[#94A3B8]">
                     Raycaster sector demo — pick how the agent participates.
                   </p>
-                  <div className="mt-8 grid w-full max-w-2xl gap-6 pt-6 lg:max-w-none lg:grid-cols-2 lg:gap-8">
-                    <Button
+                  <div className="doom-demo-choice-group mt-8 w-full pt-6">
+                    <button
                       type="button"
                       onClick={startAutoplay}
-                      className="doom-demo-choice-btn group !h-auto w-full flex-col items-stretch justify-start whitespace-normal rounded-lg border border-[#00FFB2]/35 bg-[#080C14] p-6 text-left transition hover:border-[#00FFB2] sm:p-8"
+                      className="doom-demo-choice-btn doom-demo-choice-btn--play"
                     >
-                      <span className="block font-mono text-base text-[#00FFB2] sm:text-lg">
-                        Watch the agent play
-                      </span>
-                      <span className="mt-3 block text-sm leading-relaxed text-[#94A3B8]">
+                      <span className="doom-demo-choice-title">Watch the agent play</span>
+                      <span className="doom-demo-choice-desc">
                         Autonomous bot — pathfinding, combat, live narration sidebar.
                       </span>
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
                       onClick={startBuildFlow}
-                      className="doom-demo-choice-btn group !h-auto w-full flex-col items-stretch justify-start whitespace-normal rounded-lg border border-[#8B5CF6]/35 bg-[#080C14] p-6 text-left transition hover:border-[#8B5CF6] sm:p-8"
+                      className="doom-demo-choice-btn doom-demo-choice-btn--build"
                     >
-                      <span className="block font-mono text-base text-[#8B5CF6] sm:text-lg">
-                        Watch the agent build for you
-                      </span>
-                      <span className="mt-3 block text-sm leading-relaxed text-[#94A3B8]">
+                      <span className="doom-demo-choice-title">Watch the agent build for you</span>
+                      <span className="doom-demo-choice-desc">
                         Pick a template — agent constructs the level — then you play.
                       </span>
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ) : null}

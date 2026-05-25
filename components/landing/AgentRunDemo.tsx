@@ -82,7 +82,7 @@ export function AgentRunDemo({ className }: { className?: string }) {
       <div className="hero-gradient-bg opacity-50" aria-hidden />
       <div className="hero-particles hero-particles-lite opacity-60" aria-hidden />
 
-      <div className="absolute inset-x-0 top-0 flex items-center gap-2 border-b border-hero-graphite/60 px-3 py-2">
+      <div className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center gap-2 border-b border-hero-graphite/60 px-3 py-2">
         <span className="size-2 rounded-full bg-hero-crimson/80" aria-hidden />
         <span className="size-2 rounded-full bg-hero-purple/70" aria-hidden />
         <span className="size-2 rounded-full bg-hero-cyan/80" aria-hidden />
@@ -94,7 +94,7 @@ export function AgentRunDemo({ className }: { className?: string }) {
         </span>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 top-10 flex flex-col md:flex-row">
+      <div className="absolute inset-x-0 bottom-0 top-10 flex flex-col flex-wrap md:flex-row">
         <div className="relative min-h-0 flex-1 overflow-hidden p-3 font-mono text-[11px] leading-relaxed sm:p-4 sm:text-xs">
           {(phase === "boot" || elapsed < 4000) && (
             <motion.p

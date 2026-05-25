@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   useEffect,
@@ -21,6 +20,10 @@ import {
   dispatchShellCommand,
   type AgentSpawnedDetail,
 } from "@/lib/os/shell-events";
+import {
+  runWorkspaceDemo,
+  WORKSPACE_DEMO_COMMANDS,
+} from "@/lib/os/workspace-demo";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 import { type UiMode, useUiModeStore } from "@/store/ui/uiModeStore";
@@ -34,12 +37,6 @@ const PALETTE = {
   muted: "#1E2D3D",
   text: "#94A3B8",
 } as const;
-
-const DoomDemoModal = dynamic(
-  () =>
-    import("@/components/hero/doom/DoomDemoModal").then((m) => m.DoomDemoModal),
-  { ssr: false }
-);
 
 const FEATURE_PILLS = [
   { icon: "⚡", label: "Multi-agent orchestration" },
@@ -331,8 +328,6 @@ function FullscreenHero({ className }: { className?: string }) {
   const reduce = useReducedMotion();
   const [commandValue, setCommandValue] = useState("");
   const [commandFocused, setCommandFocused] = useState(false);
-  const [doomDemoOpen, setDoomDemoOpen] = useState(false);
-
   const stagger = (i: number) => 0.06 + i * 0.08;
 
   const fadeUp = (i: number) =>
@@ -354,7 +349,8 @@ function FullscreenHero({ className }: { className?: string }) {
   };
 
   const handleSecondaryCta = () => {
-    setDoomDemoOpen(true);
+    setMode("workspace");
+    runWorkspaceDemo(WORKSPACE_DEMO_COMMANDS.submitWebShell);
   };
 
   const handleCommandSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -451,7 +447,7 @@ function FullscreenHero({ className }: { className?: string }) {
           {...fadeUp(4)}
           className="mt-11 grid w-full max-w-3xl grid-cols-1 items-center gap-10 lg:max-w-5xl lg:grid-cols-2 lg:gap-14"
         >
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5 lg:justify-end">
+          <div className="flex flex-col flex-wrap items-center justify-center gap-4 sm:flex-row sm:flex-wrap sm:gap-5 lg:justify-end">
             <Button
               type="button"
               onClick={handlePrimaryCta}
@@ -493,7 +489,7 @@ function FullscreenHero({ className }: { className?: string }) {
               }
             >
               <span className="text-left" style={{ color: PALETTE.text }}>
-                Watch DOOM demo
+                Build web shell
               </span>
             </Button>
           </div>
@@ -586,8 +582,6 @@ function FullscreenHero({ className }: { className?: string }) {
           press enter to dispatch · routed through kernel shell
         </p>
       </motion.form>
-
-      <DoomDemoModal open={doomDemoOpen} onClose={() => setDoomDemoOpen(false)} />
     </section>
   );
 }

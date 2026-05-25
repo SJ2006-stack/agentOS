@@ -3,10 +3,11 @@ export const dynamic = "force-dynamic";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
 import { isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
 import {
+  geminiFault,
   runChatWithTools,
   streamChatWithTools,
   textStreamResponse,
-} from "@/lib/ai/openrouter-agent";
+} from "@/lib/ai/gemini-agent";
 import { runCpuPipeline } from "@/lib/ai/run-cpu";
 import { createOsTools } from "@/lib/ai/tools";
 import type { CpuStep } from "@/lib/os/types";
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 
   if (!isAgentLlmConfigured()) {
     return new Response(
-      "[fault] OPENROUTER_API_KEY missing — set OPENROUTER_API_KEY in .env.local and restart npm run dev\n",
+      "[fault] GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local and restart npm run dev\n",
       { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
@@ -61,15 +62,32 @@ export async function POST(req: Request) {
     );
   }
 
-  const { text } = await runChatWithTools({
-    modelId: model,
-    system: CPU_SYSTEM,
-    prompt: cpuStepPrompt(step, task, taskId),
-    tools,
-    maxSteps: 5,
-  });
+  try {
+    const { text } = await runChatWithTools({
+      modelId: model,
+      system: CPU_SYSTEM,
+      prompt: cpuStepPrompt(step, task, taskId),
+      tools,
+      maxSteps: 5,
+    });
 
-  return new Response(`[cpu] ${step}: ${text}\n`, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+    return new Response(`[cpu] ${step}: ${text}\n`, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  } catch (err) {
+    const fault = geminiFault(err);
+    const status =
+      typeof err === "object" &&
+      err !== null &&
+      "statusCode" in err &&
+      typeof (err as { statusCode?: number }).statusCode === "number"
+        ? (err as { statusCode: number }).statusCode
+        : fault.includes("429") || fault.includes("Rate limit")
+          ? 429
+          : 502;
+    return new Response(fault, {
+      status,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 }

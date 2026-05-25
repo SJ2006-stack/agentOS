@@ -7,6 +7,8 @@ import { WorkspaceAgentList } from "@/components/modes/WorkspaceAgentList";
 import { WorkspaceAgentFeed } from "@/components/modes/WorkspaceAgentFeed";
 import { WorkspacePipeline } from "@/components/modes/WorkspacePipeline";
 import { WorkspaceDemoBar } from "@/components/modes/WorkspaceDemoBar";
+import { BuildCanvas } from "@/components/build/BuildCanvas";
+import { DeployReveal } from "@/components/build/DeployReveal";
 import { useOsStore } from "@/store/os/osStore";
 
 const AgentGraphPanel = dynamic(
@@ -21,6 +23,8 @@ const AgentGraphPanel = dynamic(
 );
 
 export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean }) {
+  const buildActive = useOsStore((s) => s.build.buildActive);
+
   useEffect(() => {
     useOsStore.getState().setConfigFlags(hydraConfigured, false);
   }, [hydraConfigured]);
@@ -30,6 +34,7 @@ export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean })
       className="workspace-mode relative flex h-full min-h-0 flex-col overflow-hidden bg-os-bg/70 font-mono text-os-green"
       style={{ "--workspace-accent": "#00FFB2" } as React.CSSProperties}
     >
+      <DeployReveal />
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
@@ -80,7 +85,7 @@ export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean })
           </section>
 
           <div className="min-h-0 flex-1" id="devfactory-active-task">
-            <WorkspacePipeline />
+            {buildActive ? <BuildCanvas /> : <WorkspacePipeline />}
           </div>
         </div>
 

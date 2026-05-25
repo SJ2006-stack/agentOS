@@ -8,6 +8,7 @@ import {
   formatMemoryPreview,
 } from "@/components/ui/expandable-text";
 import { cn } from "@/lib/utils";
+import { dispatchHydraMemoryOpen } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 import type { MemorySlotWrite } from "@/lib/os/types";
 
@@ -119,7 +120,7 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
           compact ? "gap-1" : "gap-2"
         )}
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <span className={cn(
                 "text-left leading-snug",
@@ -154,18 +155,29 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
             )}
           </div>
 
-          {memory.slots.length > 0 && (
-            <Button
-              type="button"
-              onClick={() => setShowDetails((v) => !v)}
-              className="shrink-0 text-[9px] uppercase tracking-wider text-os-dim transition-colors hover:text-os-green"
-              aria-expanded={showDetails}
-            >
-              <span className="text-left text-os-dim">
-                {showDetails ? "Hide" : "Details"}
-              </span>
-            </Button>
-          )}
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            {(memory.slots.length > 0 || hasRecall) && (
+              <Button
+                type="button"
+                onClick={() => dispatchHydraMemoryOpen()}
+                className="text-[9px] uppercase tracking-wider text-os-amber transition-colors hover:text-os-green"
+              >
+                View memory
+              </Button>
+            )}
+            {memory.slots.length > 0 && (
+              <Button
+                type="button"
+                onClick={() => setShowDetails((v) => !v)}
+                className="text-[9px] uppercase tracking-wider text-os-dim transition-colors hover:text-os-green"
+                aria-expanded={showDetails}
+              >
+                <span className="text-left text-os-dim">
+                  {showDetails ? "Hide" : "Details"}
+                </span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {hasRecall && !showDetails && memory.lastRecall && (

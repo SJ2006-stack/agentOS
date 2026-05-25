@@ -2,9 +2,28 @@ import { dispatchShellCommand } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 
 export const WORKSPACE_DEMO_COMMANDS = {
+  submitWebShell: "submit build agent dashboard shell",
   submitRestApi: "submit build a REST API",
   spawnPlanner: "spawn agent cpu.plan",
 } as const;
+
+export const WORKSPACE_DEMO_CHIPS = [
+  {
+    label: "Build web shell",
+    hint: "Live code assembly → deploy URL",
+    command: WORKSPACE_DEMO_COMMANDS.submitWebShell,
+  },
+  {
+    label: "Build REST API",
+    hint: "Full CPU pipeline → GPU dispatch",
+    command: WORKSPACE_DEMO_COMMANDS.submitRestApi,
+  },
+  {
+    label: "Spawn planner",
+    hint: "cpu.plan agent on graph",
+    command: WORKSPACE_DEMO_COMMANDS.spawnPlanner,
+  },
+] as const;
 
 export const WORKSPACE_PANEL_IDS = {
   agentGraph: "devfactory-agent-graph",

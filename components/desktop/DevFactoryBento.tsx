@@ -169,7 +169,7 @@ const features = [
 export function DevFactoryBento() {
   return (
     <div className="flex min-h-0 flex-col gap-2.5">
-      <div className="flex items-baseline justify-between gap-2 rounded-lg border border-os-border/50 bg-os-panel/30 px-2.5 py-1.5 ring-1 ring-inset ring-white/[0.03] backdrop-blur-sm">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-os-border/50 bg-os-panel/30 px-2.5 py-1.5 ring-1 ring-inset ring-white/[0.03] backdrop-blur-sm">
         <span className="text-left text-os-green">
           DevFactory overview
         </span>

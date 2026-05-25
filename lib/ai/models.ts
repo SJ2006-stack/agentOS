@@ -1,13 +1,13 @@
-export type OpenRouterModelEntry = {
+export type GeminiModelEntry = {
   id: string;
   label: string;
 };
 
-/** Single OpenRouter auto-routing free model for DevFactory OS. */
-export const OPENROUTER_MODELS: OpenRouterModelEntry[] = [
-  { id: "openrouter/free", label: "OpenRouter Free" },
+/** Single Gemini model for DevFactory OS. */
+export const GEMINI_MODELS: GeminiModelEntry[] = [
+  { id: "gemini-flash-latest", label: "Gemini Flash (latest)" },
 ];
 
-export const DEFAULT_MODEL_ID = "openrouter/free";
+export const DEFAULT_MODEL_ID = "gemini-flash-latest";
 
-export const ALLOWED_MODEL_IDS = new Set(OPENROUTER_MODELS.map((m) => m.id));
+export const ALLOWED_MODEL_IDS = new Set(GEMINI_MODELS.map((m) => m.id));

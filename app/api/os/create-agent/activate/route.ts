@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { OPENROUTER_KEY_FAULT } from "@/lib/ai/faults";
+import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
-import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
-import { streamChatContent } from "@/lib/ai/openrouter-agent";
+import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
+import { streamChatContent } from "@/lib/ai/gemini-agent";
 import { isHydraConfigured } from "@/lib/hydradb/client";
 import { writeAgentMemory, writeUserInteraction } from "@/lib/hydradb/memory";
 import { getAgentTemplate } from "@/lib/os/agent-graph";
@@ -79,9 +79,9 @@ export async function POST(req: Request) {
       memoryParts.push(`[search-warning] ${search.error ?? "no hits"}`);
     }
   } else if (action === "llm_brief") {
-    if (!isOpenRouterConfigured()) {
+    if (!isGeminiConfigured()) {
       return NextResponse.json(
-        { ok: false, error: OPENROUTER_KEY_FAULT, needsOpenRouter: true },
+        { ok: false, error: GEMINI_KEY_FAULT, needsGemini: true },
         { status: 503 }
       );
     }

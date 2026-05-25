@@ -4,14 +4,16 @@ import { useEffect, useRef, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
+import { DEFAULT_GEMINI_MODEL_ID } from "@/lib/ai/models-client";
 import { MODEL_CHANGE_EVENT } from "@/components/panels/ConfigurePanel";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 import { withBasePath } from "@/lib/api/url";
+import { isHydraMemoryShellCommand } from "@/lib/os/memory-shell-command";
 import {
   AGENT_SPAWNED_EVENT,
   dispatchAgentSpawned,
+  dispatchHydraMemoryOpen,
   notifyShellMounted,
   notifyShellUnmounted,
   SHELL_COMMAND_EVENT,
@@ -301,17 +303,17 @@ export function XtermShell({
       }
       if (lower.startsWith("config model")) {
         const id = line.trim().slice("config model".length).trim();
-        if (!id || id === DEFAULT_OPENROUTER_MODEL_ID) {
+        if (!id || id === DEFAULT_GEMINI_MODEL_ID) {
           writeln(
-            `[kernel] model fixed: ${DEFAULT_OPENROUTER_MODEL_ID} (OpenRouter Free auto-routing)`,
+            `[kernel] model fixed: ${DEFAULT_GEMINI_MODEL_ID} (Gemini Flash)`,
             "32"
           );
-          useOsStore.getState().setSelectedModelId(DEFAULT_OPENROUTER_MODEL_ID);
+          useOsStore.getState().setSelectedModelId(DEFAULT_GEMINI_MODEL_ID);
           prompt();
           return;
         }
         writeln(
-          `[kernel] only ${DEFAULT_OPENROUTER_MODEL_ID} is available — model selection is fixed`,
+          `[kernel] only ${DEFAULT_GEMINI_MODEL_ID} is available — model selection is fixed`,
           "32"
         );
         prompt();
@@ -319,6 +321,10 @@ export function XtermShell({
       }
 
       const modelId = useOsStore.getState().selectedModelId;
+
+      if (isHydraMemoryShellCommand(line)) {
+        dispatchHydraMemoryOpen();
+      }
 
       try {
         const res = await fetch(withBasePath("/api/os/command"), {
@@ -379,7 +385,7 @@ export function XtermShell({
         writeStreamChunk(activeTerm, decoder.decode(), compactRef.current);
 
         if (totalBytes === 0) {
-          writeln("[fault] empty stream — check OPENROUTER_API_KEY in .env.local", "31");
+          writeln("[fault] empty stream — check GEMINI_API_KEY in .env.local", "31");
         }
       } catch (e) {
         if (gen === commandGenRef.current && termRef.current === activeTerm) {

@@ -1,12 +1,12 @@
 # DevFactory OS
 
-Terminal-style OS monitor built with Next.js 15, xterm.js, [@openrouter/sdk](https://www.npmjs.com/package/@openrouter/sdk), HydraDB, and Supabase Realtime Broadcast.
+Terminal-style OS monitor built with Next.js 15, xterm.js, Google Gemini API, HydraDB, and Supabase Realtime Broadcast.
 
 ## Quick start
 
 ```bash
 cp .env.example .env.local
-# Fill OPENROUTER_API_KEY, HYDRADB_API_KEY, Supabase keys
+# Fill GEMINI_API_KEY, HYDRADB_API_KEY, Supabase keys
 
 npm install
 npm run dev
@@ -91,9 +91,9 @@ Metadata on each write: `agent_template`, `agent_id`, `pipeline_step`, `task_id`
 
 ## LLM layer
 
-**LLM usage is billed to your OpenRouter API key** (`OPENROUTER_API_KEY`) — track spend at [openrouter.ai/activity](https://openrouter.ai/activity).
+**LLM usage is billed to your Google API key** (`GEMINI_API_KEY`, or `GOOGLE_API_KEY`) — track spend in [Google AI Studio](https://aistudio.google.com/) / Google Cloud console.
 
-OpenRouter is called only when `agentNeedsLlm(templateId, action)` is true in `lib/ai/agent-llm-policy.ts` (not on every tool-only CPU/GPU step). Model: `openrouter/free`. Tool loops use `@openrouter/sdk` in `lib/ai/openrouter-agent.ts`. After each LLM call, the shell may show `[usage] tokens: prompt=X completion=Y` and broadcast `os:kernel` `usage_tick` for the KernelBar.
+Gemini is called only when `agentNeedsLlm(templateId, action)` is true in `lib/ai/agent-llm-policy.ts` (not on every tool-only CPU/GPU step). Model: `gemini-flash-latest`. Tool loops use the Gemini `generateContent` API in `lib/ai/gemini-agent.ts`. After each LLM call, the shell may show `[usage] tokens: prompt=X completion=Y` and broadcast `os:kernel` `usage_tick` for the KernelBar.
 
 | Agent / step | spawn | step | recall |
 |--------------|-------|------|--------|
@@ -139,7 +139,7 @@ npx vercel
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `OPENROUTER_API_KEY` | Yes | OpenRouter API key — powers all LLM routes via `@openrouter/sdk` (model: `openrouter/free`) |
+| `GEMINI_API_KEY` | Yes | Google Gemini API key — powers all LLM routes (model: `gemini-flash-latest`). `GOOGLE_API_KEY` is accepted as an alias. |
 | `HYDRADB_API_KEY` | Yes | Live HydraDB; no mock |
 | `HYDRADB_TENANT_ID` | No | Defaults to `devfactory-os` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Realtime panels |

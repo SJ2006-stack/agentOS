@@ -2,8 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { GPU_SYSTEM } from "@/lib/ai/agents";
-import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
-import { runChatWithTools } from "@/lib/ai/openrouter-agent";
+import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
+import { runChatWithTools } from "@/lib/ai/gemini-agent";
 import { emitUsageFeedback } from "@/lib/ai/usage-feedback";
 import { writeAgentMemory } from "@/lib/hydradb/memory";
 import { subTenantForGpuWorker } from "@/lib/os/agent-graph-data";
@@ -15,9 +15,9 @@ export const maxDuration = 60;
 
 
 export async function POST(req: Request) {
-  if (!isOpenRouterConfigured()) {
+  if (!isGeminiConfigured()) {
     return new Response(
-      "[fault] OPENROUTER_API_KEY missing — set OPENROUTER_API_KEY in .env.local and restart npm run dev\n",
+      "[fault] GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local and restart npm run dev\n",
       { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }

@@ -1,3 +1,3 @@
-/** Shell-visible fault when OpenRouter is not configured. */
-export const OPENROUTER_KEY_FAULT =
-  "[fault] OPENROUTER_API_KEY missing — set OPENROUTER_API_KEY in .env.local (https://openrouter.ai/settings/keys) and restart npm run dev\n";
+/** Shell-visible fault when Gemini is not configured. */
+export const GEMINI_KEY_FAULT =
+  "[fault] GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local (https://aistudio.google.com/apikey) and restart npm run dev\n";

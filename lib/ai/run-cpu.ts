@@ -2,8 +2,8 @@ import "server-only";
 import { absoluteApiUrl } from "@/lib/api/url";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
-import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
-import { runChatWithTools } from "@/lib/ai/openrouter-agent";
+import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
+import { runChatWithTools } from "@/lib/ai/gemini-agent";
 import { emitUsageFeedback } from "@/lib/ai/usage-feedback";
 import { createOsTools } from "@/lib/ai/tools";
 import { templateIdForCpuStep } from "@/lib/os/agent-graph-data";
@@ -12,7 +12,7 @@ import { broadcastGraphNodeActive } from "@/lib/os/graph-broadcast";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import { CPU_STEPS, type CpuStep, type GpuDispatchPayload } from "@/lib/os/types";
 import { getPipeline, setPipeline, startPipeline } from "@/lib/os/pipeline";
-import type { OpenRouterToolDef } from "@/lib/ai/openrouter-agent";
+import type { AgentToolDef } from "@/lib/ai/gemini-agent";
 
 function resolveOrigin(origin?: string): string {
   if (origin) return origin;
@@ -54,7 +54,7 @@ async function runToolOnlyStep(
   step: CpuStep,
   taskId: string,
   task: string,
-  tools: OpenRouterToolDef[],
+  tools: AgentToolDef[],
   write?: PipelineWrite
 ): Promise<void> {
   const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
@@ -171,7 +171,7 @@ export async function runCpuPipeline(
     const tools = createOsTools({ taskId, step, origin, modelId: model });
     const templateId = templateIdForCpuStep(step);
     const useLlm =
-      agentNeedsLlm(templateId, "step") && isOpenRouterConfigured();
+      agentNeedsLlm(templateId, "step") && isGeminiConfigured();
 
     try {
       if (useLlm) {

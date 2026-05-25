@@ -858,6 +858,8 @@ body {
   position: absolute;
   bottom: 6px;
   left: 8px;
+  z-index: 2;
+  max-width: calc(100% - 16px);
   pointer-events: none;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
@@ -893,19 +895,106 @@ body {
   overflow: hidden;
 }
 
+.doom-demo-choice-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 42rem;
+  margin-inline: auto;
+}
+
 .doom-demo-choice-btn {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  gap: 0;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: auto;
+  min-height: 0;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  background: #080c14;
+  text-align: left;
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  cursor: pointer;
+  font: inherit;
+  appearance: none;
+  transition: border-color 0.15s ease;
+}
+
+@media (min-width: 640px) {
+  .doom-demo-choice-btn {
+    padding: 2rem;
+  }
+}
+
+.doom-demo-choice-btn--play {
+  border: 1px solid rgba(0, 255, 178, 0.35);
+}
+
+.doom-demo-choice-btn--play:hover {
+  border-color: #00ffb2;
+}
+
+.doom-demo-choice-btn--build {
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.doom-demo-choice-btn--build:hover {
+  border-color: #8b5cf6;
+}
+
+.doom-demo-choice-title {
+  display: block;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.doom-demo-choice-btn--play .doom-demo-choice-title {
+  color: #00ffb2;
+}
+
+.doom-demo-choice-btn--build .doom-demo-choice-title {
+  color: #8b5cf6;
+}
+
+@media (min-width: 640px) {
+  .doom-demo-choice-title {
+    font-size: 1.125rem;
+  }
+}
+
+.doom-demo-choice-desc {
+  display: block;
+  min-width: 0;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: #94a3b8;
 }
 
 .doom-demo-choice-btn:focus-visible {
   outline: 2px solid rgba(0, 255, 178, 0.5);
   outline-offset: 2px;
+}
+
+/* —— Build canvas streaming caret —— */
+.build-stream-caret {
+  display: inline-block;
+  width: 0.5ch;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: rgba(139, 92, 246, 0.85);
+  animation: agentos-hero-terminal-caret 1s steps(1) infinite;
 }
 
 /* Terminal Mode — cinematic matte */

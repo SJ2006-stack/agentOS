@@ -7,8 +7,8 @@ import {
 } from "@/lib/hydradb/memory";
 import { templateIdForCpuStep } from "@/lib/os/agent-graph-data";
 import type { CpuStep } from "@/lib/os/types";
-import { defineTool } from "@/lib/ai/openrouter-agent";
-import type { OpenRouterToolDef } from "@/lib/ai/openrouter-agent";
+import { defineTool } from "@/lib/ai/gemini-agent";
+import type { AgentToolDef } from "@/lib/ai/gemini-agent";
 
 export function createOsTools(ctx: {
   taskId: string;
@@ -16,7 +16,7 @@ export function createOsTools(ctx: {
   agentId?: string;
   origin?: string;
   modelId?: string;
-}): OpenRouterToolDef[] {
+}): AgentToolDef[] {
   const stepTemplateId = ctx.step
     ? templateIdForCpuStep(ctx.step)
     : "kernel.orchestrator";

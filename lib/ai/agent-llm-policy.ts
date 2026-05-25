@@ -5,8 +5,8 @@ import { isCustomTemplateId } from "@/lib/os/custom-registry";
 import { CPU_STEPS, type CpuStep } from "@/lib/os/types";
 
 /**
- * Central policy: when DevFactory OS may call OpenRouter (`openrouter/free`).
- * All LLM usage bills to OPENROUTER_API_KEY — see https://openrouter.ai/activity
+ * Central policy: when DevFactory OS may call Gemini (`gemini-flash-latest`).
+ * All LLM usage bills to GEMINI_API_KEY — see Google AI Studio / Cloud billing.
  */
 export type AgentLlmAction = "spawn" | "step" | "recall";
 
@@ -79,5 +79,5 @@ export function buildAgentLlmPolicyTable(): AgentLlmPolicyRow[] {
   }));
 }
 
-export const OPENROUTER_BILLING_NOTE =
-  "LLM usage is billed to your OpenRouter API key (OPENROUTER_API_KEY) — see https://openrouter.ai/activity";
+export const GEMINI_BILLING_NOTE =
+  "LLM usage is billed to your Google API key (GEMINI_API_KEY) — see Google AI Studio / Cloud console";

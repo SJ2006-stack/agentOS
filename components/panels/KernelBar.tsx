@@ -62,7 +62,7 @@ export function KernelBar() {
             </span>
           </span>
           {usage && (
-            <span title="Last OpenRouter usage">
+            <span title="Last Gemini usage">
               <span className="inline text-left text-os-dim">
                 {`Tokens ${usage.promptTokens}+${usage.completionTokens}`}
               </span>

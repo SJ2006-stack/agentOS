@@ -344,7 +344,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
               className={cn(
-                "workspace-feed-row flex items-start gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2",
+                "workspace-feed-row flex flex-wrap items-start gap-x-2.5 gap-y-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2",
                 entry.kind === "spawn" && "workspace-feed-row--spawn"
               )}
             >
@@ -352,7 +352,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
                 {entry.icon}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="flex items-baseline gap-1.5 text-[11px] leading-snug">
+                <p className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[11px] leading-snug">
                   <span className={cn("inline text-left", KIND_STYLE[entry.kind])}>
                     {`${entry.prefix}:`}
                   </span>

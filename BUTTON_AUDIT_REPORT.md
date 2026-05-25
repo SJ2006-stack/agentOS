@@ -34,7 +34,7 @@
 | `DevFactoryCommandBar.tsx` | Suggestions + Run submit |
 | `AgentGraphControls.tsx` | Create agent expand, list toggle |
 | `PipelineTimeline.tsx` | Selectable step buttons |
-| `DoomDemoModal.tsx` | Choice / template / menu (RippleButton + particles) |
+| `WorkspaceDemoBar.tsx` | Build web shell chip → `runWorkspaceDemo` |
 | `LandingPage.tsx` | Spawn CTA → `/os` + `queueFirstAgentSpawn` |
 | `HydraMemoryPanel.tsx` | Details toggle |
 
@@ -45,6 +45,5 @@
 - `components/modes/DesktopMode.tsx`
 - `components/dock/DevFactoryDock.tsx`
 - `components/modes/WorkspaceAgentGraph.tsx`
-- `components/hero/doom/DoomDemoModal.tsx` (unused import cleanup)
 - `components/landing/LandingPage.tsx` (duplicate import cleanup)
 - `BUTTON_AUDIT_REPORT.md` (this file)

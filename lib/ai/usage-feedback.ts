@@ -1,5 +1,5 @@
 import "server-only";
-import type { ChatUsage } from "@openrouter/sdk/models";
+import type { LlmUsage } from "@/lib/ai/llm-types";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 
 export type UsageTickPayload = {
@@ -11,15 +11,13 @@ export type UsageTickPayload = {
   model?: string;
 };
 
-export function usageFromChunk(usage: ChatUsage | undefined): UsageTickPayload | null {
+export function usageFromChunk(usage: LlmUsage | undefined): UsageTickPayload | null {
   if (!usage) return null;
-  const reasoningTokens =
-    usage.completionTokensDetails?.reasoningTokens ?? undefined;
   return {
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     totalTokens: usage.totalTokens,
-    reasoningTokens,
+    reasoningTokens: usage.reasoningTokens,
   };
 }
 
@@ -32,7 +30,7 @@ export function formatUsageLine(payload: UsageTickPayload): string {
 }
 
 export async function emitUsageFeedback(
-  usage: ChatUsage | undefined,
+  usage: LlmUsage | undefined,
   options?: { write?: (chunk: string) => void; agentId?: string; model?: string }
 ): Promise<void> {
   const payload = usageFromChunk(usage);

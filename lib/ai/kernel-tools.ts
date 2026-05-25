@@ -7,10 +7,10 @@ import {
   recallPreferences,
   writeAgentMemory,
 } from "@/lib/hydradb/memory";
-import { defineTool } from "@/lib/ai/openrouter-agent";
-import type { OpenRouterToolDef } from "@/lib/ai/openrouter-agent";
+import { defineTool } from "@/lib/ai/gemini-agent";
+import type { AgentToolDef } from "@/lib/ai/gemini-agent";
 
-export function createKernelTools(ctx: { taskId?: string }): OpenRouterToolDef[] {
+export function createKernelTools(ctx: { taskId?: string }): AgentToolDef[] {
   return [
     defineTool({
       name: "recall_all_context",

@@ -1,30 +1,17 @@
 import "server-only";
-import { OpenRouter } from "@openrouter/sdk";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
-import { getOpenRouterApiKey } from "@/lib/config/env";
+import { getGeminiApiKey } from "@/lib/config/env";
 
-/** True when OPENROUTER_API_KEY (or OPENROUTER_KEY) is set and non-empty after trim. */
-export function isOpenRouterConfigured(): boolean {
-  return getOpenRouterApiKey() !== undefined;
+/** True when GEMINI_API_KEY (or GOOGLE_API_KEY) is set and non-empty after trim. */
+export function isGeminiConfigured(): boolean {
+  return getGeminiApiKey() !== undefined;
 }
 
 export function isAgentLlmConfigured(): boolean {
-  return isOpenRouterConfigured();
+  return isGeminiConfigured();
 }
 
-let _openrouter: OpenRouter | null = null;
-
-/** Singleton OpenRouter client (server-only). */
-export function getOpenRouter(): OpenRouter {
-  if (!_openrouter) {
-    _openrouter = new OpenRouter({
-      apiKey: getOpenRouterApiKey() ?? "",
-    });
-  }
-  return _openrouter;
-}
-
-/** Always resolves to the single allowed model: openrouter/free. */
+/** Always resolves to the single allowed model: gemini-flash-latest. */
 export function resolveModelId(requested?: string): string {
   void requested;
   return DEFAULT_MODEL_ID;

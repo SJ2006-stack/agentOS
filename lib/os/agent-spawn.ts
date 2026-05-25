@@ -1,15 +1,15 @@
 import "server-only";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
-import { OPENROUTER_KEY_FAULT } from "@/lib/ai/faults";
+import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
-import { isOpenRouterConfigured } from "@/lib/ai/model";
+import { isGeminiConfigured } from "@/lib/ai/model";
 import { createOsTools } from "@/lib/ai/tools";
 import { invokeGpuAgents } from "@/lib/ai/run-cpu";
 import {
   runChatWithTools,
   streamChatContent,
-  type OpenRouterToolDef,
-} from "@/lib/ai/openrouter-agent";
+  type AgentToolDef,
+} from "@/lib/ai/gemini-agent";
 import { emitUsageFeedback } from "@/lib/ai/usage-feedback";
 import {
   activateAgent,
@@ -49,7 +49,7 @@ async function broadcastNodeActive(
 async function runToolOnlySpawn(
   templateId: string,
   taskId: string,
-  tools: OpenRouterToolDef[],
+  tools: AgentToolDef[],
   write?: SpawnWrite
 ): Promise<string> {
   const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
@@ -118,9 +118,9 @@ export async function spawnAgentTemplate(input: {
   }
 
   const needsLlm = agentNeedsLlm(input.templateId, "spawn");
-  if (needsLlm && !isOpenRouterConfigured()) {
-    input.write?.(OPENROUTER_KEY_FAULT);
-    return { ok: false, message: "OPENROUTER_API_KEY missing", taskId: "" };
+  if (needsLlm && !isGeminiConfigured()) {
+    input.write?.(GEMINI_KEY_FAULT);
+    return { ok: false, message: "GEMINI_API_KEY missing", taskId: "" };
   }
 
   const taskId = input.taskId ?? getCurrentTaskId() ?? createTaskId();

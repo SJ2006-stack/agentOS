@@ -1,17 +1,17 @@
-/** Client-safe re-exports — keep in sync with lib/ai/models.ts OPENROUTER_MODELS. */
+/** Client-safe re-exports — keep in sync with lib/ai/models.ts GEMINI_MODELS. */
 
 export {
-  OPENROUTER_MODELS,
-  DEFAULT_MODEL_ID as DEFAULT_OPENROUTER_MODEL_ID,
-  type OpenRouterModelEntry as OpenRouterModel,
+  GEMINI_MODELS,
+  DEFAULT_MODEL_ID as DEFAULT_GEMINI_MODEL_ID,
+  type GeminiModelEntry as GeminiModel,
 } from "@/lib/ai/models";
 
-import { ALLOWED_MODEL_IDS, OPENROUTER_MODELS } from "@/lib/ai/models";
+import { ALLOWED_MODEL_IDS, GEMINI_MODELS } from "@/lib/ai/models";
 
-export function isOpenRouterModelId(id: string): boolean {
+export function isGeminiModelId(id: string): boolean {
   return ALLOWED_MODEL_IDS.has(id);
 }
 
-export function openRouterModelById(id: string) {
-  return OPENROUTER_MODELS.find((m) => m.id === id);
+export function geminiModelById(id: string) {
+  return GEMINI_MODELS.find((m) => m.id === id);
 }

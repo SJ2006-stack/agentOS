@@ -195,7 +195,7 @@ export function CreateAgentFlow({
               }}
             />
           </label>
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
               onClick={handleClose}
@@ -235,7 +235,7 @@ export function CreateAgentFlow({
               </span>
             </Button>
           </div>
-          <div className="flex gap-1.5 rounded-md border border-os-border/60 p-1">
+          <div className="flex flex-wrap gap-1.5 rounded-md border border-os-border/60 p-1">
             {(["templates", "custom"] as const).map((tab) => (
               <Button
                 key={tab}
@@ -354,7 +354,7 @@ export function CreateAgentFlow({
           {error && (
             <p className="text-[11px] text-os-fault/90">{error}</p>
           )}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
               onClick={handleClose}
@@ -392,7 +392,7 @@ export function CreateAgentFlow({
           {error && (
             <p className="text-[11px] text-os-fault/90">{error}</p>
           )}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
               onClick={() => setStep("pick")}

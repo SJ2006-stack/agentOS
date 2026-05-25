@@ -2,11 +2,15 @@
 
 import { create } from "zustand";
 import {
-  DEFAULT_OPENROUTER_MODEL_ID,
-  isOpenRouterModelId,
+  DEFAULT_GEMINI_MODEL_ID,
+  isGeminiModelId,
 } from "@/lib/ai/models-client";
 import {
   CPU_STEPS,
+  type BuildChunkEvent,
+  type BuildDeployEvent,
+  type BuildManifestEvent,
+  type BuildVerifyEvent,
   type CpuPipelineState,
   type CpuStep,
   type GpuDispatchPayload,
@@ -34,6 +38,11 @@ export type RealtimeBatch = {
   gpuHeatUpdates?: { x: number; y: number; heat: number }[];
   gpuWorkers?: number;
   graphNodeActive?: GraphNodeActiveEvent[];
+  buildManifest?: BuildManifestEvent;
+  buildChunks?: BuildChunkEvent[];
+  buildVerify?: BuildVerifyEvent;
+  buildDeploy?: BuildDeployEvent;
+  buildReset?: boolean;
 };
 
 interface OsState {
@@ -68,6 +77,15 @@ interface OsState {
     activeNodeIds: Set<string>;
     taskId: string | null;
   };
+  build: {
+    files: Record<string, string>;
+    activeCores: number[];
+    deployUrl: string | null;
+    buildActive: boolean;
+    verifyStatus: "idle" | "running" | "pass" | "fail";
+    taskId: string | null;
+    streamingPath: string | null;
+  };
   hydraConfigured: boolean;
   supabaseConfigured: boolean;
   selectedModelId: string;
@@ -94,6 +112,8 @@ interface OsState {
   setBootComplete: (v: boolean) => void;
   setHeroBootEnabled: (v: boolean) => void;
   hydrateHeroBootFromStorage: () => void;
+  resetBuild: () => void;
+  dismissDeployReveal: () => void;
 }
 
 const MODEL_STORAGE_KEY = "devfactory-os-model";
@@ -120,14 +140,14 @@ function persistHeroBootEnabled(v: boolean): void {
 }
 
 function readStoredModelId(): string {
-  if (typeof window === "undefined") return DEFAULT_OPENROUTER_MODEL_ID;
+  if (typeof window === "undefined") return DEFAULT_GEMINI_MODEL_ID;
   try {
     const stored = localStorage.getItem(MODEL_STORAGE_KEY);
-    if (stored && isOpenRouterModelId(stored)) return stored;
+    if (stored && isGeminiModelId(stored)) return stored;
   } catch {
     /* ignore */
   }
-  return DEFAULT_OPENROUTER_MODEL_ID;
+  return DEFAULT_GEMINI_MODEL_ID;
 }
 
 function persistModelId(id: string): void {
@@ -154,9 +174,18 @@ export const useOsStore = create<OsState>((set) => ({
   io: { events: [] },
   gpu: { heatmap: emptyHeatmap(), activeWorkers: 0, lastDispatch: null, dispatchSeq: 0 },
   graph: { activeNodeIds: new Set<string>(), taskId: null },
+  build: {
+    files: {},
+    activeCores: [],
+    deployUrl: null,
+    buildActive: false,
+    verifyStatus: "idle",
+    taskId: null,
+    streamingPath: null,
+  },
   hydraConfigured: false,
   supabaseConfigured: false,
-  selectedModelId: DEFAULT_OPENROUTER_MODEL_ID,
+  selectedModelId: DEFAULT_GEMINI_MODEL_ID,
 
   applyRealtimeBatch: (batch) =>
     set((s) => {
@@ -283,6 +312,77 @@ export const useOsStore = create<OsState>((set) => ({
           graph: { activeNodeIds: next, taskId },
         };
       }
+      if (batch.buildReset) {
+        state = {
+          ...state,
+          build: {
+            files: {},
+            activeCores: [],
+            deployUrl: null,
+            buildActive: false,
+            verifyStatus: "idle",
+            taskId: null,
+            streamingPath: null,
+          },
+        };
+      }
+      if (batch.buildManifest) {
+        const m = batch.buildManifest;
+        state = {
+          ...state,
+          build: {
+            files: {},
+            activeCores: m.files.map((f) => f.core),
+            deployUrl: null,
+            buildActive: true,
+            verifyStatus: "idle",
+            taskId: m.taskId,
+            streamingPath: null,
+          },
+        };
+      }
+      if (batch.buildChunks?.length) {
+        const files = { ...state.build.files };
+        let streamingPath = state.build.streamingPath;
+        const activeCores = [...state.build.activeCores];
+        for (const chunk of batch.buildChunks) {
+          files[chunk.path] = (files[chunk.path] ?? "") + chunk.chunk;
+          streamingPath = chunk.done ? null : chunk.path;
+          if (chunk.done) {
+            const idx = activeCores.indexOf(chunk.core);
+            if (idx >= 0) activeCores.splice(idx, 1);
+          }
+        }
+        state = {
+          ...state,
+          build: {
+            ...state.build,
+            files,
+            activeCores,
+            streamingPath,
+            buildActive: true,
+          },
+        };
+      }
+      if (batch.buildVerify) {
+        state = {
+          ...state,
+          build: {
+            ...state.build,
+            verifyStatus: batch.buildVerify.status,
+          },
+        };
+      }
+      if (batch.buildDeploy) {
+        state = {
+          ...state,
+          build: {
+            ...state.build,
+            deployUrl: batch.buildDeploy.url,
+            buildActive: true,
+          },
+        };
+      }
       return state;
     }),
   setKernelHeartbeat: (h) =>
@@ -367,7 +467,7 @@ export const useOsStore = create<OsState>((set) => ({
   setConfigFlags: (hydra, supabase) =>
     set({ hydraConfigured: hydra, supabaseConfigured: supabase }),
   setSelectedModelId: (id) => {
-    const next = isOpenRouterModelId(id) ? id : DEFAULT_OPENROUTER_MODEL_ID;
+    const next = isGeminiModelId(id) ? id : DEFAULT_GEMINI_MODEL_ID;
     persistModelId(next);
     set({ selectedModelId: next });
   },
@@ -385,6 +485,22 @@ export const useOsStore = create<OsState>((set) => ({
     const enabled = readHeroBootEnabled();
     set({ heroBootEnabled: enabled, bootComplete: !enabled });
   },
+  resetBuild: () =>
+    set({
+      build: {
+        files: {},
+        activeCores: [],
+        deployUrl: null,
+        buildActive: false,
+        verifyStatus: "idle",
+        taskId: null,
+        streamingPath: null,
+      },
+    }),
+  dismissDeployReveal: () =>
+    set((s) => ({
+      build: { ...s.build, deployUrl: null, buildActive: false },
+    })),
 }));
 
 export { CPU_STEPS };

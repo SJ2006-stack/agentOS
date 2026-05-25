@@ -68,7 +68,7 @@ export function ThemePresetPicker({ className }: ThemePresetPickerProps) {
     <div
       role="group"
       aria-label="Theme color preset"
-      className={cn("flex items-center gap-1", className)}
+      className={cn("flex flex-wrap items-center gap-1.5", className)}
     >
       {THEME_PRESETS.map((preset) => {
         const isActive = active === preset.id;

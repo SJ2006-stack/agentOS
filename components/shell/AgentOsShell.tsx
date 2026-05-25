@@ -4,11 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { CreateAgentOverlay } from "@/components/create-agent/CreateAgentOverlay";
+import { HydraMemoryPopup } from "@/components/panels/HydraMemoryPopup";
 import { AgentOsHero } from "@/components/hero/AgentOsHero";
 import { HeroBootSequence } from "@/components/hero/BootSequence";
 import { DevFactoryDock } from "@/components/dock/DevFactoryDock";
 import {
   CREATE_AGENT_OPEN_EVENT,
+  HYDRA_MEMORY_OPEN_EVENT,
   dispatchCreateAgentComplete,
 } from "@/lib/os/shell-events";
 import { consumeSkipHeroBoot } from "@/components/landing/OsSpawnBootstrap";
@@ -67,6 +69,7 @@ function shouldShowOrchestrationStrip(mode: UiMode, hasActivity: boolean): boole
 
 export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) {
   const [createAgentOpen, setCreateAgentOpen] = useState(false);
+  const [hydraMemoryOpen, setHydraMemoryOpen] = useState(false);
   const mode = useUiModeStore((s) => s.mode);
   const hydrated = useUiModeStore((s) => s.hydrated);
   const bootComplete = useOsStore((s) => s.bootComplete);
@@ -97,6 +100,12 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
     const onOpen = () => setCreateAgentOpen(true);
     window.addEventListener(CREATE_AGENT_OPEN_EVENT, onOpen);
     return () => window.removeEventListener(CREATE_AGENT_OPEN_EVENT, onOpen);
+  }, []);
+
+  useEffect(() => {
+    const onOpen = () => setHydraMemoryOpen(true);
+    window.addEventListener(HYDRA_MEMORY_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(HYDRA_MEMORY_OPEN_EVENT, onOpen);
   }, []);
 
   useEffect(() => {
@@ -141,7 +150,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg/75 font-mono text-os-green">
-      <div className="fixed top-4 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3">
+      <div className="fixed top-4 left-1/2 z-[100] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-3">
         <ThemePresetPicker className="rounded-full border border-os-border/80 bg-os-surface/90 px-2 py-1.5 backdrop-blur-sm" />
         <AnimatedThemeToggler
           variant="star"
@@ -235,6 +244,11 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
         onClose={() => setCreateAgentOpen(false)}
         hydraConfigured={hydraConfigured}
         onComplete={() => dispatchCreateAgentComplete()}
+      />
+
+      <HydraMemoryPopup
+        open={hydraMemoryOpen}
+        onClose={() => setHydraMemoryOpen(false)}
       />
     </div>
   );

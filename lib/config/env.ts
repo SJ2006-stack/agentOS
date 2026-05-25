@@ -1,7 +1,7 @@
 import "server-only";
 
-/** Primary + legacy alias — never fall back to VERCEL_AI_GATEWAY_API_KEY. */
-const OPENROUTER_ENV_KEYS = ["OPENROUTER_API_KEY", "OPENROUTER_KEY"] as const;
+/** Primary + legacy alias for Google Gemini API key. */
+const GEMINI_ENV_KEYS = ["GEMINI_API_KEY", "GOOGLE_API_KEY"] as const;
 
 /**
  * Read a server env var at runtime. Bracket access avoids Next.js replacing
@@ -14,15 +14,24 @@ export function readTrimmedEnv(name: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-/** First non-empty OpenRouter key (OPENROUTER_API_KEY, then OPENROUTER_KEY). */
-export function getOpenRouterApiKey(): string | undefined {
-  for (const key of OPENROUTER_ENV_KEYS) {
+/** First non-empty Gemini key (GEMINI_API_KEY, then GOOGLE_API_KEY). */
+export function getGeminiApiKey(): string | undefined {
+  for (const key of GEMINI_ENV_KEYS) {
     const value = readTrimmedEnv(key);
     if (value) return value;
   }
   return undefined;
 }
 
-export function isOpenRouterApiKeySet(): boolean {
-  return getOpenRouterApiKey() !== undefined;
+export function isGeminiApiKeySet(): boolean {
+  return getGeminiApiKey() !== undefined;
+}
+
+/** Deploy URL shown at end of demo build flow. */
+export function getDemoDeployUrl(): string {
+  const explicit = readTrimmedEnv("DEMO_DEPLOY_URL");
+  if (explicit) return explicit;
+  const appUrl = readTrimmedEnv("NEXT_PUBLIC_APP_URL");
+  if (appUrl) return appUrl.replace(/\/$/, "");
+  return "http://localhost:3000 (set DEMO_DEPLOY_URL)";
 }

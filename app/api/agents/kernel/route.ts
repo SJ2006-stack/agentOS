@@ -2,19 +2,19 @@ export const dynamic = "force-dynamic";
 
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
-import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
+import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
 import {
   streamChatWithTools,
   textStreamResponse,
-} from "@/lib/ai/openrouter-agent";
+} from "@/lib/ai/gemini-agent";
 
 export const maxDuration = 60;
 
 
 export async function POST(req: Request) {
-  if (!isOpenRouterConfigured()) {
+  if (!isGeminiConfigured()) {
     return new Response(
-      "[fault] OPENROUTER_API_KEY missing — set OPENROUTER_API_KEY in .env.local and restart npm run dev\n",
+      "[fault] GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local and restart npm run dev\n",
       { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }

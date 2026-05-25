@@ -1,5 +1,6 @@
 import { withBasePath } from "@/lib/api/url";
-import { dispatchAgentSpawned } from "@/lib/os/shell-events";
+import { isHydraMemoryShellCommand } from "@/lib/os/memory-shell-command";
+import { dispatchAgentSpawned, dispatchHydraMemoryOpen } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 
 const SPAWN_STREAM_RE = /\[agent\] spawning (\S+)/;
@@ -32,6 +33,10 @@ export async function executeOsCommand(command: string): Promise<void> {
 
   useOsStore.getState().setKernelCommand(trimmed);
   const modelId = useOsStore.getState().selectedModelId;
+
+  if (isHydraMemoryShellCommand(trimmed)) {
+    dispatchHydraMemoryOpen();
+  }
 
   const res = await fetch(withBasePath("/api/os/command"), {
     method: "POST",

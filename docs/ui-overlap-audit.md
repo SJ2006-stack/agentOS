@@ -53,10 +53,9 @@ Inspector report was not received within the polling window. Issues below were i
 
 - Dock: `z-50`
 - Create agent overlay: `z-[160]`
-- DOOM modal: `z-[200]`
 - Theme toggler: `z-[100]`
 
-No changes needed to DOOM/create-agent ordering.
+No changes needed to create-agent ordering vs dock/theme toggler.
 
 ---
 

@@ -6,24 +6,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { Play, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  WORKSPACE_DEMO_COMMANDS,
+  WORKSPACE_DEMO_CHIPS,
   dismissWorkspaceFirstRun,
   isWorkspaceFirstRunDismissed,
   runWorkspaceDemo,
 } from "@/lib/os/workspace-demo";
 
-const DEMO_CHIPS = [
-  {
-    label: "Build REST API",
-    hint: "Full CPU pipeline → GPU dispatch",
-    command: WORKSPACE_DEMO_COMMANDS.submitRestApi,
-  },
-  {
-    label: "Spawn planner",
-    hint: "cpu.plan agent on graph",
-    command: WORKSPACE_DEMO_COMMANDS.spawnPlanner,
-  },
-] as const;
+const DEMO_CHIPS = WORKSPACE_DEMO_CHIPS;
 
 const FIRST_RUN_STEPS = [
   "Tap Try this or type a command in Run a command below",
@@ -67,7 +56,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
             className="overflow-hidden rounded-xl border border-os-amber/30 bg-gradient-to-r from-os-amber/10 via-os-panel/50 to-os-green/5 p-3.5"
             aria-label="First run guide"
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <span className="text-left text-os-amber">
                   First run — watch an agent work

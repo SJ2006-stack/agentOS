@@ -15,7 +15,44 @@ export type OsChannel =
   | "os:memory"
   | "os:io"
   | "os:gpu"
-  | "os:graph";
+  | "os:graph"
+  | "os:build";
+
+export interface BuildFileEntry {
+  path: string;
+  core: number;
+}
+
+export interface BuildManifestEvent {
+  taskId: string;
+  files: BuildFileEntry[];
+}
+
+export interface BuildChunkEvent {
+  taskId: string;
+  path: string;
+  chunk: string;
+  index: number;
+  total: number;
+  core: number;
+  done?: boolean;
+}
+
+export interface BuildVerifyEvent {
+  taskId: string;
+  status: "running" | "pass" | "fail";
+  message?: string;
+}
+
+export interface BuildDeployEvent {
+  taskId: string;
+  url: string;
+}
+
+/** Matches `submit build …` demo tasks (no Gemini LLM required). */
+export function isBuildDemoTask(task: string): boolean {
+  return task.trim().toLowerCase().startsWith("build");
+}
 
 export interface GraphNodeActiveEvent {
   nodeId: string;

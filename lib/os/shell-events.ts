@@ -118,3 +118,10 @@ export function dispatchCreateAgentComplete(): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(CREATE_AGENT_COMPLETE_EVENT));
 }
+
+export const HYDRA_MEMORY_OPEN_EVENT = "devfactory:hydra-memory-open";
+
+export function dispatchHydraMemoryOpen(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(HYDRA_MEMORY_OPEN_EVENT));
+}

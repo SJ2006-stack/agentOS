@@ -321,7 +321,7 @@ export function DesktopMode() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,color-mix(in_srgb,var(--os-green)_10%,transparent),transparent_50%)]" />
 
       <div className="relative z-10 flex h-full min-h-0 flex-col pb-12">
-        <header className="flex shrink-0 items-start justify-between gap-3 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
+        <header className="flex shrink-0 flex-wrap items-start justify-between gap-3 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
           <div className="min-w-0">
             <span className="text-left text-white/95">
               DevFactory OS
@@ -404,7 +404,7 @@ export function DesktopMode() {
             <span className="mb-2 text-left text-white/45">
               Applications
             </span>
-            <div className="grid grid-cols-3 gap-x-3 gap-y-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3">
               {DESKTOP_ICONS.map((item) => {
                 const accent = DESKTOP_ICON_ACCENTS[item.id];
                 const { Icon } = item;

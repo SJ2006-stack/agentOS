@@ -3,6 +3,10 @@
 import { useEffect } from "react";
 import { getSupabaseBrowser, isSupabaseConfiguredClient } from "@/lib/supabase/client";
 import type {
+  BuildChunkEvent,
+  BuildDeployEvent,
+  BuildManifestEvent,
+  BuildVerifyEvent,
   CpuStep,
   GpuDispatchPayload,
   IoToolCall,
@@ -45,6 +49,13 @@ function mergeBatch(target: RealtimeBatch, patch: RealtimeBatch): void {
       ...patch.graphNodeActive,
     ];
   }
+  if (patch.buildManifest !== undefined) target.buildManifest = patch.buildManifest;
+  if (patch.buildChunks?.length) {
+    target.buildChunks = [...(target.buildChunks ?? []), ...patch.buildChunks];
+  }
+  if (patch.buildVerify !== undefined) target.buildVerify = patch.buildVerify;
+  if (patch.buildDeploy !== undefined) target.buildDeploy = patch.buildDeploy;
+  if (patch.buildReset !== undefined) target.buildReset = patch.buildReset;
 }
 
 function createRealtimeFlusher() {
@@ -221,6 +232,23 @@ export function useOsRealtime(hydraConfigured: boolean) {
                 (payload as { workersCompleted?: number }).workersCompleted ?? 0
               ),
             });
+          }
+        },
+      },
+      {
+        name: "os:build",
+        handler: (event: string, payload: Record<string, unknown>) => {
+          if (event === "manifest") {
+            queue({ buildManifest: payload as unknown as BuildManifestEvent });
+          }
+          if (event === "chunk") {
+            queue({ buildChunks: [payload as unknown as BuildChunkEvent] });
+          }
+          if (event === "verify") {
+            queue({ buildVerify: payload as unknown as BuildVerifyEvent });
+          }
+          if (event === "deploy") {
+            queue({ buildDeploy: payload as unknown as BuildDeployEvent });
           }
         },
       },

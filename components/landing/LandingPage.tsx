@@ -4,11 +4,14 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { queueFirstAgentSpawn } from "@/components/landing/OsSpawnBootstrap";
+import {
+  queueBuildWebShellDemo,
+  queueFirstAgentSpawn,
+} from "@/components/landing/OsSpawnBootstrap";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { hydrateThemePreset, ThemePresetPicker } from "@/components/ui/theme-preset-picker";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const MotionButton = motion.create(Button);
 
@@ -26,19 +29,11 @@ const AgentRunDemo = dynamic(
   }
 );
 
-const DoomDemoModal = dynamic(
-  () =>
-    import("@/components/hero/doom/DoomDemoModal").then((m) => m.DoomDemoModal),
-  { ssr: false }
-);
-
 const TAGLINE =
   "Orchestration you can see — spawn agents, watch the graph light up, pipeline move, and memory lanes fill.";
 
 export function LandingPage() {
   const router = useRouter();
-  const [doomDemoOpen, setDoomDemoOpen] = useState(false);
-
   useEffect(() => {
     hydrateThemePreset();
   }, []);
@@ -48,13 +43,18 @@ export function LandingPage() {
     router.push("/os");
   };
 
+  const onBuildDemo = () => {
+    queueBuildWebShellDemo();
+    router.push("/os");
+  };
+
   return (
     <main className="agentos-hero relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-20 font-mono">
       <div className="hero-gradient-bg" aria-hidden />
       <div className="hero-particles hero-particles-lite" aria-hidden />
       <div className="hero-network-lines opacity-20" aria-hidden />
 
-      <div className="fixed top-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3">
+      <div className="fixed top-4 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-3">
         <ThemePresetPicker className="rounded-full border border-hero-graphite/80 bg-hero-obsidian/90 px-2 py-1.5 backdrop-blur-sm" />
         <AnimatedThemeToggler
           variant="star"
@@ -97,15 +97,13 @@ export function LandingPage() {
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setDoomDemoOpen(true)}
+            onClick={onBuildDemo}
             className="rounded-lg border border-hero-graphite/80 bg-hero-obsidian/60 px-8 py-3.5 text-sm font-medium tracking-wide text-hero-muted transition-colors hover:border-hero-purple/50 hover:bg-hero-purple/10 hover:text-hero-cyan"
           >
-            <span className="text-center text-hero-muted">Watch DOOM demo</span>
+            <span className="text-center text-hero-muted">Build web shell</span>
           </MotionButton>
         </div>
       </motion.div>
-
-      <DoomDemoModal open={doomDemoOpen} onClose={() => setDoomDemoOpen(false)} />
     </main>
   );
 }

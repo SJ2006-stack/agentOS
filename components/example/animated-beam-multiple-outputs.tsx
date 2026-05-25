@@ -47,7 +47,7 @@ export default function AnimatedBeamMultipleOutputDemo({
         className
       )}
     >
-      <div className="flex size-full max-w-md flex-row items-center justify-between gap-6">
+      <div className="flex size-full max-w-md flex-row flex-wrap items-center justify-center gap-4 sm:justify-between sm:gap-6">
         <Node ref={shellRef} label="shell">
           <Terminal className="size-4" />
         </Node>
