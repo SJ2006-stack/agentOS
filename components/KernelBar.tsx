@@ -11,6 +11,7 @@ function truncateModelId(id: string, max = 18): string {
 export function KernelBar() {
   const { kernel, supabaseConfigured, hydraConfigured, selectedModelId } =
     useOsStore();
+  const usage = kernel.lastUsage;
   const hb = kernel.heartbeat;
   const uptime = hb ? `${Math.floor(hb.uptimeMs / 1000)}s` : "—";
   const status = kernel.connected ? (hb?.status ?? "online") : "offline";
@@ -45,6 +46,11 @@ export function KernelBar() {
         </span>
         <span>RT {supabaseConfigured ? "linked" : "offline"}</span>
         <span>Hydra {hydraConfigured ? "live" : "disconnected"}</span>
+        {usage && (
+          <span title="Last OpenRouter usage tick">
+            tokens {usage.promptTokens}+{usage.completionTokens}
+          </span>
+        )}
         {kernel.lastCommand && (
           <span className="text-os-green truncate max-w-xs">
             last: {kernel.lastCommand}

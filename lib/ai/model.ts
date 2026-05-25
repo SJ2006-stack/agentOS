@@ -1,14 +1,11 @@
 import "server-only";
 import { OpenRouter } from "@openrouter/sdk";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
+import { getOpenRouterApiKey } from "@/lib/env";
 
-function openRouterApiKey(): string | undefined {
-  return process.env.OPENROUTER_API_KEY;
-}
-
-/** True when OPENROUTER_API_KEY is set. */
+/** True when OPENROUTER_API_KEY (or OPENROUTER_KEY) is set and non-empty after trim. */
 export function isOpenRouterConfigured(): boolean {
-  return Boolean(openRouterApiKey());
+  return getOpenRouterApiKey() !== undefined;
 }
 
 export function isAgentLlmConfigured(): boolean {
@@ -21,7 +18,7 @@ let _openrouter: OpenRouter | null = null;
 export function getOpenRouter(): OpenRouter {
   if (!_openrouter) {
     _openrouter = new OpenRouter({
-      apiKey: openRouterApiKey() ?? "",
+      apiKey: getOpenRouterApiKey() ?? "",
     });
   }
   return _openrouter;

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
   if (!isAgentLlmConfigured()) {
     return new Response(
-      "[fault] OPENROUTER_API_KEY not configured\n",
+      "[fault] OPENROUTER_API_KEY missing — set OPENROUTER_API_KEY in .env.local and restart npm run dev\n",
       { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const text = await runChatWithTools({
+  const { text } = await runChatWithTools({
     modelId: model,
     system: CPU_SYSTEM,
     prompt: cpuStepPrompt(step, task, taskId),

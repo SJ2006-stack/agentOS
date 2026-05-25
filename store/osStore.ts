@@ -10,8 +10,10 @@ import {
   type CpuPipelineState,
   type CpuStep,
   type GpuDispatchPayload,
+  type GraphNodeActiveEvent,
   type IoToolCall,
   type KernelHeartbeat,
+  type KernelUsageTick,
   type MemoryRecallResult,
   type MemorySlotWrite,
   emptyHeatmap,
@@ -21,6 +23,7 @@ interface OsState {
   kernel: {
     heartbeat: KernelHeartbeat | null;
     lastCommand: string | null;
+    lastUsage: KernelUsageTick | null;
     connected: boolean;
   };
   cpu: {
@@ -42,12 +45,17 @@ interface OsState {
     /** Increments on each os:gpu dispatch — drives heatmap enter animation. */
     dispatchSeq: number;
   };
+  graph: {
+    activeNodeIds: Set<string>;
+    taskId: string | null;
+  };
   hydraConfigured: boolean;
   supabaseConfigured: boolean;
   selectedModelId: string;
 
   setKernelHeartbeat: (h: KernelHeartbeat) => void;
   setKernelCommand: (cmd: string) => void;
+  setKernelUsage: (u: KernelUsageTick) => void;
   setKernelConnected: (v: boolean) => void;
   setCpuStep: (step: CpuStep, status: "start" | "complete" | "running", msg?: string) => void;
   setCpuPipeline: (p: Partial<CpuPipelineState>) => void;
@@ -58,6 +66,7 @@ interface OsState {
   setGpuDispatch: (d: GpuDispatchPayload) => void;
   updateGpuHeat: (x: number, y: number, heat: number) => void;
   setGpuWorkers: (n: number) => void;
+  setGraphNodeActive: (event: GraphNodeActiveEvent) => void;
   setConfigFlags: (hydra: boolean, supabase: boolean) => void;
   setSelectedModelId: (id: string) => void;
   hydrateModelFromStorage: () => void;
@@ -93,11 +102,12 @@ const initialPipeline: CpuPipelineState = {
 };
 
 export const useOsStore = create<OsState>((set) => ({
-  kernel: { heartbeat: null, lastCommand: null, connected: false },
+  kernel: { heartbeat: null, lastCommand: null, lastUsage: null, connected: false },
   cpu: { pipeline: initialPipeline, lastMessage: null },
   memory: { slots: [], lastRecall: null, connected: false },
   io: { events: [] },
   gpu: { heatmap: emptyHeatmap(), activeWorkers: 0, lastDispatch: null, dispatchSeq: 0 },
+  graph: { activeNodeIds: new Set<string>(), taskId: null },
   hydraConfigured: false,
   supabaseConfigured: false,
   selectedModelId: DEFAULT_OPENROUTER_MODEL_ID,
@@ -106,6 +116,8 @@ export const useOsStore = create<OsState>((set) => ({
     set((s) => ({ kernel: { ...s.kernel, heartbeat: h, connected: true } })),
   setKernelCommand: (cmd) =>
     set((s) => ({ kernel: { ...s.kernel, lastCommand: cmd } })),
+  setKernelUsage: (u) =>
+    set((s) => ({ kernel: { ...s.kernel, lastUsage: u } })),
   setKernelConnected: (v) =>
     set((s) => ({ kernel: { ...s.kernel, connected: v } })),
   setCpuStep: (step, status, message) =>
@@ -167,6 +179,18 @@ export const useOsStore = create<OsState>((set) => ({
       return { gpu: { ...s.gpu, heatmap } };
     }),
   setGpuWorkers: (n) => set((s) => ({ gpu: { ...s.gpu, activeWorkers: n } })),
+  setGraphNodeActive: (event) =>
+    set((s) => {
+      const next = new Set(s.graph.activeNodeIds);
+      if (event.active) next.add(event.nodeId);
+      else next.delete(event.nodeId);
+      return {
+        graph: {
+          activeNodeIds: next,
+          taskId: event.taskId ?? s.graph.taskId,
+        },
+      };
+    }),
   setConfigFlags: (hydra, supabase) =>
     set({ hydraConfigured: hydra, supabaseConfigured: supabase }),
   setSelectedModelId: (id) => {

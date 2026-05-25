@@ -3,9 +3,14 @@ import type {
   ChatFunctionTool,
   ChatMessages,
   ChatStreamChunk,
+  ChatUsage,
 } from "@openrouter/sdk/models";
 import { z } from "zod";
+import { emitUsageFeedback } from "@/lib/ai/usage-feedback";
+import { OPENROUTER_KEY_FAULT } from "@/lib/ai/faults";
 import { getOpenRouter, isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
+
+export type OpenRouterUsageHandler = (usage: ChatUsage) => void | Promise<void>;
 
 export type OpenRouterToolDef<T extends z.ZodTypeAny = z.ZodTypeAny> = {
   name: string;
@@ -161,9 +166,10 @@ export async function* streamChatContent(input: {
   system: string;
   prompt: string;
   messages?: ChatMessages[];
+  onUsage?: OpenRouterUsageHandler;
 }): AsyncGenerator<string> {
   if (!isOpenRouterConfigured()) {
-    yield "[fault] OPENROUTER_API_KEY missing — copy .env.example to .env.local\n";
+    yield OPENROUTER_KEY_FAULT;
     return;
   }
   try {
@@ -180,12 +186,18 @@ export async function* streamChatContent(input: {
     });
 
     let yielded = false;
+    let lastUsage: ChatUsage | undefined;
     for await (const chunk of stream) {
+      if (chunk.usage) lastUsage = chunk.usage;
       const text = chunkText(chunk);
       if (text) {
         yielded = true;
         yield text;
       }
+    }
+    if (lastUsage) {
+      if (input.onUsage) await input.onUsage(lastUsage);
+      else await emitUsageFeedback(lastUsage);
     }
     if (!yielded) {
       yield "[fault] OpenRouter returned an empty stream\n";
@@ -199,6 +211,11 @@ export async function* streamChatContent(input: {
  * Multi-step agent loop using OpenRouter chat completions + native tools.
  * Primary path for kernel/CPU agents (replaces Vercel AI SDK streamText + tools).
  */
+export type RunChatWithToolsResult = {
+  text: string;
+  usage?: ChatUsage;
+};
+
 export async function runChatWithTools(input: {
   modelId: string;
   system: string;
@@ -206,9 +223,12 @@ export async function runChatWithTools(input: {
   tools: OpenRouterToolDef[];
   maxSteps?: number;
   maxTokens?: number;
-}): Promise<string> {
+  onUsage?: OpenRouterUsageHandler;
+}): Promise<RunChatWithToolsResult> {
   if (!isOpenRouterConfigured()) {
-    throw new Error("OPENROUTER_API_KEY missing — copy .env.example to .env.local");
+    throw new Error(
+      "OPENROUTER_API_KEY missing — set OPENROUTER_API_KEY in .env.local and restart npm run dev"
+    );
   }
 
   const openrouter = getOpenRouter();
@@ -223,6 +243,7 @@ export async function runChatWithTools(input: {
   ];
 
   let finalText = "";
+  let lastUsage: ChatUsage | undefined;
 
   for (let step = 0; step < (input.maxSteps ?? 6); step++) {
     const result = await openrouter.chat.send({
@@ -234,6 +255,8 @@ export async function runChatWithTools(input: {
         maxTokens: input.maxTokens,
       },
     });
+
+    if (result.usage) lastUsage = result.usage;
 
     const choice = result.choices[0];
     const msg = choice?.message;
@@ -288,7 +311,12 @@ export async function runChatWithTools(input: {
     }
   }
 
-  return finalText;
+  if (lastUsage) {
+    if (input.onUsage) await input.onUsage(lastUsage);
+    else await emitUsageFeedback(lastUsage);
+  }
+
+  return { text: finalText, usage: lastUsage };
 }
 
 /** Run tool loop, then yield final assistant text for streaming routes. */
@@ -298,13 +326,14 @@ export async function* streamChatWithTools(input: {
   prompt: string;
   tools: OpenRouterToolDef[];
   maxSteps?: number;
+  onUsage?: OpenRouterUsageHandler;
 }): AsyncGenerator<string> {
   if (!isOpenRouterConfigured()) {
-    yield "[fault] OPENROUTER_API_KEY missing — copy .env.example to .env.local\n";
+    yield OPENROUTER_KEY_FAULT;
     return;
   }
   try {
-    const text = await runChatWithTools(input);
+    const { text } = await runChatWithTools(input);
     if (text) {
       yield text.endsWith("\n") ? text : `${text}\n`;
     } else {

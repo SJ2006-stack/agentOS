@@ -2,11 +2,10 @@ import "server-only";
 import { z } from "zod";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import {
-  addMemoryToHydra,
-  cpuStepPrefix,
-  MEMORY_PREFIXES,
   recallPreferences,
+  writeAgentMemory,
 } from "@/lib/hydradb/memory";
+import { templateIdForCpuStep } from "@/lib/os/agent-graph-data";
 import type { CpuStep } from "@/lib/os/types";
 import { defineTool } from "@/lib/ai/openrouter-agent";
 import type { OpenRouterToolDef } from "@/lib/ai/openrouter-agent";
@@ -18,30 +17,26 @@ export function createOsTools(ctx: {
   origin?: string;
   modelId?: string;
 }): OpenRouterToolDef[] {
-  const stepPrefix = ctx.step ? cpuStepPrefix(ctx.step) : MEMORY_PREFIXES.kernel;
+  const stepTemplateId = ctx.step
+    ? templateIdForCpuStep(ctx.step)
+    : "kernel.orchestrator";
 
-  async function persistAndBroadcastMemory(input: {
-    sub_tenant_id: string;
-    text: string;
-    infer: boolean;
-    metadata: Record<string, unknown>;
-  }) {
+  async function persistAgentMemory(
+    templateId: string,
+    text: string,
+    metadata: Record<string, unknown>
+  ) {
     await broadcastOsEvent("os:memory", "indexing", {
-      agentId: input.sub_tenant_id,
+      agentId: templateId,
       status: "indexing",
     });
 
-    const result = await addMemoryToHydra({
-      sub_tenant_id: input.sub_tenant_id,
-      text: input.text,
-      infer: input.infer,
-      metadata: input.metadata,
-    });
+    const result = await writeAgentMemory(templateId, text, metadata);
 
     await broadcastOsEvent("os:memory", "slot_write", {
       memoryId: result.memoryId,
-      agentId: input.sub_tenant_id,
-      preview: input.text.slice(0, 80),
+      agentId: templateId,
+      preview: text.slice(0, 80),
       status: result.ok ? "indexed" : "error",
     });
 
@@ -58,15 +53,9 @@ export function createOsTools(ctx: {
       }),
       execute: async ({ plan, steps }) => {
         const text = `PLAN: ${plan}${steps?.length ? ` | steps: ${steps.join(", ")}` : ""}`;
-        await persistAndBroadcastMemory({
-          sub_tenant_id: cpuStepPrefix("PLAN"),
-          text,
-          infer: false,
-          metadata: {
-            agent_id: cpuStepPrefix("PLAN"),
-            pipeline_step: "PLAN",
-            task_id: ctx.taskId,
-          },
+        await persistAgentMemory("cpu.plan", text, {
+          pipeline_step: "PLAN",
+          task_id: ctx.taskId,
         });
         await broadcastOsEvent("os:io", "tool_call", {
           tool: "plan_task",
@@ -90,15 +79,9 @@ export function createOsTools(ctx: {
       }),
       execute: async ({ queues, priority }) => {
         const text = `ROUTE: queues=${queues.join(",")} priority=${priority ?? 0}`;
-        await persistAndBroadcastMemory({
-          sub_tenant_id: cpuStepPrefix("ROUTE"),
-          text,
-          infer: false,
-          metadata: {
-            agent_id: cpuStepPrefix("ROUTE"),
-            pipeline_step: "ROUTE",
-            task_id: ctx.taskId,
-          },
+        await persistAgentMemory("cpu.route", text, {
+          pipeline_step: "ROUTE",
+          task_id: ctx.taskId,
         });
         await broadcastOsEvent("os:io", "tool_call", {
           tool: "route_workers",
@@ -130,15 +113,9 @@ export function createOsTools(ctx: {
           heat: z.heat,
         }));
         const text = `DISPATCH: ${workerCount} workers → zones ${JSON.stringify(hotZones.slice(0, 4))}`;
-        await persistAndBroadcastMemory({
-          sub_tenant_id: cpuStepPrefix("DISPATCH"),
-          text,
-          infer: false,
-          metadata: {
-            agent_id: cpuStepPrefix("DISPATCH"),
-            pipeline_step: "DISPATCH",
-            task_id: ctx.taskId,
-          },
+        await persistAgentMemory("cpu.dispatch", text, {
+          pipeline_step: "DISPATCH",
+          task_id: ctx.taskId,
         });
         await broadcastOsEvent("os:gpu", "dispatch", {
           hotZones,
@@ -174,16 +151,10 @@ export function createOsTools(ctx: {
         infer: z.boolean().optional(),
       }),
       execute: async ({ text, infer }) => {
-        const sub = cpuStepPrefix("COMMIT");
-        return persistAndBroadcastMemory({
-          sub_tenant_id: sub,
-          text,
+        return persistAgentMemory("cpu.commit", text, {
+          pipeline_step: "COMMIT",
+          task_id: ctx.taskId,
           infer: infer ?? false,
-          metadata: {
-            agent_id: sub,
-            pipeline_step: "COMMIT",
-            task_id: ctx.taskId,
-          },
         });
       },
     }),
@@ -194,7 +165,7 @@ export function createOsTools(ctx: {
       execute: async ({ query }) => {
         const r = await recallPreferences({
           query,
-          sub_tenant_id: stepPrefix,
+          sub_tenant_id: stepTemplateId,
         });
         await broadcastOsEvent("os:memory", "recall_result", {
           query,
@@ -221,16 +192,14 @@ export function createOsTools(ctx: {
           ts: Date.now(),
         });
         if (persist) {
-          await persistAndBroadcastMemory({
-            sub_tenant_id: MEMORY_PREFIXES.io,
-            text: `IO ${layer}/${toolName}: ${JSON.stringify(args ?? {}).slice(0, 200)}`,
-            infer: false,
-            metadata: {
-              agent_id: MEMORY_PREFIXES.io,
+          await persistAgentMemory(
+            "io.bus",
+            `IO ${layer}/${toolName}: ${JSON.stringify(args ?? {}).slice(0, 200)}`,
+            {
               pipeline_step: "IO",
               task_id: ctx.taskId,
-            },
-          });
+            }
+          );
         }
         return { ok: true };
       },

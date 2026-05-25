@@ -10,6 +10,7 @@ import { HydraMemoryPanel } from "@/components/HydraMemoryPanel";
 import { IoBus } from "@/components/IoBus";
 import { GpuHeatmap } from "@/components/GpuHeatmap";
 import { ConfigurePanel } from "@/components/ConfigurePanel";
+import { AgentGraphPanel } from "@/components/AgentGraphPanel";
 import { useOsStore } from "@/store/osStore";
 import { useEffect } from "react";
 
@@ -31,6 +32,7 @@ export function OsMonitor({ hydraConfigured }: { hydraConfigured: boolean }) {
       hydraConfigured={hydraConfigured}
       kernel={<KernelBar />}
       configure={<ConfigurePanel />}
+      agentGraph={<AgentGraphPanel hydraConfigured={hydraConfigured} />}
       cpu={<CpuScheduler />}
       memory={<HydraMemoryPanel />}
       io={<IoBus />}

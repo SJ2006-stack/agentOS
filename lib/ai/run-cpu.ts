@@ -1,7 +1,13 @@
 import "server-only";
-import { resolveModelId } from "@/lib/ai/model";
+import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
+import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
+import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
+import { runChatWithTools } from "@/lib/ai/openrouter-agent";
+import { emitUsageFeedback } from "@/lib/ai/usage-feedback";
 import { createOsTools } from "@/lib/ai/tools";
-import { addMemoryToHydra, cpuStepPrefix } from "@/lib/hydradb/memory";
+import { templateIdForCpuStep } from "@/lib/os/agent-graph-data";
+import { writeAgentMemory } from "@/lib/hydradb/memory";
+import { broadcastGraphNodeActive } from "@/lib/os/graph-broadcast";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import { CPU_STEPS, type CpuStep, type GpuDispatchPayload } from "@/lib/os/types";
 import { getPipeline, setPipeline, startPipeline } from "@/lib/os/pipeline";
@@ -146,17 +152,12 @@ export async function runCpuPipeline(
 
     write?.(`[cpu] ${step} starting…\n`);
     await broadcastStep(step, taskId, pipe.completedSteps, "start");
+    await broadcastGraphNodeActive({ nodeId: templateIdForCpuStep(step), taskId, step });
 
     if (process.env.HYDRADB_API_KEY) {
-      void addMemoryToHydra({
-        sub_tenant_id: cpuStepPrefix(step),
-        text: `[${step}] starting task ${taskId}: ${task.slice(0, 120)}`,
-        infer: false,
-        metadata: {
-          agent_id: cpuStepPrefix(step),
-          pipeline_step: step,
-          task_id: taskId,
-        },
+      void writeAgentMemory(templateIdForCpuStep(step), `[${step}] starting task ${taskId}: ${task.slice(0, 120)}`, {
+        pipeline_step: step,
+        task_id: taskId,
       });
     }
 
@@ -167,9 +168,29 @@ export async function runCpuPipeline(
     });
 
     const tools = createOsTools({ taskId, step, origin, modelId: model });
+    const templateId = templateIdForCpuStep(step);
+    const useLlm =
+      agentNeedsLlm(templateId, "step") && isOpenRouterConfigured();
 
     try {
-      await runToolOnlyStep(step, taskId, task, tools, write);
+      if (useLlm) {
+        const { text } = await runChatWithTools({
+          modelId: model,
+          system: CPU_SYSTEM,
+          prompt: cpuStepPrompt(step, task, taskId),
+          tools,
+          maxSteps: 5,
+          onUsage: (u) =>
+            emitUsageFeedback(u, { write, agentId: templateId, model }),
+        });
+        if (text.trim()) write?.(`[cpu] ${step}: ${text.slice(0, 200)}\n`);
+        else write?.(`[cpu] ${step} complete\n`);
+      } else {
+        await runToolOnlyStep(step, taskId, task, tools, write);
+        if (!agentNeedsLlm(templateId, "step")) {
+          write?.(`[cpu] ${step} (no LLM)\n`);
+        }
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "step failed";
       write?.(`[cpu] ${step} fault: ${msg}\n`);
@@ -189,6 +210,7 @@ export async function runCpuPipeline(
     });
 
     await broadcastStep(step, taskId, completedSteps, "complete");
+    await broadcastGraphNodeActive({ nodeId: "kernel.orchestrator", taskId });
   }
 
   write?.(`[kernel] pipeline finished: ${taskId}\n`);

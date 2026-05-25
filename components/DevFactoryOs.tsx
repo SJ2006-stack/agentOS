@@ -7,6 +7,7 @@ import { KernelBar } from "@/components/KernelBar";
 import { CpuScheduler } from "@/components/CpuScheduler";
 import { HydraMemoryPanel } from "@/components/HydraMemoryPanel";
 import { IoBus } from "@/components/IoBus";
+import { AgentGraphPanel } from "@/components/AgentGraphPanel";
 import { GpuHeatmap } from "@/components/GpuHeatmap";
 import { ConfigurePanel } from "@/components/ConfigurePanel";
 import { useKernelHeartbeat } from "@/hooks/useKernelHeartbeat";
@@ -37,6 +38,7 @@ export function DevFactoryOs({ hydraConfigured }: { hydraConfigured: boolean }) 
       hydraConfigured={hydraConfigured}
       kernel={<KernelBar />}
       configure={<ConfigurePanel />}
+      agentGraph={<AgentGraphPanel hydraConfigured={hydraConfigured} />}
       cpu={<CpuScheduler />}
       memory={<HydraMemoryPanel />}
       io={<IoBus />}

@@ -2,11 +2,10 @@ import "server-only";
 import { z } from "zod";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import {
-  addMemoryToHydra,
   formatMemoryStream,
-  recallAllContext,
+  recallGraphContext,
   recallPreferences,
-  MEMORY_PREFIXES,
+  writeAgentMemory,
 } from "@/lib/hydradb/memory";
 import { defineTool } from "@/lib/ai/openrouter-agent";
 import type { OpenRouterToolDef } from "@/lib/ai/openrouter-agent";
@@ -19,7 +18,7 @@ export function createKernelTools(ctx: { taskId?: string }): OpenRouterToolDef[]
         "Recall aggregated context from all agent memory prefixes in HydraDB",
       inputSchema: z.object({ query: z.string() }),
       execute: async ({ query }) => {
-        const agg = await recallAllContext(query);
+        const agg = await recallGraphContext(query, ctx.taskId);
         await broadcastOsEvent("os:memory", "recall_result", {
           query,
           chunks: agg.chunks,
@@ -28,7 +27,7 @@ export function createKernelTools(ctx: { taskId?: string }): OpenRouterToolDef[]
         return {
           ok: true,
           chunkCount: agg.chunks.length,
-          prefixes: Object.keys(agg.byPrefix),
+          templates: Object.keys(agg.byTemplate),
           queryPaths: agg.queryPaths,
         };
       },
@@ -67,13 +66,13 @@ export function createKernelTools(ctx: { taskId?: string }): OpenRouterToolDef[]
         const q = query ?? "recent operational context";
         const r = sub_tenant_id
           ? await recallPreferences({ query: q, sub_tenant_id })
-          : await recallAllContext(q);
+          : await recallGraphContext(q, ctx.taskId);
         const chunks = sub_tenant_id
           ? (r as Awaited<ReturnType<typeof recallPreferences>>).chunks
-          : (r as Awaited<ReturnType<typeof recallAllContext>>).chunks;
+          : (r as Awaited<ReturnType<typeof recallGraphContext>>).chunks;
         const paths = sub_tenant_id
           ? (r as Awaited<ReturnType<typeof recallPreferences>>).queryPaths
-          : (r as Awaited<ReturnType<typeof recallAllContext>>).queryPaths;
+          : (r as Awaited<ReturnType<typeof recallGraphContext>>).queryPaths;
         const formatted = formatMemoryStream(chunks, paths);
         await broadcastOsEvent("os:memory", "recall_result", {
           query: q,
@@ -91,24 +90,11 @@ export function createKernelTools(ctx: { taskId?: string }): OpenRouterToolDef[]
         infer: z.boolean().optional(),
       }),
       execute: async ({ text, infer }) => {
-        const result = await addMemoryToHydra({
-          sub_tenant_id: MEMORY_PREFIXES.kernel,
-          text,
+        const result = await writeAgentMemory("kernel.orchestrator", text, {
+          pipeline_step: "ORCHESTRATE",
+          task_id: ctx.taskId,
           infer: infer ?? false,
-          metadata: {
-            agent_id: MEMORY_PREFIXES.kernel,
-            pipeline_step: "ORCHESTRATE",
-            task_id: ctx.taskId,
-          },
         });
-        if (result.ok) {
-          await broadcastOsEvent("os:memory", "slot_write", {
-            agentId: MEMORY_PREFIXES.kernel,
-            preview: text.slice(0, 80),
-            status: "indexed",
-            memoryId: result.memoryId,
-          });
-        }
         return result;
       },
     }),

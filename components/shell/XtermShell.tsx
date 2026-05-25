@@ -15,6 +15,7 @@ const PREFIX_COLORS: Record<string, string> = {
   "[cpu]": "36",
   "[gpu]": "35",
   "[memory]": "33",
+  "[agent]": "36",
   "[fault]": "31",
 };
 
@@ -81,7 +82,8 @@ export function XtermShell({
           line.startsWith("[kernel]") ||
           line.startsWith("[cpu]") ||
           line.startsWith("[gpu]") ||
-          line.startsWith("[memory]")
+          line.startsWith("[memory]") ||
+          line.startsWith("[agent]")
         ) {
           writeln(line, colorForLine(line));
         } else {
@@ -128,7 +130,7 @@ export function XtermShell({
 
     term.writeln("\x1b[32mDevFactory OS Shell\x1b[0m");
     term.writeln(
-      "Commands: submit <task> | recall <query> | memory stream [q] | show memory | status | spawn <n> | kill <id> | config model <id>"
+      "Commands: submit <task> | spawn agent <id> | agents | agent status | create agent <name> \"<role>\" | recall <q> | memory stream | show memory | status | spawn <n> | kill <id>"
     );
     if (!hydraConfiguredRef.current) {
       term.writeln(

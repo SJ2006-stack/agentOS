@@ -4,9 +4,11 @@ import { useEffect } from "react";
 import { getSupabaseBrowser, isSupabaseConfiguredClient } from "@/lib/supabase/client";
 import type {
   CpuStep,
+  GraphNodeActiveEvent,
   GpuDispatchPayload,
   IoToolCall,
   KernelHeartbeat,
+  KernelUsageTick,
   MemoryRecallResult,
   MemorySlotWrite,
 } from "@/lib/os/types";
@@ -39,28 +41,8 @@ export function useOsRealtime(hydraConfigured: boolean) {
               String((payload as { command?: string }).command ?? "")
             );
           }
-        },
-      },
-      {
-        name: "os:cpu",
-        handler: (event: string, payload: Record<string, unknown>) => {
-          const s = useOsStore.getState();
-          if (event === "step_start" || event === "step_complete") {
-            const step = (payload as { step?: CpuStep }).step;
-            const status =
-              event === "step_start"
-                ? ("running" as const)
-                : ("complete" as const);
-            if (step) {
-              s.setCpuStep(
-                step,
-                status,
-                String((payload as { message?: string }).message ?? "")
-              );
-            }
-          }
-          if (event === "pipeline_state") {
-            s.setCpuPipeline(payload as Parameters<typeof s.setCpuPipeline>[0]);
+          if (event === "usage_tick") {
+            s.setKernelUsage(payload as unknown as KernelUsageTick);
           }
         },
       },
@@ -81,6 +63,63 @@ export function useOsRealtime(hydraConfigured: boolean) {
         handler: (event: string, payload: Record<string, unknown>) => {
           if (event === "tool_call") {
             useOsStore.getState().pushIoEvent(payload as unknown as IoToolCall);
+          }
+        },
+      },
+      {
+        name: "os:cpu",
+        handler: (event: string, payload: Record<string, unknown>) => {
+          const s = useOsStore.getState();
+          if (event === "node_active") {
+            const p = payload as {
+              nodeId?: string;
+              taskId?: string;
+              active?: boolean;
+            };
+            if (p.nodeId) {
+              s.setGraphNodeActive({
+                nodeId: p.nodeId,
+                taskId: String(p.taskId ?? ""),
+                active: p.active !== false,
+              });
+            }
+            return;
+          }
+          if (event === "step_start" || event === "step_complete") {
+            const step = (payload as { step?: CpuStep }).step;
+            const status =
+              event === "step_start"
+                ? ("running" as const)
+                : ("complete" as const);
+            if (step) {
+              s.setCpuStep(
+                step,
+                status,
+                String((payload as { message?: string }).message ?? "")
+              );
+            }
+          }
+          if (event === "pipeline_state") {
+            s.setCpuPipeline(payload as Parameters<typeof s.setCpuPipeline>[0]);
+          }
+        },
+      },
+      {
+        name: "os:graph",
+        handler: (event: string, payload: Record<string, unknown>) => {
+          if (event === "node_active") {
+            const p = payload as {
+              nodeId?: string;
+              taskId?: string;
+              active?: boolean;
+            };
+            if (p.nodeId) {
+              useOsStore.getState().setGraphNodeActive({
+                nodeId: p.nodeId,
+                taskId: String(p.taskId ?? ""),
+                active: p.active !== false,
+              });
+            }
           }
         },
       },

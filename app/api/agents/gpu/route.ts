@@ -1,7 +1,11 @@
+import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { GPU_SYSTEM } from "@/lib/ai/agents";
 import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
 import { runChatWithTools } from "@/lib/ai/openrouter-agent";
-import { addMemoryToHydra, MEMORY_PREFIXES } from "@/lib/hydradb/memory";
+import { emitUsageFeedback } from "@/lib/ai/usage-feedback";
+import { writeAgentMemory } from "@/lib/hydradb/memory";
+import { subTenantForGpuWorker } from "@/lib/os/agent-graph-data";
+import { broadcastGraphNodeActive } from "@/lib/os/graph-broadcast";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import type { GpuDispatchPayload } from "@/lib/os/types";
 
@@ -10,7 +14,7 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   if (!isOpenRouterConfigured()) {
     return new Response(
-      "[fault] OPENROUTER_API_KEY not configured\n",
+      "[fault] OPENROUTER_API_KEY missing — set OPENROUTER_API_KEY in .env.local and restart npm run dev\n",
       { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
@@ -23,6 +27,7 @@ export async function POST(req: Request) {
   };
 
   const model = resolveModelId(modelId);
+  const useLlm = agentNeedsLlm("gpu.worker", "spawn");
   const count = Math.min(workerCount, 32);
   const zones =
     hotZones?.length
@@ -41,12 +46,14 @@ export async function POST(req: Request) {
     });
   }
 
+  await broadcastGraphNodeActive({ nodeId: "gpu.worker", taskId });
+
   const results: string[] = [];
 
   await Promise.all(
     Array.from({ length: count }, async (_, i) => {
       const id = `w${String(i).padStart(3, "0")}`;
-      const prefix = MEMORY_PREFIXES.gpuWorker(id);
+      const workerSub = subTenantForGpuWorker(id);
       const zone = zones[i % zones.length] ?? { x: i % 16, y: Math.floor(i / 16) % 16, heat: 0.6 };
 
       await broadcastOsEvent("os:gpu", "worker_tick", {
@@ -57,26 +64,33 @@ export async function POST(req: Request) {
 
       const summary = `GPU worker ${id} zone (${zone.x},${zone.y}) heat=${zone.heat ?? 0.6} task=${taskId}`;
       if (process.env.HYDRADB_API_KEY) {
-        await addMemoryToHydra({
-          sub_tenant_id: prefix,
-          text: summary,
-          infer: false,
-          metadata: { agent_id: prefix, pipeline_step: "GPU", task_id: taskId },
+        await writeAgentMemory("gpu.worker", summary, {
+          agent_template: "gpu.worker",
+          pipeline_step: "GPU",
+          task_id: taskId,
+          worker_id: id,
+          sub_tenant_override: workerSub,
         });
       }
 
-      try {
-        const text = await runChatWithTools({
-          modelId: model,
-          system: GPU_SYSTEM,
-          prompt: summary,
-          tools: [],
-          maxSteps: 1,
-          maxTokens: 48,
-        });
-        results[i] = text;
-      } catch {
-        results[i] = `${id}: ok`;
+      if (useLlm) {
+        try {
+          const { text } = await runChatWithTools({
+            modelId: model,
+            system: GPU_SYSTEM,
+            prompt: summary,
+            tools: [],
+            maxSteps: 1,
+            maxTokens: 48,
+            onUsage: (u) =>
+              emitUsageFeedback(u, { agentId: `gpu.worker.${id}`, model }),
+          });
+          results[i] = text;
+        } catch {
+          results[i] = `${id}: ok`;
+        }
+      } else {
+        results[i] = `${id}: zone (${zone.x},${zone.y}) batch ok`;
       }
 
       await broadcastOsEvent("os:gpu", "worker_tick", {
@@ -93,7 +107,7 @@ export async function POST(req: Request) {
   });
 
   return new Response(
-    `[gpu] batch complete: ${count} workers (model=${model})\n${results.filter(Boolean).slice(0, 4).join("\n")}\n`,
+    `[gpu] batch complete: ${count} workers (${useLlm ? `model=${model}` : "no LLM"})\n${results.filter(Boolean).slice(0, 4).join("\n")}\n`,
     { headers: { "Content-Type": "text/plain; charset=utf-8" } }
   );
 }

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface OsLayoutProps {
   kernel: ReactNode;
   configure: ReactNode;
+  agentGraph: ReactNode;
   cpu: ReactNode;
   memory: ReactNode;
   io: ReactNode;
@@ -21,6 +22,7 @@ interface OsLayoutProps {
 export function OsLayout({
   kernel,
   configure,
+  agentGraph,
   cpu,
   memory,
   io,
@@ -51,14 +53,22 @@ export function OsLayout({
           <header className="shrink-0 border-b border-os-border px-3 py-1.5">
             {kernel}
           </header>
-          <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-[auto_1fr_auto_auto] gap-2 p-2">
+          <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-[auto_auto_1fr_auto_auto] gap-2 p-2">
             <motion.section
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.02 }}
-              className="col-span-2 max-h-32 min-h-0 overflow-hidden rounded border border-os-border bg-os-panel/50 p-2"
+              className="col-span-3 max-h-32 min-h-0 overflow-hidden rounded border border-os-border bg-os-panel/50 p-2"
             >
               {configure}
+            </motion.section>
+            <motion.section
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.04 }}
+              className="col-span-3 min-h-[140px] max-h-44 overflow-hidden rounded border border-os-border bg-os-panel/50 p-2"
+            >
+              {agentGraph}
             </motion.section>
             <motion.section
               initial={{ opacity: 0, y: 6 }}
@@ -71,8 +81,8 @@ export function OsLayout({
             <motion.section
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.1 }}
-              className="min-h-0 overflow-hidden rounded border border-os-border bg-os-panel/50 p-2"
+              transition={{ duration: 0.35, delay: 0.08 }}
+              className="col-span-2 min-h-0 overflow-hidden rounded border border-os-border bg-os-panel/50 p-2"
             >
               {memory}
             </motion.section>
