@@ -199,7 +199,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                 <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
                   <div
                     className={cn(
-                      "relative min-h-[240px] flex-1 overflow-hidden rounded-lg border border-[#1E2D3D]",
+                      "doom-demo-viewport relative min-h-[240px] flex-1 overflow-hidden rounded-lg border border-[#1E2D3D]",
                       screen === "autoplay" ? "lg:min-h-[360px]" : "min-h-[320px]"
                     )}
                   >

@@ -14,7 +14,7 @@ export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean })
 
   return (
     <div
-      className="workspace-mode relative flex h-full min-h-0 flex-col overflow-hidden bg-os-bg font-mono text-os-green"
+      className="workspace-mode relative flex h-full min-h-0 flex-col overflow-hidden bg-os-bg/70 font-mono text-os-green"
       style={{ "--workspace-accent": "#00FFB2" } as React.CSSProperties}
       id="devfactory-active-task"
     >

@@ -797,8 +797,15 @@ body {
   display: block;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  background: #080c14;
+  background: #0a0a08;
   cursor: crosshair;
+  aspect-ratio: 16 / 10;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.doom-demo-viewport {
+  background: #0a0a08;
 }
 
 .doom-demo-controls-hint {

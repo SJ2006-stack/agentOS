@@ -1,12 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getBotInput, pickNarrationLine } from "./DoomAgentBot";
+import {
+  BOT_TICK_MS,
+  getBotInput,
+  pickNarrationLine,
+  resetBotState,
+} from "./DoomAgentBot";
 import {
   applyInput,
   createGameState,
   inputFromKeys,
   renderFrame,
+  tickWorld,
+  type GameInput,
   type GameState,
 } from "./doomEngine";
 import type { DoomLevelTemplate } from "./DoomLevelTemplates";
@@ -24,6 +31,16 @@ function cloneMap(template: DoomLevelTemplate) {
   return template.map.map((row) => [...row]) as GameState["map"];
 }
 
+const EMPTY_INPUT: GameInput = {
+  forward: false,
+  backward: false,
+  strafeLeft: false,
+  strafeRight: false,
+  turnLeft: false,
+  turnRight: false,
+  shoot: false,
+};
+
 export function DoomGameCanvas({
   template,
   mode,
@@ -32,7 +49,9 @@ export function DoomGameCanvas({
 }: DoomGameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState | null>(null);
-  const tickRef = useRef(0);
+  const botTickRef = useRef(0);
+  const botInputRef = useRef<GameInput>({ ...EMPTY_INPUT });
+  const lastBotMsRef = useRef(0);
   const keysRef = useRef<Record<string, boolean>>({});
   const rafRef = useRef(0);
   const lastRef = useRef(performance.now());
@@ -48,7 +67,10 @@ export function DoomGameCanvas({
       { ...template.playerStart },
       template.enemySpawns.map((e) => ({ ...e }))
     );
-    tickRef.current = 0;
+    botTickRef.current = 0;
+    lastBotMsRef.current = 0;
+    botInputRef.current = { ...EMPTY_INPUT };
+    resetBotState();
   }, [template]);
 
   useEffect(() => {
@@ -89,21 +111,30 @@ export function DoomGameCanvas({
     if (!ctx) return;
 
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - lastRef.current) / 1000);
+      const frameDt = Math.min(0.05, (now - lastRef.current) / 1000);
       lastRef.current = now;
-      tickRef.current += 1;
 
       const state = stateRef.current;
       if (state) {
-        const input =
-          mode === "autoplay"
-            ? getBotInput(state, tickRef.current)
-            : inputFromKeys(keysRef.current);
+        if (mode === "autoplay") {
+          if (lastBotMsRef.current === 0) lastBotMsRef.current = now;
 
-        applyInput(state, input, dt);
+          while (now - lastBotMsRef.current >= BOT_TICK_MS) {
+            botInputRef.current = getBotInput(state, botTickRef.current);
+            applyInput(state, botInputRef.current, BOT_TICK_MS / 1000);
+            botTickRef.current += 1;
+            lastBotMsRef.current += BOT_TICK_MS;
 
-        if (mode === "autoplay" && onNarration && tickRef.current % 45 === 0) {
-          onNarration(pickNarrationLine(tickRef.current, state));
+            if (onNarration && botTickRef.current % 5 === 0) {
+              onNarration(pickNarrationLine(botTickRef.current, state));
+            }
+          }
+
+          tickWorld(state, frameDt);
+        } else {
+          const input = inputFromKeys(keysRef.current);
+          applyInput(state, input, frameDt);
+          tickWorld(state, frameDt);
         }
 
         const rect = canvas.getBoundingClientRect();
@@ -152,7 +183,7 @@ export function DoomGameCanvas({
         </p>
       ) : (
         <p className="doom-demo-controls-hint font-mono text-[10px] tracking-wide text-[#94A3B8]/70">
-          Agent autopilot active
+          Agent autopilot · decisions every {BOT_TICK_MS}ms
         </p>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { executeOsCommand } from "@/lib/os/execute-command";
 import { useUiModeStore } from "@/store/ui/uiModeStore";
 
 export const SHELL_COMMAND_EVENT = "devfactory:shell-command";
@@ -65,6 +66,10 @@ export function dispatchShellCommand(
     if (ensureMount) {
       try {
         const ui = useUiModeStore.getState();
+        if (ui.mode === "workspace") {
+          void executeOsCommand(command);
+          return;
+        }
         if (ui.mode !== "terminal") ui.setMode("terminal");
       } catch {
         /* uiModeStore may not be initialized in non-browser contexts */
