@@ -1,7 +1,19 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+} from "react";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+} from "motion/react";
 import {
   AGENT_SPAWNED_EVENT,
   dispatchShellCommand,
