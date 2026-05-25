@@ -54,8 +54,8 @@ interface UiModeState {
 }
 
 export const useUiModeStore = create<UiModeState>((set) => ({
-  mode: typeof window !== "undefined" ? (readStoredMode() ?? "hero") : "hero",
-  hydrated: typeof window !== "undefined",
+  mode: "hero",
+  hydrated: false,
   setMode: (mode) => {
     persistMode(mode);
     set({ mode });

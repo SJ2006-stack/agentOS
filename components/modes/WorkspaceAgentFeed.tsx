@@ -1,29 +1,37 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Button } from "@/components/ui/button";
 import {
   AGENT_SPAWNED_EVENT,
   type AgentSpawnedDetail,
 } from "@/lib/os/shell-events";
 import { getAgentDisplayName } from "@/lib/os/agent-graph-data";
+import {
+  matchesFeedFilter,
+  persistFeed,
+  readPersistedFeed,
+  type FeedFilter,
+  type FeedKind,
+  type StoredFeedEntry,
+} from "@/lib/os/workspace-feed-storage";
 import { CPU_STEPS, type CpuStep, type IoToolCall } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
+import { OsPanelSkeleton } from "@/components/ui/os-panel-skeleton";
 import { useOsStore } from "@/store/os/osStore";
 
-type FeedKind = "research" | "memory" | "complete" | "dispatch" | "spawn" | "fault";
+type FeedEntry = StoredFeedEntry;
 
-interface FeedEntry {
-  id: string;
-  kind: FeedKind;
-  icon: string;
-  prefix: string;
-  text: string;
-  ts: number;
-}
-
-const MAX_FEED = 32;
+const MAX_FEED = 50;
 const VISIBLE_FEED = 12;
+
+const FEED_FILTERS: { id: FeedFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "spawn", label: "Spawn" },
+  { id: "memory", label: "Memory" },
+  { id: "command", label: "Command" },
+];
 
 let feedSeq = 0;
 function nextFeedId(): string {
@@ -137,6 +145,9 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
   const heartbeatStatus = useOsStore((s) => s.kernel.heartbeat?.status ?? null);
 
   const [feed, setFeed] = useState<FeedEntry[]>([]);
+  const [booting, setBooting] = useState(true);
+  const [filter, setFilter] = useState<FeedFilter>("all");
+  const [hydrated, setHydrated] = useState(false);
 
   const lastIoKeyRef = useRef<string | null>(null);
   const lastMemoryKeyRef = useRef<string | null>(null);
@@ -145,10 +156,20 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
   const lastHeartbeatStatusRef = useRef<string | null>(null);
   const initialisedRef = useRef(false);
 
-  const push = (entries: FeedEntry[]) => {
+  useEffect(() => {
+    setFeed(readPersistedFeed());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    persistFeed(feed);
+  }, [feed, hydrated]);
+
+  const push = useCallback((entries: FeedEntry[]) => {
     if (entries.length === 0) return;
     setFeed((prev) => [...entries.reverse(), ...prev].slice(0, MAX_FEED));
-  };
+  }, []);
 
   useEffect(() => {
     if (ioEvents.length === 0) return;
@@ -173,7 +194,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
       });
     }
     push(fresh);
-  }, [ioEvents]);
+  }, [ioEvents, push]);
 
   useEffect(() => {
     if (memorySlots.length === 0) return;
@@ -212,7 +233,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
       }
     }
     push(fresh);
-  }, [memorySlots]);
+  }, [memorySlots, push]);
 
   useEffect(() => {
     const prev = lastCpuLenRef.current;
@@ -235,7 +256,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
       };
     });
     push(fresh);
-  }, [completedSteps]);
+  }, [completedSteps, push]);
 
   useEffect(() => {
     const prev = lastDispatchSeqRef.current;
@@ -253,7 +274,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
         ts: Date.now(),
       },
     ]);
-  }, [dispatchSeq, lastDispatchWorkers]);
+  }, [dispatchSeq, lastDispatchWorkers, push]);
 
   useEffect(() => {
     const prev = lastHeartbeatStatusRef.current;
@@ -272,7 +293,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
         },
       ]);
     }
-  }, [heartbeatStatus]);
+  }, [heartbeatStatus, push]);
 
   useEffect(() => {
     const onSpawn = (e: Event) => {
@@ -294,35 +315,74 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
     };
     window.addEventListener(AGENT_SPAWNED_EVENT, onSpawn);
     return () => window.removeEventListener(AGENT_SPAWNED_EVENT, onSpawn);
-  }, []);
+  }, [push]);
 
   useEffect(() => {
+    if (!hydrated) return;
     initialisedRef.current = true;
-  }, []);
+    const id = window.setTimeout(() => setBooting(false), 450);
+    return () => window.clearTimeout(id);
+  }, [hydrated]);
 
-  const visible = feed.slice(0, VISIBLE_FEED);
+  const filtered = feed.filter((entry) => matchesFeedFilter(entry.kind, filter));
+  const visible = filtered.slice(0, VISIBLE_FEED);
+  const filteredCount = filtered.length;
 
   return (
     <section
       aria-label="Agent feed"
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-        <span className="text-left text-os-dim">
-          Agent Feed
-        </span>
-        <span className="text-left text-os-dim">
-          {feed.length === 0 ? "idle" : String(feed.length)}
-        </span>
+      <header className="flex shrink-0 flex-col gap-2 border-b border-white/10 px-4 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-left text-os-dim">Agent Feed</span>
+          <span className="text-left text-os-dim">
+            {!hydrated ? "…" : filteredCount === 0 ? "idle" : String(filteredCount)}
+          </span>
+        </div>
+        <div
+          role="group"
+          aria-label="Filter feed by kind"
+          className="flex flex-wrap gap-1"
+        >
+          {FEED_FILTERS.map(({ id, label }) => (
+            <Button
+              key={id}
+              type="button"
+              aria-pressed={filter === id}
+              onClick={() => setFilter(id)}
+              className={cn(
+                "rounded-md border px-2 py-0.5 text-[9px] uppercase tracking-wider transition-colors",
+                filter === id
+                  ? "border-os-green/45 bg-os-green/10 text-os-green"
+                  : "border-white/10 text-os-dim hover:border-white/20 hover:text-os-green"
+              )}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
       </header>
 
       <ul
         className="min-h-0 flex-1 list-none space-y-2 overflow-y-auto px-3 py-3"
         aria-live="polite"
+        aria-relevant="additions"
         aria-atomic="false"
+        aria-label="Live agent activity updates"
       >
         <AnimatePresence initial={false}>
-          {visible.length === 0 && (
+          {!hydrated || booting ? (
+            <motion.li
+              key="boot-skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="list-none"
+            >
+              <OsPanelSkeleton variant="feed" rows={4} />
+            </motion.li>
+          ) : visible.length === 0 ? (
             <motion.li
               key="empty"
               initial={{ opacity: 0 }}
@@ -330,42 +390,53 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
               exit={{ opacity: 0 }}
               className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-4 py-5 text-center text-[11px] text-os-dim"
             >
-              <span className="text-center text-os-dim">
-                Waiting for agent activity…
-              </span>
-            </motion.li>
-          )}
-          {visible.map((entry) => (
-            <motion.li
-              key={entry.id}
-              layout
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              className={cn(
-                "workspace-feed-row flex flex-wrap items-start gap-x-2.5 gap-y-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2",
-                entry.kind === "spawn" && "workspace-feed-row--spawn"
+              {feed.length === 0 ? (
+                <>
+                  <span className="block text-os-green/80">No activity yet</span>
+                  <span className="mt-1.5 block text-[10px] leading-relaxed">
+                    Run a command or tap Try this — entries persist across refresh.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="block text-os-green/80">No {filter} events</span>
+                  <span className="mt-1.5 block text-[10px]">
+                    Try another filter or run a demo command.
+                  </span>
+                </>
               )}
-            >
-              <span aria-hidden className="shrink-0 text-[13px] leading-none">
-                {entry.icon}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[11px] leading-snug">
-                  <span className={cn("inline text-left", KIND_STYLE[entry.kind])}>
-                    {`${entry.prefix}:`}
-                  </span>
-                  <span className="break-words text-os-green/90">
-                    {entry.text}
-                  </span>
-                </p>
-              </div>
-              <span className="shrink-0 font-mono text-[10px] tabular-nums text-os-dim/80">
-                {formatTimestamp(entry.ts)}
-              </span>
             </motion.li>
-          ))}
+          ) : (
+            visible.map((entry) => (
+              <motion.li
+                key={entry.id}
+                layout
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className={cn(
+                  "workspace-feed-row flex flex-wrap items-start gap-x-2.5 gap-y-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2",
+                  entry.kind === "spawn" && "workspace-feed-row--spawn"
+                )}
+              >
+                <span aria-hidden className="shrink-0 text-[13px] leading-none">
+                  {entry.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[11px] leading-snug">
+                    <span className={cn("inline text-left", KIND_STYLE[entry.kind])}>
+                      {`${entry.prefix}:`}
+                    </span>
+                    <span className="break-words text-os-green/90">{entry.text}</span>
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-[10px] tabular-nums text-os-dim/80">
+                  {formatTimestamp(entry.ts)}
+                </span>
+              </motion.li>
+            ))
+          )}
         </AnimatePresence>
       </ul>
     </section>

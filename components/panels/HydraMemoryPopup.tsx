@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { AnimatedList } from "@/components/ui/animated-list";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,9 @@ import {
   ExpandableText,
   formatMemoryPreview,
 } from "@/components/ui/expandable-text";
+import { OsPanelSkeleton } from "@/components/ui/os-panel-skeleton";
 import { cn } from "@/lib/utils";
+import { hydraSetupSteps, HYDRA_ENV_FILE, HYDRA_ENV_TEMPLATE } from "@/lib/os/hydra-config";
 import { useOsStore } from "@/store/os/osStore";
 import type { MemorySlotWrite } from "@/lib/os/types";
 
@@ -65,6 +67,7 @@ export function HydraMemoryPopup({
   const hydraConfigured = useOsStore((s) => s.hydraConfigured);
   const slots = memory.slots;
   const lastRecall = memory.lastRecall;
+  const [hydrating, setHydrating] = useState(false);
 
   const handleClose = useCallback(() => onClose(), [onClose]);
 
@@ -86,9 +89,23 @@ export function HydraMemoryPopup({
     };
   }, [open]);
 
-  if (!open) return null;
-
   const isEmpty = slots.length === 0 && !lastRecall;
+
+  useEffect(() => {
+    if (!open) {
+      setHydrating(false);
+      return;
+    }
+    if (!hydraConfigured || !isEmpty) {
+      setHydrating(false);
+      return;
+    }
+    setHydrating(true);
+    const id = window.setTimeout(() => setHydrating(false), 700);
+    return () => window.clearTimeout(id);
+  }, [open, hydraConfigured, isEmpty]);
+
+  if (!open) return null;
 
   return (
     <div
@@ -135,11 +152,35 @@ export function HydraMemoryPopup({
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          {isEmpty ? (
-            <p className="text-center font-mono text-[12px] leading-relaxed text-os-dim">
-              No memory slots yet — boot Hydra or run{" "}
-              <span className="text-os-green">recall kernel</span> in the terminal.
-            </p>
+          {!hydraConfigured ? (
+            <div className="rounded-xl border border-dashed border-os-fault/35 bg-os-fault/5 px-4 py-5 font-mono text-[11px]">
+              <p className="text-os-fault">HydraDB not configured</p>
+              <p className="mt-2 leading-relaxed text-os-dim">
+                Memory slots require HydraDB. See{" "}
+                <span className="text-os-green">{HYDRA_ENV_TEMPLATE}</span> for
+                required variables, then copy to{" "}
+                <span className="text-os-green">{HYDRA_ENV_FILE}</span> and restart.
+              </p>
+              <ol className="mt-3 space-y-1.5 text-[10px] leading-snug text-os-dim/90">
+                {hydraSetupSteps().map((step, i) => (
+                  <li key={step} className="flex gap-2">
+                    <span className="shrink-0 text-os-amber/90">{i + 1}.</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : hydrating ? (
+            <OsPanelSkeleton variant="list" rows={4} />
+          ) : isEmpty ? (
+            <div className="rounded-xl border border-dashed border-os-border/50 bg-os-bg/30 px-4 py-6 text-center font-mono text-[12px] leading-relaxed text-os-dim">
+              <p className="text-os-green/80">No memory slots yet</p>
+              <p className="mt-2 text-[11px]">
+                Boot Hydra or run{" "}
+                <span className="text-os-green">recall kernel</span> in the terminal
+                — indexed insights will show up here.
+              </p>
+            </div>
           ) : (
             <>
               {slots.length > 0 && (

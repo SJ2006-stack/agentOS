@@ -1,5 +1,6 @@
 import { withBasePath } from "@/lib/api/url";
 import { isHydraMemoryShellCommand } from "@/lib/os/memory-shell-command";
+import { parseCommandApiError } from "@/lib/os/command-errors";
 import { dispatchAgentSpawned, dispatchHydraMemoryOpen } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 
@@ -38,29 +39,38 @@ export async function executeOsCommand(command: string): Promise<void> {
     dispatchHydraMemoryOpen();
   }
 
-  const res = await fetch(withBasePath("/api/os/command"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ command: trimmed, modelId }),
-    cache: "no-store",
-  });
+  try {
+    const res = await fetch(withBasePath("/api/os/command"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command: trimmed, modelId }),
+      cache: "no-store",
+    });
 
-  if (!res.ok) return;
-
-  const reader = res.body?.getReader();
-  if (!reader) {
-    const text = await res.text();
-    if (text) maybeEmitSpawnFromChunk(text);
-    return;
-  }
-
-  const decoder = new TextDecoder();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value?.length) {
-      maybeEmitSpawnFromChunk(decoder.decode(value, { stream: true }));
+    if (!res.ok) {
+      const err = await parseCommandApiError(res);
+      useOsStore.getState().setKernelCommandError(err.message);
+      return;
     }
+
+    const reader = res.body?.getReader();
+    if (!reader) {
+      const text = await res.text();
+      if (text) maybeEmitSpawnFromChunk(text);
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value?.length) {
+        maybeEmitSpawnFromChunk(decoder.decode(value, { stream: true }));
+      }
+    }
+    maybeEmitSpawnFromChunk(decoder.decode());
+  } catch (e) {
+    const err = await parseCommandApiError(null, e);
+    useOsStore.getState().setKernelCommandError(err.message);
   }
-  maybeEmitSpawnFromChunk(decoder.decode());
 }

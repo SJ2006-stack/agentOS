@@ -167,7 +167,7 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
       aria-label="Active agents"
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-white/10 px-4 py-3">
         <span className="text-left text-os-dim">
           Active Agents
         </span>

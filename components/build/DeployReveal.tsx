@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Copy, ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,19 @@ export const DeployReveal = memo(function DeployReveal() {
   const dismiss = useOsStore((s) => s.dismissDeployReveal);
   const [copied, setCopied] = useState(false);
 
+  const onDismiss = useCallback(() => {
+    dismiss();
+  }, [dismiss]);
+
+  useEffect(() => {
+    if (!deployUrl) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onDismiss();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [deployUrl, onDismiss]);
+
   const onCopy = useCallback(async () => {
     if (!deployUrl) return;
     try {
@@ -72,7 +85,7 @@ export const DeployReveal = memo(function DeployReveal() {
           >
             <Button
               type="button"
-              onClick={dismiss}
+              onClick={onDismiss}
               className="absolute right-3 top-3 rounded-md border border-os-border/60 p-1.5 text-os-dim hover:text-os-green"
               aria-label="Close"
             >

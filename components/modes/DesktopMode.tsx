@@ -224,9 +224,9 @@ function DesktopWindow({
     >
       <div
         onPointerDown={(e) => dragControls.start(e)}
-        className="flex cursor-grab items-center justify-between border-b border-os-green/10 bg-os-panel/20 px-3 py-2 active:cursor-grabbing"
+        className="flex cursor-grab flex-wrap items-center justify-between gap-2 border-b border-os-green/10 bg-os-panel/20 px-3 py-2 active:cursor-grabbing"
       >
-        <span className="text-left text-os-green/90">
+        <span className="min-w-0 text-left text-os-green/90">
           {title}
         </span>
         <Button

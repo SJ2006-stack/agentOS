@@ -128,7 +128,7 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
         spawnTick && "workspace-panel-highlight"
       )}
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-white/10 px-4 py-3">
         <span className="text-left text-os-dim">
           Mission Pipeline
         </span>

@@ -25,12 +25,17 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
 }: {
   compact?: boolean;
 }) {
+  const [firstRunChecked, setFirstRunChecked] = useState(compact);
   const [showFirstRun, setShowFirstRun] = useState(false);
   const [runningCommand, setRunningCommand] = useState<string | null>(null);
 
   useEffect(() => {
-    if (compact) return;
+    if (compact) {
+      setFirstRunChecked(true);
+      return;
+    }
     setShowFirstRun(!isWorkspaceFirstRunDismissed());
+    setFirstRunChecked(true);
   }, [compact]);
 
   const dismissFirstRun = useCallback(() => {
@@ -47,7 +52,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
   return (
     <div className="workspace-demo-bar shrink-0 space-y-3">
       <AnimatePresence initial={false}>
-        {showFirstRun && !compact && (
+        {firstRunChecked && showFirstRun && !compact && (
           <motion.aside
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}

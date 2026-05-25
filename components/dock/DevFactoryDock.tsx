@@ -47,6 +47,18 @@ const MODE_ICONS: Record<UiMode, typeof Terminal> = {
   workspace: Network,
 };
 
+function focusDockSibling(current: HTMLElement, delta: number) {
+  const toolbar = current.closest('[data-dock-toolbar]');
+  if (!toolbar) return;
+  const items = Array.from(
+    toolbar.querySelectorAll<HTMLElement>('[data-dock-item][tabindex="0"]')
+  );
+  const idx = items.indexOf(current);
+  if (idx < 0 || items.length === 0) return;
+  const next = items[(idx + delta + items.length) % items.length];
+  next?.focus();
+}
+
 function ModeDockItem({
   mode,
   active,
@@ -65,10 +77,39 @@ function ModeDockItem({
         <DockIcon
           role="button"
           tabIndex={0}
+          data-dock-item
           aria-label={label}
           aria-pressed={active}
           onClick={onClick}
           onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+              e.preventDefault();
+              focusDockSibling(e.currentTarget, 1);
+              return;
+            }
+            if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+              e.preventDefault();
+              focusDockSibling(e.currentTarget, -1);
+              return;
+            }
+            if (e.key === "Home") {
+              e.preventDefault();
+              const toolbar = e.currentTarget.closest("[data-dock-toolbar]");
+              const first = toolbar?.querySelector<HTMLElement>(
+                '[data-dock-item][tabindex="0"]'
+              );
+              first?.focus();
+              return;
+            }
+            if (e.key === "End") {
+              e.preventDefault();
+              const toolbar = e.currentTarget.closest("[data-dock-toolbar]");
+              const items = toolbar?.querySelectorAll<HTMLElement>(
+                '[data-dock-item][tabindex="0"]'
+              );
+              items?.[items.length - 1]?.focus();
+              return;
+            }
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               onClick();
@@ -133,9 +174,20 @@ function UtilityDockItem({
         <DockIcon
           role="button"
           tabIndex={0}
+          data-dock-item
           aria-label={label}
           onClick={onClick}
           onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+              e.preventDefault();
+              focusDockSibling(e.currentTarget, 1);
+              return;
+            }
+            if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+              e.preventDefault();
+              focusDockSibling(e.currentTarget, -1);
+              return;
+            }
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               onClick();
@@ -214,7 +266,12 @@ export function DevFactoryDock({
           </div>
         )}
 
-        <div className="pointer-events-auto relative">
+        <div
+          className="pointer-events-auto relative"
+          role="toolbar"
+          aria-label="OS navigation"
+          data-dock-toolbar
+        >
           {spawnOpen && (
             <div
               ref={spawnRef}
@@ -305,7 +362,7 @@ export function DevFactoryDock({
               label="Spawn — quick menu"
               onClick={() => setSpawnOpen((o) => !o)}
             >
-              <Plus />
+              <Plus aria-hidden />
             </UtilityDockItem>
           </Dock>
         </div>

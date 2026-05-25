@@ -47,8 +47,15 @@ export const BuildCanvas = memo(function BuildCanvas() {
   const files = useOsStore((s) => s.build.files);
   const streamingPath = useOsStore((s) => s.build.streamingPath);
   const verifyStatus = useOsStore((s) => s.build.verifyStatus);
+  const deployUrl = useOsStore((s) => s.build.deployUrl);
   const activeCores = useOsStore((s) => s.build.activeCores);
+  const buildActive = useOsStore((s) => s.build.buildActive);
   const [activeTab, setActiveTab] = useState<string>(SOURCE_TABS[0]);
+
+  const isAssembling = streamingPath !== null || activeCores.length > 0;
+  const isDeployPending =
+    verifyStatus === "pass" && !deployUrl && buildActive && !isAssembling;
+  const isComplete = verifyStatus === "pass" && !isAssembling && Boolean(deployUrl);
 
   useEffect(() => {
     if (streamingPath && SOURCE_TABS.includes(streamingPath as (typeof SOURCE_TABS)[number])) {
@@ -82,10 +89,24 @@ export const BuildCanvas = memo(function BuildCanvas() {
         <div>
           <span className="text-left text-os-green">Build Canvas</span>
           <p className="mt-0.5 text-[10px] text-os-dim">
-            GPU workers assembling shell · {activeCores.length} cores active
+            {isComplete
+              ? "Build complete — deploy URL ready"
+              : isDeployPending
+                ? "Verified — publishing deploy URL…"
+                : isAssembling
+                  ? `GPU workers assembling shell · ${activeCores.length} cores active`
+                  : verifyStatus === "fail"
+                    ? "Build failed verification"
+                    : "GPU workers assembling shell"}
           </p>
         </div>
-        {verifyStatus !== "idle" && (
+        <div className="flex flex-wrap items-center gap-2">
+          {isComplete && (
+            <span className="rounded-full border border-os-green/50 bg-os-green/10 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-os-green">
+              Complete
+            </span>
+          )}
+          {verifyStatus !== "idle" && (
           <span
             className={cn(
               "rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider",
@@ -96,7 +117,8 @@ export const BuildCanvas = memo(function BuildCanvas() {
           >
             {verifyStatus === "running" ? "Verifying…" : verifyStatus}
           </span>
-        )}
+          )}
+        </div>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4 lg:flex-row">

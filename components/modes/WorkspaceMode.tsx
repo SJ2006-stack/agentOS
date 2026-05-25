@@ -9,6 +9,8 @@ import { WorkspacePipeline } from "@/components/modes/WorkspacePipeline";
 import { WorkspaceDemoBar } from "@/components/modes/WorkspaceDemoBar";
 import { BuildCanvas } from "@/components/build/BuildCanvas";
 import { DeployReveal } from "@/components/build/DeployReveal";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { OsPanelSkeleton } from "@/components/ui/os-panel-skeleton";
 import { useOsStore } from "@/store/os/osStore";
 
 const AgentGraphPanel = dynamic(
@@ -16,9 +18,7 @@ const AgentGraphPanel = dynamic(
     import("@/components/graph/AgentGraphPanel").then((m) => m.AgentGraphPanel),
   {
     ssr: false,
-    loading: () => (
-      <div className="min-h-[200px] flex-1 animate-pulse rounded-lg border border-os-border/50 bg-os-panel/20" />
-    ),
+    loading: () => <OsPanelSkeleton variant="graph" className="h-full min-h-[200px]" />,
   }
 );
 
@@ -48,18 +48,13 @@ export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean })
         <WorkspaceDemoBar />
       </div>
 
-      <div
-        className="workspace-grid relative z-10 grid min-h-0 flex-1 gap-4 overflow-hidden p-4 pt-3"
-        style={{
-          gridTemplateColumns: "minmax(0, 22fr) minmax(0, 56fr) minmax(0, 22fr)",
-        }}
-      >
-        <div className="min-h-0">
+      <div className="workspace-grid relative z-10 grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 pt-3 md:grid-cols-2 xl:grid-cols-[minmax(0,22fr)_minmax(0,56fr)_minmax(0,22fr)] xl:overflow-hidden">
+        <div className="min-h-0 min-w-0 md:order-2 xl:order-none">
           <WorkspaceAgentList hydraConfigured={hydraConfigured} />
         </div>
 
         <div
-          className="flex min-h-0 flex-col gap-4"
+          className="flex min-h-0 min-w-0 flex-col gap-4 md:order-1 md:col-span-2 xl:order-none xl:col-span-1"
           id="devfactory-orchestration-hero"
         >
           <section
@@ -76,11 +71,13 @@ export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean })
               </span>
             </header>
             <div className="min-h-0 flex-1 p-3">
-              <AgentGraphPanel
-                hydraConfigured={hydraConfigured}
-                showHeader={false}
-                hideCreateAgent
-              />
+              <ErrorBoundary label="Agent graph">
+                <AgentGraphPanel
+                  hydraConfigured={hydraConfigured}
+                  showHeader={false}
+                  hideCreateAgent
+                />
+              </ErrorBoundary>
             </div>
           </section>
 
@@ -89,7 +86,7 @@ export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean })
           </div>
         </div>
 
-        <div className="min-h-0">
+        <div className="min-h-0 min-w-0 md:order-3 xl:order-none">
           <WorkspaceAgentFeed />
         </div>
       </div>

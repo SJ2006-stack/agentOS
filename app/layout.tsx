@@ -34,7 +34,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.classList.remove("dark");else if(t==="dark")document.documentElement.classList.add("dark");}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.classList.remove("dark");else if(t==="dark")document.documentElement.classList.add("dark");var p=localStorage.getItem("devfactory-theme-preset");var presets=["terminal-forest","terminal-ocean","terminal-phosphor","terminal-dusk","dark-obsidian"];if(p&&presets.indexOf(p)>=0)document.documentElement.setAttribute("data-theme",p);else document.documentElement.setAttribute("data-theme","terminal-forest");}catch(e){}})();`,
           }}
         />
       </head>

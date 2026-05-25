@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { CreateAgentOverlay } from "@/components/create-agent/CreateAgentOverlay";
+import { EnvConfigBanner } from "@/components/shell/EnvConfigBanner";
 import { HydraMemoryPopup } from "@/components/panels/HydraMemoryPopup";
 import { AgentOsHero } from "@/components/hero/AgentOsHero";
 import { HeroBootSequence } from "@/components/hero/BootSequence";
 import { DevFactoryDock } from "@/components/dock/DevFactoryDock";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { OsPanelSkeleton } from "@/components/ui/os-panel-skeleton";
 import {
   CREATE_AGENT_OPEN_EVENT,
   HYDRA_MEMORY_OPEN_EVENT,
@@ -21,6 +24,7 @@ import { useKernelHeartbeat } from "@/hooks/os/useKernelHeartbeat";
 import { useOsRealtime } from "@/hooks/realtime/useOsRealtime";
 import { useOsStore } from "@/store/os/osStore";
 import { cn } from "@/lib/utils";
+import type { OsEnvStatus } from "@/lib/env-types";
 import { UI_MODE_LABELS, UI_MODE_STRIP_HINTS, type UiMode, useUiModeStore } from "@/store/ui/uiModeStore";
 
 const DesktopMode = dynamic(
@@ -28,9 +32,7 @@ const DesktopMode = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center font-mono text-[10px] text-os-dim">
-        desktop…
-      </div>
+      <OsPanelSkeleton className="h-full min-h-[240px]" />
     ),
   }
 );
@@ -40,9 +42,7 @@ const TerminalMode = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center font-mono text-[10px] text-os-dim">
-        shell…
-      </div>
+      <OsPanelSkeleton className="h-full min-h-[240px]" />
     ),
   }
 );
@@ -52,9 +52,7 @@ const WorkspaceMode = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center font-mono text-[10px] text-os-dim">
-        workspace…
-      </div>
+      <OsPanelSkeleton variant="graph" className="h-full min-h-[240px]" />
     ),
   }
 );
@@ -67,7 +65,8 @@ function shouldShowOrchestrationStrip(mode: UiMode, hasActivity: boolean): boole
   return mode === "terminal";
 }
 
-export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) {
+export function AgentOsShell({ envStatus }: { envStatus: OsEnvStatus }) {
+  const { hydraConfigured } = envStatus;
   const [createAgentOpen, setCreateAgentOpen] = useState(false);
   const [hydraMemoryOpen, setHydraMemoryOpen] = useState(false);
   const mode = useUiModeStore((s) => s.mode);
@@ -83,6 +82,11 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   useKernelHeartbeat();
 
   useEffect(() => {
+    document.body.classList.add("os-shell-active");
+    return () => document.body.classList.remove("os-shell-active");
+  }, []);
+
+  useEffect(() => {
     useOsStore.getState().hydrateModelFromStorage();
     useOsStore.getState().hydrateHeroBootFromStorage();
     useUiModeStore.getState().hydrateFromStorage();
@@ -93,8 +97,12 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   }, []);
 
   useEffect(() => {
-    useOsStore.getState().setConfigFlags(hydraConfigured, false);
-  }, [hydraConfigured]);
+    useOsStore.getState().setConfigFlags(
+      envStatus.hydraConfigured,
+      envStatus.supabaseConfigured,
+      envStatus.geminiConfigured
+    );
+  }, [envStatus]);
 
   useEffect(() => {
     const onOpen = () => setCreateAgentOpen(true);
@@ -149,7 +157,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   const showActiveWorkspace = mode !== "hero";
 
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg/75 font-mono text-os-green">
+    <div className="os-shell-root relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg/75 font-mono text-os-green">
       <div className="fixed top-4 left-1/2 z-[100] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-3">
         <ThemePresetPicker className="rounded-full border border-os-border/80 bg-os-surface/90 px-2 py-1.5 backdrop-blur-sm" />
         <AnimatedThemeToggler
@@ -167,6 +175,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
 
       {showActiveWorkspace && (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <EnvConfigBanner envStatus={envStatus} />
           {mode !== "desktop" && (
             <div className="shrink-0 border-b border-os-border/50 px-4 py-2">
               <span className="text-center text-os-dim">
@@ -180,12 +189,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
             </div>
           )}
 
-          <div
-            className={cn(
-              "relative min-h-0 flex-1 overflow-hidden",
-              mode === "desktop" ? "pb-20" : "pb-28"
-            )}
-          >
+          <div className="relative min-h-0 flex-1 overflow-hidden pb-28 sm:pb-32">
             {mode === "terminal" && (
               <motion.div
                 key="terminal"
@@ -194,7 +198,9 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
                 animate={{ opacity: 1 }}
                 transition={MODE_TRANSITION}
               >
-                <TerminalMode hydraConfigured={hydraConfigured} />
+                <ErrorBoundary label="Terminal mode">
+                  <TerminalMode hydraConfigured={hydraConfigured} />
+                </ErrorBoundary>
               </motion.div>
             )}
 
@@ -206,7 +212,9 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
                 animate={{ opacity: 1 }}
                 transition={MODE_TRANSITION}
               >
-                <WorkspaceMode hydraConfigured={hydraConfigured} />
+                <ErrorBoundary label="Workspace mode">
+                  <WorkspaceMode hydraConfigured={hydraConfigured} />
+                </ErrorBoundary>
               </motion.div>
             )}
 
@@ -218,7 +226,9 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
                 animate={{ opacity: 1 }}
                 transition={MODE_TRANSITION}
               >
-                <DesktopMode />
+                <ErrorBoundary label="Desktop mode">
+                  <DesktopMode />
+                </ErrorBoundary>
               </motion.div>
             )}
           </div>

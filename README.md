@@ -140,16 +140,31 @@ npx vercel
 | Variable | Required | Notes |
 |----------|----------|-------|
 | `GEMINI_API_KEY` | Yes | Google Gemini API key — powers all LLM routes (model: `gemini-flash-latest`). `GOOGLE_API_KEY` is accepted as an alias. |
-| `HYDRADB_API_KEY` | Yes | Live HydraDB; no mock |
-| `HYDRADB_TENANT_ID` | No | Defaults to `devfactory-os` |
+| `HYDRADB_API_KEY` | Yes | Live HydraDB; no mock fallback |
+| `HYDRADB_TENANT_ID` | No | Defaults to `agentos` (see `.env.example`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Realtime panels |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Client subscribe |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server broadcast only |
-| `NEXT_PUBLIC_APP_URL` | No | Production URL for callbacks |
+| `NEXT_PUBLIC_APP_URL` | No | Production URL for server-side callbacks |
+| `DEMO_DEPLOY_URL` | No | URL shown when demo build completes (falls back to `NEXT_PUBLIC_APP_URL`) |
+| `TAVILY_API_KEY` | No | Web search for Researcher create-agent flow (preferred) |
+| `SERPER_API_KEY` | No | Web search fallback if Tavily unset |
+| `NEXT_PUBLIC_ENABLE_DOOM_DEMO` | No | `1` / `0` — DOOM hero demo; on in dev when unset |
 
 3. Redeploy after env changes. `vercel.json` sets longer `maxDuration` for agent and HydraDB routes.
 
 Never commit real API keys — copy from `.env.example` into `.env.local` or Vercel only.
+
+### Health check (monitoring)
+
+The kernel heartbeat endpoint is used by the shell (`useKernelHeartbeat`) and is suitable for uptime probes:
+
+```bash
+curl -sS -X POST https://<your-host>/api/os/heartbeat
+# → {"ok":true,"uptimeMs":<number>}
+```
+
+Expect **200** with `ok: true`. On failure, check Vercel function logs and Supabase broadcast credentials. Poll every 30–60s when the OS tab is expected to be active (the client skips polling when the document is hidden).
 
 ## Demo script
 

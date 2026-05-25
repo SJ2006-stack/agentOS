@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
-import { flushSync } from "react-dom";
+import { flushSync, createPortal } from "react-dom";
 
 import { withBasePath } from "@/lib/api/url";
 import { cn } from "@/lib/utils";
 
-const THEME_DELAY_MS = 3000;
+const THEME_FALLBACK_MS = 3500;
+const LIGHTNING_DURATION_MS = 520;
+const AUDIO_END_THRESHOLD_S = 0.12;
 const ZA_WARUDO_SRC = "/sounds/za-warudo.mp3";
 const ZA_WARUDO_URL = withBasePath(ZA_WARUDO_SRC);
 
@@ -145,9 +145,13 @@ export const AnimatedThemeToggler = ({
   const shape = variant ?? "circle";
   const [isDark, setIsDark] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [showLightning, setShowLightning] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pendingRef = useRef(false);
-  const delayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const themeApplyTriggeredRef = useRef(false);
+  const fallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lightningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zaWarudoRef = useRef<HTMLAudioElement | null>(null);
   const zaWarudoReadyRef = useRef(false);
   const zaWarudoPlayFailedLoggedRef = useRef(false);
@@ -207,12 +211,32 @@ export const AnimatedThemeToggler = ({
   }, []);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const clearAudioEndListeners = useCallback(() => {
+    const audio = zaWarudoRef.current;
+    if (!audio) return;
+    audio.onended = null;
+    audio.ontimeupdate = null;
+  }, []);
+
+  const clearThemeApplySchedule = useCallback(() => {
+    if (fallbackTimeoutRef.current !== null) {
+      clearTimeout(fallbackTimeoutRef.current);
+      fallbackTimeoutRef.current = null;
+    }
+    clearAudioEndListeners();
+  }, [clearAudioEndListeners]);
+
+  useEffect(() => {
     return () => {
-      if (delayTimeoutRef.current !== null) {
-        clearTimeout(delayTimeoutRef.current);
+      clearThemeApplySchedule();
+      if (lightningTimeoutRef.current !== null) {
+        clearTimeout(lightningTimeoutRef.current);
       }
     };
-  }, []);
+  }, [clearThemeApplySchedule]);
 
   const applyTheme = useCallback(() => {
     const currentlyDark = document.documentElement.classList.contains("dark");
@@ -309,33 +333,98 @@ export const AnimatedThemeToggler = ({
     }
   }, [shape, fromCenter, duration, applyTheme]);
 
+  const triggerLightning = useCallback(() => {
+    if (prefersReducedMotion()) return;
+
+    setShowLightning(true);
+    if (lightningTimeoutRef.current !== null) {
+      clearTimeout(lightningTimeoutRef.current);
+    }
+    lightningTimeoutRef.current = setTimeout(() => {
+      setShowLightning(false);
+      lightningTimeoutRef.current = null;
+    }, LIGHTNING_DURATION_MS);
+  }, []);
+
+  const finalizeThemeChange = useCallback(() => {
+    if (!pendingRef.current || themeApplyTriggeredRef.current) return;
+
+    themeApplyTriggeredRef.current = true;
+    clearThemeApplySchedule();
+    pendingRef.current = false;
+    setIsPending(false);
+
+    const reducedMotion = prefersReducedMotion();
+    if (reducedMotion) {
+      applyTheme();
+      return;
+    }
+
+    triggerLightning();
+    runViewTransition();
+  }, [
+    applyTheme,
+    runViewTransition,
+    clearThemeApplySchedule,
+    triggerLightning,
+  ]);
+
+  const scheduleThemeApplyFromAudio = useCallback(() => {
+    clearThemeApplySchedule();
+    themeApplyTriggeredRef.current = false;
+
+    fallbackTimeoutRef.current = setTimeout(() => {
+      fallbackTimeoutRef.current = null;
+      finalizeThemeChange();
+    }, THEME_FALLBACK_MS);
+
+    const audio = zaWarudoRef.current;
+    if (!audio || audio.error) return;
+
+    const onAudioNearEnd = () => {
+      if (
+        Number.isFinite(audio.duration) &&
+        audio.duration > 0 &&
+        audio.duration - audio.currentTime <= AUDIO_END_THRESHOLD_S
+      ) {
+        finalizeThemeChange();
+      }
+    };
+
+    audio.onended = () => {
+      finalizeThemeChange();
+    };
+    audio.ontimeupdate = onAudioNearEnd;
+  }, [clearThemeApplySchedule, finalizeThemeChange]);
+
   const toggleTheme = useCallback(() => {
     if (pendingRef.current) return;
 
     const button = buttonRef.current;
     if (!button) return;
 
-    const reducedMotion = prefersReducedMotion();
-
     pendingRef.current = true;
+    themeApplyTriggeredRef.current = false;
     setIsPending(true);
 
     playZaWarudo();
+    scheduleThemeApplyFromAudio();
+  }, [playZaWarudo, scheduleThemeApplyFromAudio]);
 
-    delayTimeoutRef.current = setTimeout(() => {
-      delayTimeoutRef.current = null;
-      pendingRef.current = false;
-      setIsPending(false);
-      if (reducedMotion) {
-        applyTheme();
-      } else {
-        runViewTransition();
-      }
-    }, THEME_DELAY_MS);
-  }, [applyTheme, runViewTransition, playZaWarudo]);
+  const lightningOverlay =
+    mounted && showLightning
+      ? createPortal(
+          <div className="theme-lightning-overlay" aria-hidden>
+            <div className="theme-lightning-burst" aria-hidden />
+            <div className="theme-lightning-jagged" aria-hidden />
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <>
+    {lightningOverlay}
     <audio
       ref={zaWarudoRef}
       src={ZA_WARUDO_URL}

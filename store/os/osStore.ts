@@ -51,6 +51,7 @@ interface OsState {
   kernel: {
     heartbeat: KernelHeartbeat | null;
     lastCommand: string | null;
+    lastCommandError: string | null;
     lastUsage: KernelUsageTick | null;
     connected: boolean;
   };
@@ -88,11 +89,13 @@ interface OsState {
   };
   hydraConfigured: boolean;
   supabaseConfigured: boolean;
+  geminiConfigured: boolean;
   selectedModelId: string;
 
   applyRealtimeBatch: (batch: RealtimeBatch) => void;
   setKernelHeartbeat: (h: KernelHeartbeat) => void;
   setKernelCommand: (cmd: string) => void;
+  setKernelCommandError: (msg: string | null) => void;
   setKernelUsage: (u: KernelUsageTick) => void;
   setKernelConnected: (v: boolean) => void;
   setCpuStep: (step: CpuStep, status: "start" | "complete" | "running", msg?: string) => void;
@@ -105,7 +108,11 @@ interface OsState {
   updateGpuHeat: (x: number, y: number, heat: number) => void;
   setGpuWorkers: (n: number) => void;
   setGraphNodeActive: (event: GraphNodeActiveEvent) => void;
-  setConfigFlags: (hydra: boolean, supabase: boolean) => void;
+  setConfigFlags: (
+    hydra: boolean,
+    supabase: boolean,
+    gemini?: boolean
+  ) => void;
   setSelectedModelId: (id: string) => void;
   hydrateModelFromStorage: () => void;
   resetGpuHeat: () => void;
@@ -168,7 +175,7 @@ const initialPipeline: CpuPipelineState = {
 export const useOsStore = create<OsState>((set) => ({
   bootComplete: typeof window !== "undefined" ? !readHeroBootEnabled() : false,
   heroBootEnabled: typeof window !== "undefined" ? readHeroBootEnabled() : true,
-  kernel: { heartbeat: null, lastCommand: null, lastUsage: null, connected: false },
+  kernel: { heartbeat: null, lastCommand: null, lastCommandError: null, lastUsage: null, connected: false },
   cpu: { pipeline: initialPipeline, lastMessage: null },
   memory: { slots: [], lastRecall: null, connected: false },
   io: { events: [] },
@@ -185,6 +192,7 @@ export const useOsStore = create<OsState>((set) => ({
   },
   hydraConfigured: false,
   supabaseConfigured: false,
+  geminiConfigured: false,
   selectedModelId: DEFAULT_GEMINI_MODEL_ID,
 
   applyRealtimeBatch: (batch) =>
@@ -365,11 +373,16 @@ export const useOsStore = create<OsState>((set) => ({
         };
       }
       if (batch.buildVerify) {
+        const verifyStatus = batch.buildVerify.status;
         state = {
           ...state,
           build: {
             ...state.build,
-            verifyStatus: batch.buildVerify.status,
+            verifyStatus,
+            streamingPath:
+              verifyStatus === "pass" || verifyStatus === "fail"
+                ? null
+                : state.build.streamingPath,
           },
         };
       }
@@ -380,6 +393,10 @@ export const useOsStore = create<OsState>((set) => ({
             ...state.build,
             deployUrl: batch.buildDeploy.url,
             buildActive: true,
+            streamingPath: null,
+            activeCores: [],
+            verifyStatus:
+              state.build.verifyStatus === "fail" ? "fail" : "pass",
           },
         };
       }
@@ -388,7 +405,11 @@ export const useOsStore = create<OsState>((set) => ({
   setKernelHeartbeat: (h) =>
     set((s) => ({ kernel: { ...s.kernel, heartbeat: h, connected: true } })),
   setKernelCommand: (cmd) =>
-    set((s) => ({ kernel: { ...s.kernel, lastCommand: cmd } })),
+    set((s) => ({
+      kernel: { ...s.kernel, lastCommand: cmd, lastCommandError: null },
+    })),
+  setKernelCommandError: (msg) =>
+    set((s) => ({ kernel: { ...s.kernel, lastCommandError: msg } })),
   setKernelUsage: (u) =>
     set((s) => ({ kernel: { ...s.kernel, lastUsage: u } })),
   setKernelConnected: (v) =>
@@ -464,8 +485,12 @@ export const useOsStore = create<OsState>((set) => ({
         },
       };
     }),
-  setConfigFlags: (hydra, supabase) =>
-    set({ hydraConfigured: hydra, supabaseConfigured: supabase }),
+  setConfigFlags: (hydra, supabase, gemini) =>
+    set({
+      hydraConfigured: hydra,
+      supabaseConfigured: supabase,
+      geminiConfigured: gemini ?? false,
+    }),
   setSelectedModelId: (id) => {
     const next = isGeminiModelId(id) ? id : DEFAULT_GEMINI_MODEL_ID;
     persistModelId(next);
@@ -499,7 +524,11 @@ export const useOsStore = create<OsState>((set) => ({
     }),
   dismissDeployReveal: () =>
     set((s) => ({
-      build: { ...s.build, deployUrl: null, buildActive: false },
+      build: {
+        ...s.build,
+        deployUrl: null,
+        buildActive: Object.keys(s.build.files).length > 0,
+      },
     })),
 }));
 

@@ -1,12 +1,13 @@
 import "server-only";
 import { HydraDBClient } from "@hydradb/sdk";
+import { readTrimmedEnv } from "@/lib/config/env";
 
 const DEFAULT_TENANT = "devfactory-os";
 
 let client: HydraDBClient | null = null;
 
 export function isHydraConfigured(): boolean {
-  return Boolean(process.env.HYDRADB_API_KEY);
+  return readTrimmedEnv("HYDRADB_API_KEY") !== undefined;
 }
 
 export function getHydraTenantId(): string {
@@ -14,7 +15,7 @@ export function getHydraTenantId(): string {
 }
 
 export function getHydraClient(): HydraDBClient | null {
-  const apiKey = process.env.HYDRADB_API_KEY;
+  const apiKey = readTrimmedEnv("HYDRADB_API_KEY");
   if (!apiKey) return null;
   if (!client) {
     client = new HydraDBClient({ token: apiKey });

@@ -526,7 +526,7 @@ function FullscreenHero({ className }: { className?: string }) {
       >
         <div
           className={cn(
-            "flex items-center gap-3 rounded-xl border px-4 py-2.5 font-mono text-sm shadow-lg backdrop-blur-md transition-colors",
+            "flex min-w-0 flex-wrap items-center gap-3 rounded-xl border px-4 py-2.5 font-mono text-sm shadow-lg backdrop-blur-md transition-colors",
           )}
           style={{
             borderColor: commandFocused ? PALETTE.accent : PALETTE.muted,
@@ -552,7 +552,7 @@ function FullscreenHero({ className }: { className?: string }) {
             placeholder="submit task · spawn agent · recall memory..."
             spellCheck={false}
             autoComplete="off"
-            className="flex-1 bg-transparent text-[13px] outline-none placeholder:opacity-70"
+            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:opacity-70"
             style={{ color: PALETTE.text, caretColor: PALETTE.accent }}
             aria-label="Type a command"
           />

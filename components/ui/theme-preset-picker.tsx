@@ -53,7 +53,9 @@ interface ThemePresetPickerProps {
 }
 
 export function ThemePresetPicker({ className }: ThemePresetPickerProps) {
-  const [active, setActive] = useState<ThemePresetId>(DEFAULT_PRESET);
+  const [active, setActive] = useState<ThemePresetId>(() =>
+    typeof window !== "undefined" ? readStoredThemePreset() : DEFAULT_PRESET
+  );
 
   useEffect(() => {
     setActive(hydrateThemePreset());

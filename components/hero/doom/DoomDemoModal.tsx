@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusTrap } from "@/hooks/a11y/useFocusTrap";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { DoomBuildPreview } from "./DoomBuildPreview";
@@ -25,6 +27,9 @@ interface DoomDemoModalProps {
 }
 
 export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, panelRef);
+
   const [screen, setScreen] = useState<Screen>("choice");
   const [selectedTemplate, setSelectedTemplate] = useState<DoomLevelTemplate>(
     DOOM_LEVEL_TEMPLATES[0]
@@ -80,14 +85,16 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
           aria-modal="true"
           aria-label="DOOM demo"
         >
-          <Button
+          <button
             type="button"
+            tabIndex={-1}
             className="absolute inset-0 h-auto w-auto rounded-none border-0 bg-[#080C14]/95 backdrop-blur-sm"
             aria-label="Close demo"
             onClick={onClose}
           />
 
           <motion.div
+            ref={panelRef}
             className={cn(
               "doom-demo-panel relative z-10 flex w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-[#1E2D3D] shadow-2xl",
               inGame ? "max-h-[90vh]" : "min-h-[min(520px,85vh)] max-h-[90vh]"
@@ -107,6 +114,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
               <Button
                 type="button"
                 onClick={onClose}
+                aria-label="Close DOOM demo"
                 className="rounded border border-[#1E2D3D] px-3 py-1.5 transition-colors hover:border-[#00FFB2]/40"
               >
                 <span className="text-left text-[#94A3B8]">
@@ -154,13 +162,13 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                   <span className="text-left text-[#94A3B8]">
                     Select a level template
                   </span>
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {DOOM_LEVEL_TEMPLATES.map((t) => (
                       <Button
                         key={t.id}
                         type="button"
                         onClick={() => onPickTemplate(t.id)}
-                        className="rounded-lg border border-[#1E2D3D] bg-[#080C14] p-4 text-left transition hover:border-[#8B5CF6]/50"
+                        className="flex min-w-0 flex-col whitespace-normal rounded-lg border border-[#1E2D3D] bg-[#080C14] p-4 text-left transition hover:border-[#8B5CF6]/50"
                       >
                         <span className="text-left text-[#8B5CF6]">
                           {t.name}
@@ -198,13 +206,15 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                       screen === "autoplay" ? "lg:min-h-[360px]" : "min-h-[320px]"
                     )}
                   >
-                    <DoomGameCanvas
-                      key={`${selectedTemplate.id}-${playMode}`}
-                      template={selectedTemplate}
-                      mode={playMode}
-                      onNarration={setNarration}
-                      className="absolute inset-0 flex flex-col"
-                    />
+                    <ErrorBoundary label="DOOM renderer" className="absolute inset-0 rounded-lg">
+                      <DoomGameCanvas
+                        key={`${selectedTemplate.id}-${playMode}`}
+                        template={selectedTemplate}
+                        mode={playMode}
+                        onNarration={setNarration}
+                        className="absolute inset-0 flex flex-col"
+                      />
+                    </ErrorBoundary>
                   </div>
                   {screen === "autoplay" ? (
                     <aside className="doom-demo-narration w-full shrink-0 rounded-lg border border-[#1E2D3D] bg-[#080C14] p-4 font-mono text-[11px] leading-relaxed text-[#94A3B8] lg:w-52">

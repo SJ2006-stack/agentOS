@@ -8,6 +8,7 @@ import {
   formatMemoryPreview,
 } from "@/components/ui/expandable-text";
 import { cn } from "@/lib/utils";
+import { hydraSetupSteps, HYDRA_ENV_FILE, HYDRA_ENV_TEMPLATE } from "@/lib/os/hydra-config";
 import { dispatchHydraMemoryOpen } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 import type { MemorySlotWrite } from "@/lib/os/types";
@@ -83,12 +84,24 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
             HYDRA MEMORY
           </span>
         )}
-        <span className="text-left text-os-fault">
-          HYDRADB_API_KEY missing — set in .env.local
-        </span>
-        <span className="mt-1 text-left text-os-dim">
-          Run: submit task after configuring HydraDB
-        </span>
+        <div className="rounded-lg border border-dashed border-os-fault/35 bg-os-fault/5 px-3 py-3">
+          <span className="text-left text-os-fault">
+            HydraDB not configured
+          </span>
+          <p className="mt-2 text-left text-[10px] leading-relaxed text-os-dim">
+            Copy <span className="text-os-green">{HYDRA_ENV_TEMPLATE}</span> →{" "}
+            <span className="text-os-green">{HYDRA_ENV_FILE}</span>, set the HydraDB
+            keys listed there, then restart the dev server.
+          </p>
+          <ol className="mt-2.5 space-y-1 text-[9px] leading-snug text-os-dim/90">
+            {hydraSetupSteps().map((step, i) => (
+              <li key={step} className="flex gap-2">
+                <span className="shrink-0 font-mono text-os-amber/90">{i + 1}.</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     );
   }
@@ -120,6 +133,16 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
           compact ? "gap-1" : "gap-2"
         )}
       >
+        {isIdle ? (
+          <div className="rounded-lg border border-dashed border-os-border/50 bg-os-bg/30 px-3 py-3">
+            <span className="text-left text-os-dim">No memories yet</span>
+            <p className="mt-1.5 text-left text-[10px] leading-relaxed text-os-dim/90">
+              Submit a task or run{" "}
+              <span className="text-os-green">recall kernel</span> in the terminal
+              — agent insights will appear here.
+            </p>
+          </div>
+        ) : (
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <span className={cn(
@@ -179,8 +202,9 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
             )}
           </div>
         </div>
+        )}
 
-        {hasRecall && !showDetails && memory.lastRecall && (
+        {!isIdle && hasRecall && !showDetails && memory.lastRecall && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <ExpandableText
               text={`recall: ${memory.lastRecall.query}`}

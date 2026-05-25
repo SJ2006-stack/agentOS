@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -103,6 +104,13 @@ export function LandingPage() {
             <span className="text-center text-hero-muted">Build web shell</span>
           </MotionButton>
         </div>
+
+        <Link
+          href="/final-demo"
+          className="text-[10px] tracking-wide text-hero-muted/70 transition-colors hover:text-hero-cyan"
+        >
+          Finale demo →
+        </Link>
       </motion.div>
     </main>
   );

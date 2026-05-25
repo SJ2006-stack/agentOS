@@ -9,6 +9,7 @@ import { MODEL_CHANGE_EVENT } from "@/components/panels/ConfigurePanel";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 import { withBasePath } from "@/lib/api/url";
+import { parseCommandApiError } from "@/lib/os/command-errors";
 import { isHydraMemoryShellCommand } from "@/lib/os/memory-shell-command";
 import {
   AGENT_SPAWNED_EVENT,
@@ -191,9 +192,8 @@ export function XtermShell({
   );
 
   useEffect(() => {
-    // #region agent log (post-fix verification)
-    // Suppress xterm v5 internal ResizeObserver race: _renderer.value is briefly null
-    // during terminal disposal, causing an unhandled throw in xterm's own observer.
+    // xterm ResizeObserver race suppressor — _renderer.value is briefly null during
+    // terminal disposal, which can throw inside xterm's own observer callback.
     const xtermRaceSuppressor = (ev: ErrorEvent) => {
       if (
         ev.message?.includes("dimensions") &&
@@ -203,11 +203,10 @@ export function XtermShell({
         ev.preventDefault();
       }
     };
-    window.addEventListener('error', xtermRaceSuppressor);
-    // #endregion
+    window.addEventListener("error", xtermRaceSuppressor);
 
     if (!containerRef.current) {
-      window.removeEventListener('error', xtermRaceSuppressor);
+      window.removeEventListener("error", xtermRaceSuppressor);
       return;
     }
 
@@ -339,19 +338,9 @@ export function XtermShell({
         }
 
         if (!res.ok) {
-          const errText = await res.text().catch(() => "");
-          const trimmed = errText.trim();
-          const isHtml =
-            trimmed.startsWith("<!") ||
-            trimmed.toLowerCase().includes("<!doctype html");
-          writeln(
-            isHtml
-              ? `[fault] API not found (${res.status}) — check basePath and dev server`
-              : trimmed
-                ? trimmed.split("\n")[0]!
-                : `[fault] HTTP ${res.status}`,
-            "31"
-          );
+          const err = await parseCommandApiError(res);
+          useOsStore.getState().setKernelCommandError(err.message);
+          writeln(err.message, "31");
           prompt();
           return;
         }
@@ -389,10 +378,9 @@ export function XtermShell({
         }
       } catch (e) {
         if (gen === commandGenRef.current && termRef.current === activeTerm) {
-          writeln(
-            `[fault] ${e instanceof Error ? e.message : "command failed"}`,
-            "31"
-          );
+          const err = await parseCommandApiError(null, e);
+          useOsStore.getState().setKernelCommandError(err.message);
+          writeln(err.message, "31");
         }
       }
       if (gen === commandGenRef.current && termRef.current === activeTerm) {
@@ -469,9 +457,7 @@ export function XtermShell({
       themeObserver.disconnect();
       ro.disconnect();
       window.removeEventListener("resize", fitTerminal);
-      // #region agent log
-      window.removeEventListener('error', xtermRaceSuppressor);
-      // #endregion
+      window.removeEventListener("error", xtermRaceSuppressor);
       term.dispose();
       termRef.current = null;
       fitRef.current = null;

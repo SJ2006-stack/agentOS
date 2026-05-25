@@ -3,13 +3,15 @@
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { KernelBar } from "@/components/panels/KernelBar";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { OsPanelSkeleton } from "@/components/ui/os-panel-skeleton";
 
 const AgentGraphPanel = dynamic(
   () => import("@/components/graph/AgentGraphPanel").then((m) => m.AgentGraphPanel),
   {
     ssr: false,
     loading: () => (
-      <div className="h-full min-h-[120px] animate-pulse rounded bg-os-panel/20" />
+      <OsPanelSkeleton variant="graph" className="h-full min-h-[120px]" />
     ),
   }
 );
@@ -44,7 +46,7 @@ const XtermShell = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full min-h-[160px] animate-pulse rounded bg-os-panel/30" />
+      <OsPanelSkeleton className="h-full min-h-[160px]" />
     ),
   }
 );
@@ -81,11 +83,13 @@ export function buildOsPanels(
     kernel: <KernelBar />,
     configure: <ConfigurePanel />,
     agentGraph: (
-      <AgentGraphPanel
-        hydraConfigured={hydraConfigured}
-        showHeader={showHeader}
-        hideCreateAgent={hideCreateAgent}
-      />
+      <ErrorBoundary label="Agent graph">
+        <AgentGraphPanel
+          hydraConfigured={hydraConfigured}
+          showHeader={showHeader}
+          hideCreateAgent={hideCreateAgent}
+        />
+      </ErrorBoundary>
     ),
     cpu: <CpuScheduler showHeader={showHeader} />,
     memory: <HydraMemoryPanel showHeader={showHeader} compact={compactMemory} />,

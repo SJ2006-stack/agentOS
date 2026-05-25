@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useFocusTrap } from "@/hooks/a11y/useFocusTrap";
 import { X } from "lucide-react";
 import { CreateAgentFlow } from "@/components/create-agent/CreateAgentFlow";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,9 @@ export function CreateAgentOverlay({
   hydraConfigured: boolean;
   onComplete?: () => void;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, panelRef);
+
   const handleComplete = useCallback(() => {
     onComplete?.();
     onClose();
@@ -51,11 +55,13 @@ export function CreateAgentOverlay({
     >
       <button
         type="button"
+        tabIndex={-1}
         aria-label="Close create agent"
         className="absolute inset-0 bg-os-bg/85 backdrop-blur-md"
         onClick={onClose}
       />
       <div
+        ref={panelRef}
         className={cn(
           "relative z-10 flex max-h-[min(92vh,880px)] w-full max-w-2xl flex-col",
           "rounded-2xl border border-os-amber/35 bg-os-panel/95 shadow-2xl shadow-os-bg/60",

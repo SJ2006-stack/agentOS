@@ -1,14 +1,15 @@
 import { DevFactoryOs } from "@/components/shell/DevFactoryOs";
 import { OsSpawnBootstrap } from "@/components/landing/OsSpawnBootstrap";
-import { isHydraConfigured } from "@/lib/hydradb/client";
+import { getEnvStatus, validateServerEnv } from "@/lib/env";
 
 export default function OsPage() {
-  const hydraConfigured = isHydraConfigured();
+  validateServerEnv();
+  const envStatus = getEnvStatus();
 
   return (
     <>
       <OsSpawnBootstrap />
-      <DevFactoryOs hydraConfigured={hydraConfigured} />
+      <DevFactoryOs envStatus={envStatus} />
     </>
   );
 }
