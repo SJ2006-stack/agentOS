@@ -167,13 +167,13 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
       aria-label="Active agents"
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
+      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
         <span className="text-left text-os-dim">
           Active Agents
         </span>
         <span
           className={cn(
-            "workspace-count-pill inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] tabular-nums",
+            "workspace-count-pill inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tabular-nums",
             activeCount > 0
               ? "border-[color:var(--workspace-accent)]/45 bg-[color:var(--workspace-accent)]/10 text-[color:var(--workspace-accent)]"
               : "border-white/10 bg-white/5 text-os-dim"
@@ -192,7 +192,7 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
         </span>
       </header>
 
-      <ul className="min-h-0 flex-1 list-none space-y-1.5 overflow-y-auto px-2.5 py-2 pr-2">
+      <ul className="min-h-0 flex-1 list-none space-y-2 overflow-y-auto px-3 py-3 pr-2.5">
         <AnimatePresence initial={false}>
           {agents.length === 0 && (
             <motion.li
@@ -200,7 +200,7 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-4 text-center text-[11px] text-os-dim"
+              className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-4 py-5 text-center text-[11px] text-os-dim"
             >
               <span className="text-center text-os-dim">
                 No agents yet. Spawn one to begin.
@@ -216,7 +216,7 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
               className={cn(
-                "workspace-agent-card group flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 transition-colors hover:border-[color:var(--workspace-accent)]/40 hover:bg-white/[0.07]",
+                "workspace-agent-card group flex cursor-pointer items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 transition-colors hover:border-[color:var(--workspace-accent)]/40 hover:bg-white/[0.07]",
                 agent.active && "workspace-agent-card--active"
               )}
               role="button"
@@ -250,7 +250,7 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
               </div>
               <span
                 className={cn(
-                  "shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] tracking-[0.14em]",
+                  "shrink-0 rounded border px-2 py-1 font-mono text-[9px] tracking-[0.14em]",
                   SIGNATURE_TAG_CLASS[agent.signature]
                 )}
               >
@@ -263,11 +263,11 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
         </AnimatePresence>
       </ul>
 
-      <footer className="shrink-0 border-t border-white/10 p-2.5">
-        <Button coolMode
+      <footer className="shrink-0 border-t border-white/10 p-3.5">
+        <Button
           type="button"
           onClick={onSpawn}
-          className="workspace-spawn-btn group flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--workspace-accent)]/50 bg-[color:var(--workspace-accent)]/[0.08] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--workspace-accent)] transition-[background-color,border-color,box-shadow]"
+          className="workspace-spawn-btn group flex w-full items-center justify-center gap-2.5 rounded-lg border border-[color:var(--workspace-accent)]/50 bg-[color:var(--workspace-accent)]/[0.08] px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--workspace-accent)] transition-[background-color,border-color,box-shadow]"
         >
           <Plus className="size-3.5" aria-hidden />
           <span className="text-center text-[color:var(--workspace-accent)]">

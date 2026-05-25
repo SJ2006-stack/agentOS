@@ -108,6 +108,33 @@
 /* Agent graph — legibility + create-agent prominence */
 .workspace-graph-host {
   min-height: 220px;
+  transition: box-shadow 0.35s ease;
+  overflow: visible;
+}
+
+.workspace-graph-host .workspace-graph-svg {
+  overflow: visible;
+}
+
+.workspace-hero-graph {
+  min-height: 0;
+}
+
+.workspace-feed-row--spawn {
+  border-color: color-mix(in srgb, var(--os-amber) 45%, transparent);
+  background-color: color-mix(in srgb, var(--os-amber) 8%, transparent);
+  animation: workspace-feed-spawn-in 0.35s ease-out;
+}
+
+@keyframes workspace-feed-spawn-in {
+  0% {
+    transform: translateY(-6px);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .workspace-graph-node {
@@ -293,7 +320,7 @@
 
 .pipeline-step-label {
   font-size: 9px;
-  line-height: 1.2;
+  line-height: 1.35;
   color: color-mix(in srgb, var(--os-dim) 85%, transparent);
 }
 
@@ -553,6 +580,15 @@
     opacity: 1;
     transform: scale(1.18);
   }
+}
+
+.workspace-stage-label {
+  display: block;
+  max-width: 4.5rem;
+  font-size: 9px;
+  line-height: 1.35;
+  text-align: center;
+  word-break: break-word;
 }
 
 .workspace-stage--future {

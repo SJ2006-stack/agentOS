@@ -155,7 +155,7 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
           </div>
 
           {memory.slots.length > 0 && (
-            <Button coolMode
+            <Button
               type="button"
               onClick={() => setShowDetails((v) => !v)}
               className="shrink-0 text-[9px] uppercase tracking-wider text-os-dim transition-colors hover:text-os-green"

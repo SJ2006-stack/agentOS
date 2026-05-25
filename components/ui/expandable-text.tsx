@@ -45,7 +45,7 @@ export function ExpandableText({
         {text}
       </p>
       {overflows && (
-        <Button coolMode
+        <Button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           className="mt-0.5 text-[9px] text-os-amber hover:underline"

@@ -15,7 +15,7 @@ export default function GlobalError({
         <FlickeringGridBackground />
         <div className="relative z-10 flex min-h-full flex-col items-center justify-center gap-4 p-8">
           <h1>Something went wrong</h1>
-          <Button coolMode type="button" onClick={() => reset()}>
+          <Button type="button" onClick={() => reset()}>
             Try again
           </Button>
         </div>

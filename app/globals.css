@@ -441,6 +441,10 @@ body {
   pointer-events: none;
 }
 
+.workspace-graph-nodes {
+  pointer-events: auto;
+}
+
 .workspace-graph-grid {
   pointer-events: none;
 }
@@ -454,10 +458,40 @@ body {
 }
 
 .workspace-graph-edge-pulse {
-  stroke-dasharray: 3 22;
+  stroke-dasharray: 4 18;
   stroke-linecap: round;
-  opacity: 0.9;
-  animation: workspace-edge-travel 1.75s linear infinite;
+  opacity: 1;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--os-green) 55%, transparent));
+  animation: workspace-edge-travel 1.35s linear infinite;
+}
+
+.workspace-graph-host--live {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--os-green) 18%, transparent),
+    0 0 28px color-mix(in srgb, var(--os-green) 12%, transparent);
+}
+
+.workspace-graph-node-halo--spawn {
+  animation: workspace-node-spawn-ring 1.2s ease-out infinite;
+}
+
+.workspace-graph-node-body--spawn {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--os-amber) 65%, transparent));
+}
+
+@keyframes workspace-node-spawn-ring {
+  0% {
+    stroke-opacity: 0.95;
+    transform: scale(1);
+  }
+  70% {
+    stroke-opacity: 0.25;
+    transform: scale(1.06);
+  }
+  100% {
+    stroke-opacity: 0;
+    transform: scale(1.1);
+  }
 }
 
 .workspace-graph-edge-pulse--research {
@@ -505,6 +539,16 @@ body {
 /* —— AgentOS hero v2 (revamp) —— */
 .agentos-hero-v2 {
   background-color: transparent;
+}
+
+.agentos-hero-title {
+  font-size: clamp(2.75rem, 10vw, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.agentos-orchestration-strip button {
+  line-height: 1.4;
 }
 
 .agentos-hero-grid {
@@ -681,6 +725,7 @@ body {
 .agentos-hero-stats {
   color: rgba(148, 163, 184, 0.65);
   letter-spacing: 0.02em;
+  line-height: 1.5;
 }
 
 .agentos-hero-stats-num {

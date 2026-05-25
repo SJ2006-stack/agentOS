@@ -1,17 +1,22 @@
 import {
   hasLineOfSight,
-  isWall,
+  raycastDistance,
   type Cell,
   type GameInput,
   type GameState,
 } from "./doomEngine";
 
 /** Bot applies movement / combat decisions on this interval (ms). */
-export const BOT_TICK_MS = 200;
+export const BOT_TICK_MS = 220;
 
 const TURN_THRESHOLD = 0.06;
 const MAX_TURN_PER_TICK = 0.22;
-const STUCK_DIST = 0.04;
+const STUCK_DIST = 0.035;
+const POSITION_HISTORY = 8;
+const SAME_CELL_STUCK_TICKS = 2;
+const GOAL_STALE_TICKS = 3;
+const FORWARD_PROBE = 0.42;
+const BACKUP_STEPS = 3;
 
 type GridPoint = { x: number; y: number };
 
@@ -19,6 +24,14 @@ function normalizeAngle(a: number): number {
   while (a > Math.PI) a -= Math.PI * 2;
   while (a < -Math.PI) a += Math.PI * 2;
   return a;
+}
+
+function gridCell(x: number, y: number): GridPoint {
+  return { x: Math.floor(x), y: Math.floor(y) };
+}
+
+function cellKey(p: GridPoint): string {
+  return `${p.x},${p.y}`;
 }
 
 function bfsPath(
@@ -85,40 +98,131 @@ function nearestAliveEnemy(state: GameState) {
 }
 
 function probeOpenDirection(state: GameState): number | null {
-  const angles = [0, -0.5, 0.5, -1, 1, -1.5, 1.5];
+  const angles = [0, -0.5, 0.5, -1, 1, -1.5, 1.5, Math.PI];
   let best: { angle: number; dist: number } | null = null;
   for (const offset of angles) {
     const a = state.playerAngle + offset;
-    let d = 0;
-    for (let i = 0; i < 12; i++) {
-      const tx = state.playerX + Math.cos(a) * (0.35 + i * 0.25);
-      const ty = state.playerY + Math.sin(a) * (0.35 + i * 0.25);
-      if (isWall(state.map, tx, ty)) break;
-      d = 0.35 + i * 0.25;
-    }
+    const d = raycastDistance(state.map, state.playerX, state.playerY, a);
     if (!best || d > best.dist) {
       best = { angle: offset, dist: d };
     }
   }
-  return best && best.dist > 0.6 ? best.angle : null;
+  return best && best.dist > 0.55 ? best.angle : null;
 }
 
+function canAdvance(state: GameState, angle?: number): boolean {
+  const a = angle ?? state.playerAngle;
+  return raycastDistance(state.map, state.playerX, state.playerY, a) > FORWARD_PROBE;
+}
+
+// --- bot memory (live state each tick, no recordings) ---
 let lastX = 0;
 let lastY = 0;
 let stuckTicks = 0;
+let sameCellTicks = 0;
+let lastCellKey = "";
+let goalDistStaleTicks = 0;
+let lastGoalDist = Infinity;
 let pathCache: GridPoint[] | null = null;
 let pathGoalKey = "";
+let positionHistory: string[] = [];
+let unstickTicksLeft = 0;
+let unstickStrafeLeft = true;
+let pendingLog: string | null = null;
 
 function clearBotMemory() {
   lastX = 0;
   lastY = 0;
   stuckTicks = 0;
+  sameCellTicks = 0;
+  lastCellKey = "";
+  goalDistStaleTicks = 0;
+  lastGoalDist = Infinity;
   pathCache = null;
   pathGoalKey = "";
+  positionHistory = [];
+  unstickTicksLeft = 0;
+  pendingLog = null;
 }
 
 export function resetBotState(): void {
   clearBotMemory();
+}
+
+/** Sidebar log line set by the bot on notable events (e.g. stuck). */
+export function consumeBotLog(): string | null {
+  const line = pendingLog;
+  pendingLog = null;
+  return line;
+}
+
+function pushPositionHistory(state: GameState): void {
+  const key = cellKey(gridCell(state.playerX, state.playerY));
+  positionHistory.push(key);
+  if (positionHistory.length > POSITION_HISTORY) {
+    positionHistory.shift();
+  }
+}
+
+function isOscillating(): boolean {
+  if (positionHistory.length < 4) return false;
+  const tail = positionHistory.slice(-4);
+  const unique = new Set(tail);
+  return unique.size <= 2;
+}
+
+function noteStuck(reason: string): void {
+  pendingLog = `[agent] stuck — ${reason}`;
+  pathCache = null;
+  pathGoalKey = "";
+  unstickTicksLeft = BACKUP_STEPS;
+  unstickStrafeLeft = Math.random() < 0.5;
+  stuckTicks = 0;
+  sameCellTicks = 0;
+  goalDistStaleTicks = 0;
+}
+
+function updateStuckMetrics(state: GameState, goalDist: number): boolean {
+  const moved =
+    Math.abs(state.playerX - lastX) + Math.abs(state.playerY - lastY);
+  if (moved < STUCK_DIST) stuckTicks += 1;
+  else stuckTicks = 0;
+  lastX = state.playerX;
+  lastY = state.playerY;
+
+  const cell = cellKey(gridCell(state.playerX, state.playerY));
+  if (cell === lastCellKey) sameCellTicks += 1;
+  else {
+    sameCellTicks = 0;
+    lastCellKey = cell;
+  }
+  pushPositionHistory(state);
+
+  if (goalDist < Infinity && goalDist > 2.2) {
+    if (Math.abs(goalDist - lastGoalDist) < 0.08) goalDistStaleTicks += 1;
+    else goalDistStaleTicks = 0;
+    lastGoalDist = goalDist;
+  } else {
+    goalDistStaleTicks = 0;
+    if (goalDist >= Infinity) lastGoalDist = Infinity;
+  }
+
+  const stuck =
+    sameCellTicks > SAME_CELL_STUCK_TICKS ||
+    stuckTicks > 2 ||
+    goalDistStaleTicks >= GOAL_STALE_TICKS ||
+    isOscillating();
+
+  return stuck;
+}
+
+function applyUnstick(input: GameInput, botTick: number): void {
+  input.backward = true;
+  if (unstickStrafeLeft) input.strafeLeft = true;
+  else input.strafeRight = true;
+  if (botTick % 2 === 0) input.turnRight = true;
+  else input.turnLeft = true;
+  unstickTicksLeft -= 1;
 }
 
 function smoothTurn(input: GameInput, angleDiff: number): void {
@@ -127,7 +231,15 @@ function smoothTurn(input: GameInput, angleDiff: number): void {
   else if (turn > TURN_THRESHOLD) input.turnRight = true;
 }
 
-/** Autonomous bot: BFS toward enemies, wall avoidance, LOS combat. */
+function safeForward(
+  input: GameInput,
+  state: GameState,
+  moveAngle?: number
+): void {
+  if (canAdvance(state, moveAngle)) input.forward = true;
+}
+
+/** Autonomous bot: BFS toward enemies, raycast wall checks, anti-stuck recovery. */
 export function getBotInput(state: GameState, botTick: number): GameInput {
   const input: GameInput = {
     forward: false,
@@ -143,14 +255,21 @@ export function getBotInput(state: GameState, botTick: number): GameInput {
 
   if (botTick === 0) clearBotMemory();
 
-  const moved =
-    Math.abs(state.playerX - lastX) + Math.abs(state.playerY - lastY);
-  if (moved < STUCK_DIST) stuckTicks += 1;
-  else stuckTicks = 0;
-  lastX = state.playerX;
-  lastY = state.playerY;
+  if (unstickTicksLeft > 0) {
+    applyUnstick(input, botTick);
+    return input;
+  }
 
   const enemy = nearestAliveEnemy(state);
+  let goalDist = Infinity;
+
+  if (enemy) goalDist = enemy.dist;
+
+  if (updateStuckMetrics(state, goalDist)) {
+    noteStuck("backing up");
+    applyUnstick(input, botTick);
+    return input;
+  }
 
   if (enemy) {
     const los = hasLineOfSight(
@@ -166,7 +285,7 @@ export function getBotInput(state: GameState, botTick: number): GameInput {
       smoothTurn(input, enemy.angle);
       if (Math.abs(enemy.angle) < TURN_THRESHOLD) {
         input.shoot = state.ammo > 0 && botTick % 2 === 0;
-        if (enemy.dist > 1.8) input.forward = true;
+        if (enemy.dist > 1.8) safeForward(input, state);
       }
       return input;
     }
@@ -175,10 +294,7 @@ export function getBotInput(state: GameState, botTick: number): GameInput {
     const gy = Math.floor(enemy.y);
     const goalKey = `${gx},${gy}`;
     if (pathGoalKey !== goalKey || !pathCache || pathCache.length < 2) {
-      const start = {
-        x: Math.floor(state.playerX),
-        y: Math.floor(state.playerY),
-      };
+      const start = gridCell(state.playerX, state.playerY);
       pathCache = bfsPath(state.map, start, { x: gx, y: gy });
       pathGoalKey = goalKey;
     }
@@ -200,34 +316,27 @@ export function getBotInput(state: GameState, botTick: number): GameInput {
       const targetAngle = Math.atan2(ty - state.playerY, tx - state.playerX);
       const diff = normalizeAngle(targetAngle - state.playerAngle);
       smoothTurn(input, diff);
-      if (Math.abs(diff) < 0.35) input.forward = true;
-      if (stuckTicks > 2) {
-        input.strafeLeft = botTick % 2 === 0;
-        stuckTicks = 0;
-        pathCache = null;
-      }
+      if (Math.abs(diff) < 0.38) safeForward(input, state, targetAngle);
       return input;
     }
 
     smoothTurn(input, enemy.angle);
-    if (Math.abs(enemy.angle) < 0.5) input.forward = true;
+    if (Math.abs(enemy.angle) < 0.5) safeForward(input, state);
     return input;
   }
 
   pathCache = null;
+  pathGoalKey = "";
+  lastGoalDist = Infinity;
+
   const open = probeOpenDirection(state);
   if (open !== null) {
     smoothTurn(input, open);
-    input.forward = true;
+    safeForward(input, state, state.playerAngle + open);
   } else {
     input.turnRight = botTick % 2 === 0;
-    input.forward = botTick % 3 !== 0;
-  }
-
-  if (stuckTicks > 2) {
-    input.strafeRight = true;
-    input.backward = true;
-    stuckTicks = 0;
+    input.turnLeft = botTick % 2 !== 0;
+    if (canAdvance(state)) input.forward = true;
   }
 
   return input;
@@ -246,6 +355,9 @@ export const BOT_NARRATION_LINES = [
 ] as const;
 
 export function pickNarrationLine(botTick: number, state: GameState): string {
+  const log = consumeBotLog();
+  if (log) return log;
+
   const idx = Math.floor(botTick / 5) % BOT_NARRATION_LINES.length;
   if (state.enemies.some((e) => e.alive && e.hitFlash > 0)) {
     return "Agent: hit confirmed — suppressing.";

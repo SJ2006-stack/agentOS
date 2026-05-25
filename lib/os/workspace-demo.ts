@@ -47,10 +47,6 @@ export function runWorkspaceDemo(command: string): void {
   highlightWorkspacePanel(WORKSPACE_PANEL_IDS.agentGraph);
   window.setTimeout(
     () => highlightWorkspacePanel(WORKSPACE_PANEL_IDS.activeTask),
-    350
-  );
-  window.setTimeout(
-    () => highlightWorkspacePanel(WORKSPACE_PANEL_IDS.terminal, 1600),
-    850
+    400
   );
 }

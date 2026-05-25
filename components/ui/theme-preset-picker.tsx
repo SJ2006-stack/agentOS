@@ -73,7 +73,7 @@ export function ThemePresetPicker({ className }: ThemePresetPickerProps) {
       {THEME_PRESETS.map((preset) => {
         const isActive = active === preset.id;
         return (
-          <Button coolMode
+          <Button
             key={preset.id}
             type="button"
             title={preset.label}

@@ -345,7 +345,7 @@ export const AnimatedThemeToggler = ({
       onCanPlayThrough={onZaWarudoCanPlayThrough}
       onError={onZaWarudoError}
     />
-    <Button coolMode
+    <Button
       type="button"
       ref={buttonRef}
       onClick={toggleTheme}

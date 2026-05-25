@@ -81,7 +81,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
                   ))}
                 </ol>
               </div>
-              <Button coolMode
+              <Button
                 type="button"
                 onClick={dismissFirstRun}
                 className="shrink-0 rounded-md border border-os-border/60 p-1 text-os-dim transition-colors hover:border-os-amber/40 hover:text-os-amber"
@@ -108,14 +108,14 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
         </span>
         {!compact && (
           <p className="hidden text-[10px] text-os-dim/90 sm:inline">
-            One click — agent runs a real task you can verify in terminal
+            One click — watch graph, pipeline, and feed react
           </p>
         )}
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           {DEMO_CHIPS.map((chip) => {
             const isRunning = runningCommand === chip.command;
             return (
-              <Button coolMode
+              <Button
                 key={chip.command}
                 type="button"
                 title={chip.hint}

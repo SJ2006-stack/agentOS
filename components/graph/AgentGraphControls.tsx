@@ -25,7 +25,6 @@ export function AgentGraphControls({
       {!hideCreateAgent && (section === "create" || section === "all") && (
         <div className="workspace-graph-create shrink-0 rounded-lg border border-os-amber/35 bg-os-amber/5 p-2.5">
           <Button
-            coolMode
             type="button"
             onClick={() => dispatchCreateAgentOpen()}
             className="workspace-graph-create-cta flex w-full items-center justify-center gap-2 rounded-md border border-os-amber/60 bg-os-amber/15 px-3 py-2 text-[12px] font-semibold uppercase tracking-wider text-os-amber transition-colors hover:border-os-amber hover:bg-os-amber/25"
@@ -37,7 +36,7 @@ export function AgentGraphControls({
 
       {templates.length > 0 && (section === "list" || section === "all") && (
         <div className="shrink-0 border-t border-os-border/50 pt-1.5">
-          <Button coolMode
+          <Button
             type="button"
             onClick={() => setListExpanded((open) => !open)}
             className="flex w-full items-center justify-between gap-2 text-left text-[10px] text-os-dim transition-colors hover:text-os-green"

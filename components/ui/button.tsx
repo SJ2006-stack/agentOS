@@ -1,15 +1,7 @@
-"use client";
-
 import * as React from "react";
-import { useCallback, useEffect, useRef } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import {
-  applyParticleEffect,
-  DEFAULT_COOL_MODE_OPTIONS,
-  type CoolParticleOptions,
-} from "@/components/ui/cool-mode";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -40,43 +32,15 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  /** Particle burst on press/hold. Pass `true` or options; omit to disable. */
-  coolMode?: boolean | CoolParticleOptions;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    { className, variant, size, asChild = false, coolMode, ...props },
-    ref
-  ) => {
-    const innerRef = useRef<HTMLButtonElement | null>(null);
-    const setRef = useCallback(
-      (node: HTMLButtonElement | null) => {
-        innerRef.current = node;
-        if (typeof ref === "function") {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-      },
-      [ref]
-    );
-
-    useEffect(() => {
-      const el = innerRef.current;
-      if (!el || coolMode === undefined || coolMode === false || asChild) {
-        return;
-      }
-      const options =
-        coolMode === true ? DEFAULT_COOL_MODE_OPTIONS : coolMode;
-      return applyParticleEffect(el, options);
-    }, [coolMode, asChild]);
-
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={asChild ? ref : setRef}
+        ref={ref}
         {...props}
       />
     );

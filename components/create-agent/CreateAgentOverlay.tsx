@@ -62,30 +62,29 @@ export function CreateAgentOverlay({
           "ring-1 ring-inset ring-white/[0.06]"
         )}
       >
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-os-border/60 px-4 py-3 sm:px-5">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-os-border/60 px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <h2
               id="create-agent-overlay-title"
-              className="font-mono text-sm font-semibold uppercase tracking-wider text-os-amber"
+              className="font-mono text-sm font-semibold uppercase leading-tight tracking-wider text-os-amber"
             >
               Create agent
             </h2>
-            <p className="mt-0.5 text-[11px] text-os-dim">
+            <p className="mt-1 text-[11px] leading-snug text-os-dim">
               Pick a graph template or customize your own role.
             </p>
           </div>
           <Button
-            coolMode
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="shrink-0 rounded-lg border border-os-border/70 p-2 text-os-dim hover:text-os-green"
+            className="shrink-0 rounded-lg border border-os-border/70 p-2.5 text-os-dim hover:text-os-green"
           >
             <X className="size-4" aria-hidden />
           </Button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5 sm:py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
           <CreateAgentFlow
             variant="overlay"
             hydraConfigured={hydraConfigured}
@@ -94,9 +93,9 @@ export function CreateAgentOverlay({
           />
         </div>
 
-        <footer className="shrink-0 border-t border-os-border/50 px-4 py-2.5 text-[10px] text-os-dim/80 sm:px-5">
+        <footer className="shrink-0 border-t border-os-border/50 px-5 py-3.5 text-[10px] leading-relaxed text-os-dim/80 sm:px-6">
           Or type{" "}
-          <code className="text-os-green/90">
+          <code className="break-all text-os-green/90">
             create agent &lt;name&gt; &quot;&lt;role&gt;&quot;
           </code>{" "}
           in the command bar.

@@ -11,6 +11,8 @@ export interface MissionPipelineProps {
   stages: Stage[];
   activeIndex: number;
   autoPlay?: boolean;
+  /** Brief DISPATCH emphasis when an agent spawns */
+  pulseSpawn?: boolean;
 }
 
 export const DEFAULT_PIPELINE_STAGES: Stage[] = [
@@ -26,6 +28,7 @@ export function MissionPipeline({
   stages,
   activeIndex,
   autoPlay = false,
+  pulseSpawn = false,
 }: MissionPipelineProps): JSX.Element {
   const reduceMotion = useReducedMotion();
   const [internalIndex, setInternalIndex] = useState<number>(activeIndex);
@@ -56,6 +59,8 @@ export function MissionPipeline({
         const isActive = i === safeCurrent;
         const isDone = i < safeCurrent;
         const isFuture = i > safeCurrent;
+        const isSpawnPulse =
+          pulseSpawn && stages[i]?.name === "DISPATCH" && !isFuture;
         const showConnector = i > 0;
         const connectorFilled = i <= safeCurrent;
         const isActiveEdge = i === safeCurrent;
@@ -65,6 +70,7 @@ export function MissionPipeline({
           isActive && "mp-card--active",
           isDone && "mp-card--done",
           isFuture && "mp-card--future",
+          isSpawnPulse && "mp-card--spawn",
         ]
           .filter(Boolean)
           .join(" ");
@@ -216,6 +222,14 @@ export function MissionPipeline({
           background: rgba(0, 255, 178, 0.05);
           z-index: 1;
         }
+        .mp-card--spawn {
+          border-color: #fbbf24;
+          box-shadow:
+            0 0 0 1px rgba(251, 191, 36, 0.85),
+            0 0 22px rgba(251, 191, 36, 0.4),
+            inset 0 0 10px rgba(251, 191, 36, 0.12);
+          animation: mp-spawn-flash 1.2s ease-out;
+        }
         .mp-card--done {
           border-left: 3px solid ${ACCENT};
           background: rgba(0, 255, 178, 0.05);
@@ -236,10 +250,12 @@ export function MissionPipeline({
         }
         .mp-name {
           font-size: 11px;
+          line-height: 1.35;
           letter-spacing: 0.16em;
           text-transform: uppercase;
           font-weight: 600;
           color: #c8f7e7;
+          word-break: break-word;
         }
         .mp-card--active .mp-name {
           color: #ffffff;
@@ -273,6 +289,15 @@ export function MissionPipeline({
           pointer-events: none;
           mix-blend-mode: screen;
           animation: mp-shimmer 2.2s linear infinite;
+        }
+
+        @keyframes mp-spawn-flash {
+          0% {
+            transform: scale(1.08);
+          }
+          100% {
+            transform: scale(1.05);
+          }
         }
 
         @keyframes mp-pulse {

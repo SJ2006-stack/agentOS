@@ -161,20 +161,20 @@ export function CreateAgentFlow({
 
   const templateListClass =
     variant === "overlay"
-      ? "min-h-[200px] max-h-[min(52vh,480px)] space-y-2 overflow-y-auto pr-1"
-      : "max-h-52 space-y-1.5 overflow-y-auto pr-0.5";
+      ? "min-h-[200px] max-h-[min(52vh,480px)] space-y-3 overflow-y-auto pr-1.5"
+      : "max-h-52 space-y-2 overflow-y-auto pr-1";
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col gap-3", className)}>
       {!hydraConfigured && (
-        <p className="rounded-md border border-os-fault/35 bg-os-fault/10 px-2.5 py-2 text-[11px] text-os-fault/90">
+        <p className="rounded-md border border-os-fault/35 bg-os-fault/10 px-3 py-2.5 text-[11px] text-os-fault/90">
           HydraDB is not configured — set HYDRADB_API_KEY to register and spawn
           agents. You can still browse templates below.
         </p>
       )}
       {step === "name" && (
         <>
-          <label className="space-y-1">
+          <label className="space-y-2">
             <span className="text-left text-os-dim">
               Agent name
             </span>
@@ -183,7 +183,7 @@ export function CreateAgentFlow({
               value={agentName}
               onChange={(e) => setAgentName(e.target.value)}
               placeholder="e.g. market-research"
-              className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
+              className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-3 py-2 text-sm text-os-green outline-none focus:border-os-amber/40"
               autoComplete="off"
               spellCheck={false}
               autoFocus
@@ -195,21 +195,21 @@ export function CreateAgentFlow({
               }}
             />
           </label>
-          <div className="flex justify-end gap-1.5">
-            <Button coolMode
+          <div className="flex justify-end gap-2">
+            <Button
               type="button"
               onClick={handleClose}
-              className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim hover:text-os-green"
+              className="rounded-md border border-os-border/70 px-3 py-2 text-[10px] uppercase tracking-wide text-os-dim hover:text-os-green"
             >
               <span className="text-center text-os-dim">
                 Cancel
               </span>
             </Button>
-            <Button coolMode
+            <Button
               type="button"
               disabled={!agentName.trim()}
               onClick={goNextFromName}
-              className="rounded-md border border-os-amber/40 bg-os-amber/10 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/20 disabled:opacity-40"
+              className="rounded-md border border-os-amber/40 bg-os-amber/10 px-3 py-2 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/20 disabled:opacity-40"
             >
               <span className="text-center text-os-amber">
                 Continue
@@ -221,11 +221,11 @@ export function CreateAgentFlow({
 
       {step === "pick" && (
         <>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-left text-os-amber">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <span className="min-w-0 truncate text-left leading-snug text-os-amber">
               {agentName.trim()}
             </span>
-            <Button coolMode
+            <Button
               type="button"
               onClick={() => setStep("name")}
               className="text-[10px] text-os-dim hover:text-os-green"
@@ -235,14 +235,14 @@ export function CreateAgentFlow({
               </span>
             </Button>
           </div>
-          <div className="flex gap-1 rounded-md border border-os-border/60 p-0.5">
+          <div className="flex gap-1.5 rounded-md border border-os-border/60 p-1">
             {(["templates", "custom"] as const).map((tab) => (
-              <Button coolMode
+              <Button
                 key={tab}
                 type="button"
                 onClick={() => setPickTab(tab)}
                 className={cn(
-                  "flex-1 rounded px-2 py-1 text-[10px] uppercase tracking-wide transition-colors",
+                  "flex-1 rounded px-3 py-1.5 text-[10px] uppercase tracking-wide transition-colors",
                   pickTab === tab
                     ? "bg-os-amber/15 text-os-amber"
                     : "text-os-dim hover:text-os-green"
@@ -257,16 +257,16 @@ export function CreateAgentFlow({
           {pickTab === "templates" ? (
             <div className={templateListClass}>
               {TEMPLATE_CARDS.length === 0 ? (
-                <p className="rounded-md border border-dashed border-os-border/60 px-3 py-4 text-center text-[11px] text-os-dim">
+                <p className="rounded-md border border-dashed border-os-border/60 px-4 py-5 text-center text-[11px] text-os-dim">
                   No spawnable templates found in the agent graph.
                 </p>
               ) : null}
               {TEMPLATE_CARDS.map((card) => (
-                <Button coolMode
+                <Button
                   key={card.templateId}
                   type="button"
                   onClick={() => selectTemplate(card)}
-                  className="w-full rounded-lg border border-os-border/60 bg-os-bg/30 px-2.5 py-2 text-left transition-colors hover:border-os-amber/40 hover:bg-os-amber/5"
+                  className="w-full rounded-lg border border-os-border/60 bg-os-bg/30 px-3 py-2.5 text-left transition-colors hover:border-os-amber/40 hover:bg-os-amber/5"
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-left text-os-green">
@@ -286,7 +286,7 @@ export function CreateAgentFlow({
               ))}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <span className="text-left text-os-dim">
                 Freeform custom agent — registered in HydraDB and spawnable from
                 the graph.
@@ -295,16 +295,16 @@ export function CreateAgentFlow({
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
                 placeholder="Role (e.g. reviews PRs for security issues)"
-                className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
+                className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-3 py-2 text-sm text-os-green outline-none focus:border-os-amber/40"
               />
-              <Button coolMode
+              <Button
                 type="button"
                 disabled={!customRole.trim() || busy || !hydraConfigured}
                 onClick={() => {
                   setPickTab("custom");
                   setStep("custom");
                 }}
-                className="w-full rounded-md border border-os-amber/40 bg-os-amber/10 py-1.5 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/20 disabled:opacity-40"
+                className="w-full rounded-md border border-os-amber/40 bg-os-amber/10 py-2 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/20 disabled:opacity-40"
               >
                 <span className="text-center text-os-amber">
                   Continue to create
@@ -312,7 +312,7 @@ export function CreateAgentFlow({
               </Button>
             </div>
           )}
-          <Button coolMode
+          <Button
             type="button"
             onClick={handleClose}
             className="self-start text-[10px] text-os-dim hover:text-os-green"
@@ -326,11 +326,11 @@ export function CreateAgentFlow({
 
       {step === "prompt" && selected && (
         <>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-left text-os-amber">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <span className="min-w-0 truncate text-left leading-snug text-os-amber">
               {selected.displayName}
             </span>
-            <Button coolMode
+            <Button
               type="button"
               onClick={() => setStep("pick")}
               className="text-[10px] text-os-dim hover:text-os-green"
@@ -348,27 +348,27 @@ export function CreateAgentFlow({
             onChange={(e) => setUserQuery(e.target.value)}
             rows={3}
             placeholder="Your answer…"
-            className="w-full resize-none rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
+            className="w-full resize-none rounded-md border border-os-border/70 bg-os-bg/40 px-3 py-2 text-sm text-os-green outline-none focus:border-os-amber/40"
             autoFocus
           />
           {error && (
             <p className="text-[11px] text-os-fault/90">{error}</p>
           )}
-          <div className="flex justify-end gap-1.5">
-            <Button coolMode
+          <div className="flex justify-end gap-2">
+            <Button
               type="button"
               onClick={handleClose}
-              className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim"
+              className="rounded-md border border-os-border/70 px-3 py-2 text-[10px] uppercase tracking-wide text-os-dim"
             >
               <span className="text-center text-os-dim">
                 Cancel
               </span>
             </Button>
-            <Button coolMode
+            <Button
               type="button"
               disabled={busy || !userQuery.trim() || !hydraConfigured}
               onClick={() => void runTemplateActivate()}
-              className="rounded-md border border-os-amber/40 bg-os-amber/15 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/25 disabled:opacity-40"
+              className="rounded-md border border-os-amber/40 bg-os-amber/15 px-3 py-2 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/25 disabled:opacity-40"
             >
               <span className="text-center text-os-amber">
                 {busy ? "Working…" : "Run & spawn"}
@@ -387,26 +387,26 @@ export function CreateAgentFlow({
             value={customRole}
             onChange={(e) => setCustomRole(e.target.value)}
             placeholder="Role description"
-            className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
+            className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-3 py-2 text-sm text-os-green outline-none focus:border-os-amber/40"
           />
           {error && (
             <p className="text-[11px] text-os-fault/90">{error}</p>
           )}
-          <div className="flex justify-end gap-1.5">
-            <Button coolMode
+          <div className="flex justify-end gap-2">
+            <Button
               type="button"
               onClick={() => setStep("pick")}
-              className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim"
+              className="rounded-md border border-os-border/70 px-3 py-2 text-[10px] uppercase tracking-wide text-os-dim"
             >
               <span className="text-center text-os-dim">
                 Back
               </span>
             </Button>
-            <Button coolMode
+            <Button
               type="button"
               disabled={busy || !customRole.trim() || !hydraConfigured}
               onClick={() => void runCustomCreate()}
-              className="rounded-md border border-os-amber/40 bg-os-amber/15 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber disabled:opacity-40"
+              className="rounded-md border border-os-amber/40 bg-os-amber/15 px-3 py-2 text-[10px] uppercase tracking-wide text-os-amber disabled:opacity-40"
             >
               <span className="text-center text-os-amber">
                 {busy ? "Creating…" : "Create agent"}
@@ -417,7 +417,7 @@ export function CreateAgentFlow({
       )}
 
       {step === "working" && (
-        <div className="py-4">
+        <div className="py-5">
           <span className="text-center text-os-amber">
             Running template action and spawning agent…
           </span>

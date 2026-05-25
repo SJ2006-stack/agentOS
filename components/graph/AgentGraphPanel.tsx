@@ -80,25 +80,27 @@ export function AgentGraphPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 text-[11px]">
-      {(showHeader || activeNodeIds.size > 0) && (
-        <div
-          className={cn(
-            "flex shrink-0 items-center gap-2",
-            showHeader ? "justify-between" : "justify-end"
-          )}
-        >
-          {showHeader && (
-            <span className="text-left text-os-dim">
-              agent graph
-            </span>
-          )}
-          {activeNodeIds.size > 0 && (
-            <span className="rounded border border-os-green/30 bg-os-green/5 px-1.5 py-0.5 text-left text-os-green">
-              {`${activeNodeIds.size} active`}
-            </span>
-          )}
-        </div>
-      )}
+      <div
+        className={cn(
+          "flex shrink-0 items-center gap-2",
+          showHeader ? "justify-between" : "justify-end"
+        )}
+      >
+        {showHeader ? (
+          <span className="text-left text-os-dim">
+            agent graph
+          </span>
+        ) : (
+          <span className="text-left text-[10px] text-os-dim/75">
+            watch the graph — edges pulse when agents run
+          </span>
+        )}
+        {activeNodeIds.size > 0 && (
+          <span className="rounded border border-os-green/30 bg-os-green/5 px-1.5 py-0.5 text-left text-os-green">
+            {`${activeNodeIds.size} active`}
+          </span>
+        )}
+      </div>
 
       {!hideCreateAgent && (
         <AgentGraphControls templates={templates} section="create" />

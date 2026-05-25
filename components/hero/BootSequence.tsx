@@ -73,7 +73,7 @@ export function HeroBootSequence({
             ✔ AgentOS ready
           </AnimatedSpan>
         </div>
-        <Button coolMode
+        <Button
           type="button"
           onClick={onSkip ?? onComplete}
           className="mt-6 text-[10px] uppercase tracking-wider text-hero-muted transition-colors hover:text-hero-cyan"

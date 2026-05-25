@@ -191,7 +191,7 @@ export const PipelineTimeline = memo(function PipelineTimeline() {
                   aria-hidden
                 />
               )}
-              <Button coolMode
+              <Button
                 type="button"
                 disabled={!isSelectable}
                 onClick={() => isSelectable && setSelectedStep(step)}

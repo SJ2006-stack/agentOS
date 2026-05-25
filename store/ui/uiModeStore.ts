@@ -6,16 +6,16 @@ export type UiMode = "hero" | "terminal" | "desktop" | "workspace";
 
 export const UI_MODE_LABELS: Record<UiMode, string> = {
   hero: "Hero",
-  terminal: "Shell",
+  terminal: "Advanced — raw shell",
   desktop: "Desktop launcher",
   workspace: "Agents workspace",
 };
 
 /** Short strip hint tying modes into one DevFactory OS mental model */
 export const UI_MODE_STRIP_HINTS: Partial<Record<UiMode, string>> = {
-  terminal: "Kernel commands · same dock everywhere",
+  terminal: "Advanced — raw shell · kernel stream",
   desktop: "Six apps · opens shell & workspace panels",
-  workspace: "Same icons as desktop · graph & memory",
+  workspace: "Graph & pipeline hero · spawn here first",
 };
 
 const UI_MODE_STORAGE_KEY = "devfactory-ui-mode";

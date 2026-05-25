@@ -51,7 +51,7 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           {DESKTOP_COMMAND_SUGGESTIONS.map(({ label, command }) => (
-            <Button coolMode
+            <Button
               key={command}
               type="button"
               onClick={() => submitCommand(command)}
@@ -90,7 +90,7 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
           <span className="hidden text-[10px] text-white/40 sm:inline">
             {selectedModelId.split("/").pop()}
           </span>
-          <Button coolMode
+          <Button
             type="submit"
             className="shrink-0 rounded-lg border border-white/25 bg-white/15 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-white transition-[background-color,box-shadow] hover:border-sky-400/40 hover:bg-sky-500/20 hover:shadow-[0_0_12px_rgba(56,189,248,0.2)]"
           >
@@ -130,7 +130,7 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
       <span className="hidden text-[10px] text-os-dim sm:inline">
         {selectedModelId.split("/").pop()}
       </span>
-      <Button coolMode
+      <Button
         type="submit"
         className="rounded-md border border-os-border/70 bg-os-bg/30 px-2 py-1 text-[10px] uppercase tracking-wide text-os-amber transition-[background-color,box-shadow] hover:border-os-amber/40 hover:bg-os-amber/10 hover:shadow-[0_0_10px_color-mix(in_srgb,var(--os-amber)_25%,transparent)]"
       >

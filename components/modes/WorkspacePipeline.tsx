@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MissionPipeline } from "@/components/pipeline/MissionPipeline";
+import { AGENT_SPAWNED_EVENT, type AgentSpawnedDetail } from "@/lib/os/shell-events";
 import { CPU_STEPS, type CpuStep } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
@@ -74,6 +75,23 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
   const completedSteps = useOsStore((s) => s.cpu.pipeline.completedSteps);
   const lastMessage = useOsStore((s) => s.cpu.lastMessage);
   const memorySlots = useOsStore((s) => s.memory.slots);
+  const [spawnTick, setSpawnTick] = useState(false);
+
+  useEffect(() => {
+    let clearId: ReturnType<typeof setTimeout> | undefined;
+    const onSpawn = (e: Event) => {
+      const detail = (e as CustomEvent<AgentSpawnedDetail>).detail;
+      if (!detail?.templateId) return;
+      setSpawnTick(true);
+      if (clearId) clearTimeout(clearId);
+      clearId = setTimeout(() => setSpawnTick(false), 1400);
+    };
+    window.addEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+    return () => {
+      window.removeEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+      if (clearId) clearTimeout(clearId);
+    };
+  }, []);
 
   const activeIndex = useMemo(() => {
     if (currentStep) return CPU_STEPS.indexOf(currentStep);
@@ -100,12 +118,17 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
     return STAGE_PLACEHOLDER[displayedStage];
   }, [displayedStage, currentStep, lastMessage, memorySlots]);
 
+  const dispatchIndex = CPU_STEPS.indexOf("DISPATCH");
+
   return (
     <section
       aria-label="Mission pipeline"
-      className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
+      className={cn(
+        "workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur",
+        spawnTick && "workspace-panel-highlight"
+      )}
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
+      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
         <span className="text-left text-os-dim">
           Mission Pipeline
         </span>
@@ -119,15 +142,18 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
         )}
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-5">
         <MissionPipeline
           stages={MISSION_PIPELINE_STAGES}
-          activeIndex={activeIndex}
+          activeIndex={
+            spawnTick && activeIndex < 0 ? dispatchIndex : activeIndex
+          }
+          pulseSpawn={spawnTick}
         />
 
         <div
           className={cn(
-            "workspace-stage-card mt-2 rounded-xl border bg-white/5 px-4 py-3 backdrop-blur",
+            "workspace-stage-card mt-3 rounded-xl border bg-white/5 px-5 py-4 backdrop-blur",
             currentStep
               ? "border-[color:var(--workspace-accent)]/45 workspace-stage-card--live"
               : "border-white/10"
@@ -152,7 +178,7 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.18 }}
-                    className="mt-2 flex items-center gap-2 text-[11px] text-os-amber"
+                    className="mt-3 flex items-center gap-2.5 text-[11px] text-os-amber"
                   >
                     <ThinkingDots />
                     <span className="text-left text-os-amber">
@@ -179,10 +205,10 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
                 Idle
               </span>
               <span className="text-left text-os-green/85">
-                Send a command to start a mission.
+                Spawn an agent on the graph or use Try this above.
               </span>
-              <span className="text-left text-os-dim">
-                Try submit or spawn an agent on the left.
+              <span className="text-left text-os-dim/80">
+                Pipeline advances as the kernel routes your task.
               </span>
             </div>
           )}

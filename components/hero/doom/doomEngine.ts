@@ -23,6 +23,12 @@ export interface Bullet {
   life: number;
 }
 
+export interface HitscanTracer {
+  endX: number;
+  endY: number;
+  life: number;
+}
+
 export interface GameState {
   map: Cell[][];
   width: number;
@@ -38,6 +44,7 @@ export interface GameState {
   bullets: Bullet[];
   shootCooldown: number;
   muzzleFlash: number;
+  hitscanTracer: HitscanTracer | null;
   keys: Record<string, boolean>;
   gameOver: boolean;
   won: boolean;
@@ -82,10 +89,28 @@ export function createGameState(
     bullets: [],
     shootCooldown: 0,
     muzzleFlash: 0,
+    hitscanTracer: null,
     keys: {},
     gameOver: false,
     won: false,
   };
+}
+
+/** Ray distance to nearest wall along angle (for bot wall avoidance). */
+export function raycastDistance(
+  map: Cell[][],
+  x: number,
+  y: number,
+  angle: number,
+  maxDist = 12
+): number {
+  const step = 0.12;
+  for (let d = step; d <= maxDist; d += step) {
+    const tx = x + Math.cos(angle) * d;
+    const ty = y + Math.sin(angle) * d;
+    if (isWall(map, tx, ty)) return Math.max(0, d - step);
+  }
+  return maxDist;
 }
 
 export function isWall(map: Cell[][], x: number, y: number): boolean {
@@ -129,6 +154,10 @@ export function hasLineOfSight(
 export function tickWorld(state: GameState, dt: number): void {
   state.shootCooldown = Math.max(0, state.shootCooldown - dt);
   state.muzzleFlash = Math.max(0, state.muzzleFlash - dt * 5);
+  if (state.hitscanTracer) {
+    state.hitscanTracer.life -= dt * 6;
+    if (state.hitscanTracer.life <= 0) state.hitscanTracer = null;
+  }
 
   for (const b of state.bullets) {
     b.x += b.vx * dt;
@@ -193,7 +222,7 @@ export function tickWorld(state: GameState, dt: number): void {
 export function applyInput(state: GameState, input: GameInput, dt: number): void {
   if (state.gameOver || state.won) return;
 
-  const moveSpeed = 2.6 * dt;
+  const moveSpeed = 2.05 * dt;
   const rotSpeed = 2.2 * dt;
 
   if (input.turnLeft) state.playerAngle -= rotSpeed;
@@ -238,6 +267,12 @@ export function applyInput(state: GameState, input: GameInput, dt: number): void
       vy: sin * 9,
       life: 1.2,
     });
+    const hitDist = raycastDistance(state.map, bx, by, state.playerAngle, 14);
+    state.hitscanTracer = {
+      endX: bx + cos * hitDist,
+      endY: by + sin * hitDist,
+      life: 1,
+    };
   }
 }
 
@@ -284,39 +319,66 @@ function wallTexColor(
   mapX: number,
   mapY: number,
   texCoord: number,
+  wallY: number,
   side: number,
   depth: number
 ): [number, number, number] {
   const variant = (mapX * 7 + mapY * 13) % 3;
-  const brick = Math.floor(texCoord * 8) % 2 === 0;
-  const mortar = Math.floor(texCoord * 16) % 4 === 0;
+  const row = Math.floor(wallY * 10) % 2;
+  const col = Math.floor(texCoord * 10) % 2;
+  const mortarH = wallY % 0.1 < 0.018;
+  const mortarV = texCoord % 0.1 < 0.018;
+  const mortar = mortarH || mortarV;
 
-  let r = 61;
-  let g = 61;
-  let b = 41;
+  let r = 78;
+  let g = 58;
+  let b = 38;
+  let r2 = 52;
+  let g2 = 42;
+  let b2 = 30;
   if (variant === 1) {
-    r = 52;
-    g = 48;
+    r = 68;
+    g = 54;
     b = 44;
+    r2 = 46;
+    g2 = 40;
+    b2 = 34;
   } else if (variant === 2) {
-    r = 72;
-    g = 58;
-    b = 42;
+    r = 88;
+    g = 68;
+    b = 44;
+    r2 = 58;
+    g2 = 48;
+    b2 = 32;
   }
+
+  const brickTone = (row + col) % 2 === 0;
+  let br = brickTone ? r : r2;
+  let bg = brickTone ? g : g2;
+  let bb = brickTone ? b : b2;
 
   if (mortar) {
-    r *= 0.55;
-    g *= 0.55;
-    b *= 0.55;
-  } else if (brick) {
-    r *= 1.06;
-    g *= 1.04;
-    b *= 1.02;
+    br *= 0.42;
+    bg *= 0.42;
+    bb *= 0.42;
   }
 
-  const fog = Math.max(0.22, 1 - (depth / MAX_DEPTH) * 0.78);
-  const sideShade = side === 1 ? 0.72 : 1;
-  return [r * fog * sideShade, g * fog * sideShade, b * fog * sideShade];
+  const fog = Math.max(0.2, 1 - (depth / MAX_DEPTH) * 0.8);
+  const sideShade = side === 1 ? 0.68 : 1;
+  return [br * fog * sideShade, bg * fog * sideShade, bb * fog * sideShade];
+}
+
+function floorTexColor(
+  mapX: number,
+  mapY: number,
+  depth: number
+): [number, number, number] {
+  const checker = (mapX + mapY) % 2 === 0;
+  const r = checker ? 42 : 34;
+  const g = checker ? 32 : 26;
+  const b = checker ? 22 : 18;
+  const fog = Math.max(0.25, 1 - (depth / MAX_DEPTH) * 0.75);
+  return [r * fog, g * fog, b * fog];
 }
 
 export function renderFrame(
@@ -330,10 +392,12 @@ export function renderFrame(
   const img = ctx.createImageData(w, viewH);
   const data = img.data;
 
+  const horizonBand = Math.max(2, Math.floor(halfH * 0.06));
+
   for (let y = 0; y < viewH; y++) {
     const isCeil = y < halfH;
     const t = isCeil ? y / halfH : (y - halfH) / (viewH - halfH);
-    const [r, g, b] = isCeil
+    let [r, g, b] = isCeil
       ? [
           CEIL_TOP[0] + (CEIL_BOT[0] - CEIL_TOP[0]) * t,
           CEIL_TOP[1] + (CEIL_BOT[1] - CEIL_TOP[1]) * t,
@@ -344,6 +408,12 @@ export function renderFrame(
           FLOOR_NEAR[1] + (FLOOR_FAR[1] - FLOOR_NEAR[1]) * t,
           FLOOR_NEAR[2] + (FLOOR_FAR[2] - FLOOR_NEAR[2]) * t,
         ];
+    if (isCeil && y >= halfH - horizonBand) {
+      const bandT = (y - (halfH - horizonBand)) / horizonBand;
+      r *= 0.55 + bandT * 0.2;
+      g *= 0.55 + bandT * 0.2;
+      b *= 0.55 + bandT * 0.2;
+    }
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
       data[i] = r;
@@ -433,14 +503,42 @@ export function renderFrame(
         ? state.playerY + depth * raySin
         : state.playerX + depth * rayCos;
     const texCoord = wallX - Math.floor(wallX);
+    const wallHitY = (y: number) => {
+      const rel = (y - start) / Math.max(1, end - start);
+      return rel;
+    };
 
     for (let y = start; y < end; y++) {
-      const stripe = y % 3 === 0 ? 0.97 : 1;
-      const [wr, wg, wb] = wallTexColor(hitMapX, hitMapY, texCoord, side, depth);
+      const stripe = y % 4 === 0 ? 0.94 : 1;
+      const [wr, wg, wb] = wallTexColor(
+        hitMapX,
+        hitMapY,
+        texCoord,
+        wallHitY(y),
+        side,
+        depth
+      );
       const i = (y * w + col) * 4;
       data[i] = wr * stripe;
       data[i + 1] = wg * stripe;
       data[i + 2] = wb * stripe;
+      data[i + 3] = 255;
+    }
+
+    for (let y = end; y < viewH; y++) {
+      const p = y - halfH;
+      const rowDist = halfH / Math.max(1, p);
+      const floorX = state.playerX + rowDist * rayCos;
+      const floorY = state.playerY + rowDist * raySin;
+      const [fr, fg, fb] = floorTexColor(
+        Math.floor(floorX),
+        Math.floor(floorY),
+        rowDist
+      );
+      const i = (y * w + col) * 4;
+      data[i] = fr;
+      data[i + 1] = fg;
+      data[i + 2] = fb;
       data[i + 3] = 255;
     }
   }
@@ -459,6 +557,10 @@ export function renderFrame(
     drawEnemySprite(ctx, state, sp, w, viewH, zBuffer, dirX, dirY, planeX, planeY);
   }
 
+  if (state.hitscanTracer && state.hitscanTracer.life > 0) {
+    drawHitscanTracer(ctx, state, w, viewH);
+  }
+
   if (state.muzzleFlash > 0) {
     const alpha = state.muzzleFlash * 0.55;
     ctx.fillStyle = `rgba(255,200,80,${alpha})`;
@@ -472,7 +574,94 @@ export function renderFrame(
   }
 
   drawWeapon(ctx, w, viewH, state.muzzleFlash);
+  drawMinimap(ctx, state, w);
   drawHud(ctx, state, w, h, viewH);
+}
+
+function drawHitscanTracer(
+  ctx: CanvasRenderingContext2D,
+  state: GameState,
+  w: number,
+  viewH: number
+): void {
+  const tr = state.hitscanTracer;
+  if (!tr || tr.life <= 0) return;
+
+  const halfH = viewH / 2;
+  const dx = tr.endX - state.playerX;
+  const dy = tr.endY - state.playerY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < 0.1) return;
+
+  const angle = Math.atan2(dy, dx) - state.playerAngle;
+  const screenX = w / 2 + Math.tan(angle) * (w / (2 * Math.tan(FOV / 2)));
+  const lineH = Math.min(viewH, Math.floor(viewH / dist));
+  const endY = halfH - lineH / 4;
+  const alpha = tr.life * 0.85;
+
+  ctx.strokeStyle = `rgba(255,220,80,${alpha})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(w / 2, viewH * 0.72);
+  ctx.lineTo(screenX, endY);
+  ctx.stroke();
+  ctx.strokeStyle = `rgba(255,255,200,${alpha * 0.35})`;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+}
+
+function drawMinimap(
+  ctx: CanvasRenderingContext2D,
+  state: GameState,
+  w: number
+): void {
+  const size = 56;
+  const pad = 8;
+  const mx = w - size - pad;
+  const my = pad;
+  const scale = size / Math.max(state.width, state.height);
+
+  ctx.fillStyle = "rgba(8,8,6,0.72)";
+  ctx.fillRect(mx - 2, my - 2, size + 4, size + 4);
+  ctx.strokeStyle = "rgba(100,90,60,0.6)";
+  ctx.strokeRect(mx - 2, my - 2, size + 4, size + 4);
+
+  for (let y = 0; y < state.height; y++) {
+    for (let x = 0; x < state.width; x++) {
+      if (state.map[y][x] === 1) {
+        ctx.fillStyle = "#4a4038";
+        ctx.fillRect(mx + x * scale, my + y * scale, scale, scale);
+      }
+    }
+  }
+
+  for (const e of state.enemies) {
+    if (!e.alive) continue;
+    ctx.fillStyle = "#cc2222";
+    ctx.fillRect(
+      mx + e.x * scale - 1,
+      my + e.y * scale - 1,
+      3,
+      3
+    );
+  }
+
+  ctx.fillStyle = "#00ffb2";
+  ctx.fillRect(
+    mx + state.playerX * scale - 2,
+    my + state.playerY * scale - 2,
+    4,
+    4
+  );
+
+  ctx.strokeStyle = "#00ffb2";
+  ctx.beginPath();
+  ctx.moveTo(mx + state.playerX * scale, my + state.playerY * scale);
+  ctx.lineTo(
+    mx + (state.playerX + Math.cos(state.playerAngle) * 0.8) * scale,
+    my + (state.playerY + Math.sin(state.playerAngle) * 0.8) * scale
+  );
+  ctx.stroke();
 }
 
 function drawEnemySprite(
@@ -495,7 +684,8 @@ function drawEnemySprite(
   if (transformY <= 0.25) return;
 
   const spriteScreenX = Math.floor((w / 2) * (1 + transformX / transformY));
-  const spriteH = Math.abs(Math.floor(viewH / transformY));
+  const distScale = Math.min(2.4, 1.15 / Math.max(0.35, transformY));
+  const spriteH = Math.abs(Math.floor((viewH / transformY) * distScale));
   const spriteW = Math.floor(spriteH * 0.72);
   const drawStartY = Math.max(0, -spriteH / 2 + viewH / 2);
   const drawEndY = Math.min(viewH, spriteH / 2 + viewH / 2);
@@ -618,7 +808,9 @@ function drawHud(
   ctx.fillStyle = "#3d3d29";
   ctx.fillRect(0, barY, w, barH);
   ctx.fillStyle = "#2a2a1e";
-  ctx.fillRect(0, barY, w, 3);
+  ctx.fillRect(0, barY, w, 4);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fillRect(0, barY + 4, w, 1);
 
   const hp = Math.ceil(state.health);
   const arm = Math.ceil(state.armor);

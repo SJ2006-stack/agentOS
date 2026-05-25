@@ -82,7 +82,6 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
         >
           <Button
             type="button"
-            coolMode={false}
             className="absolute inset-0 bg-[#080C14]/88 backdrop-blur-sm"
             aria-label="Close demo"
             onClick={onClose}
@@ -105,7 +104,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                   agentos · doom sector
                 </span>
               </div>
-              <Button coolMode
+              <Button
                 type="button"
                 onClick={onClose}
                 className="rounded border border-[#1E2D3D] px-2 py-1 transition-colors hover:border-[#00FFB2]/40"
@@ -126,7 +125,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                     Raycaster sector demo — pick how the agent participates.
                   </span>
                   <div className="grid w-full max-w-lg gap-3 sm:grid-cols-2">
-                    <Button coolMode
+                    <Button
                       type="button"
                       onClick={startAutoplay}
                       className="doom-demo-choice-btn group rounded-lg border border-[#00FFB2]/35 bg-[#080C14] p-4 text-left transition hover:border-[#00FFB2]"
@@ -138,7 +137,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                         Autonomous bot — pathfinding, combat, live narration sidebar.
                       </span>
                     </Button>
-                    <Button coolMode
+                    <Button
                       type="button"
                       onClick={startBuildFlow}
                       className="doom-demo-choice-btn group rounded-lg border border-[#8B5CF6]/35 bg-[#080C14] p-4 text-left transition hover:border-[#8B5CF6]"
@@ -161,7 +160,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                   </span>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {DOOM_LEVEL_TEMPLATES.map((t) => (
-                      <Button coolMode
+                      <Button
                         key={t.id}
                         type="button"
                         onClick={() => onPickTemplate(t.id)}
@@ -176,7 +175,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                       </Button>
                     ))}
                   </div>
-                  <Button coolMode
+                  <Button
                     type="button"
                     onClick={() => setScreen("choice")}
                     className="self-start font-mono text-[10px] text-[#94A3B8] underline-offset-2 hover:underline"
@@ -225,7 +224,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
 
             {screen !== "choice" ? (
               <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[#1E2D3D] px-4 py-2">
-                <Button coolMode
+                <Button
                   type="button"
                   onClick={() => {
                     if (inGame) setScreen("choice");

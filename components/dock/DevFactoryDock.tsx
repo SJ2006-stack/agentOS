@@ -12,7 +12,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DockModePreview } from "@/components/modes/DockModePreview";
-import { CoolMode, DEFAULT_COOL_MODE_OPTIONS } from "@/components/ui/cool-mode";
 import { cn } from "@/lib/utils";
 import {
   dispatchCreateAgentOpen,
@@ -63,21 +62,20 @@ function ModeDockItem({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <CoolMode options={DEFAULT_COOL_MODE_OPTIONS} className="inline-flex">
-          <DockIcon
-            role="button"
-            tabIndex={0}
-            aria-label={label}
-            aria-pressed={active}
-            onClick={onClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick();
-              }
-            }}
-            className={cn(
-              "relative overflow-visible transition-[background-color,box-shadow,border-color] duration-300",
+        <DockIcon
+          role="button"
+          tabIndex={0}
+          aria-label={label}
+          aria-pressed={active}
+          onClick={onClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onClick();
+            }
+          }}
+          className={cn(
+            "relative overflow-visible transition-[background-color,box-shadow,border-color] duration-300",
             active
               ? [
                   "border-os-amber/50 bg-gradient-to-b from-os-amber/15 to-os-green/10",
@@ -85,8 +83,8 @@ function ModeDockItem({
                   "ring-2 ring-os-amber/80 ring-offset-1 ring-offset-os-panel/80",
                 ].join(" ")
               : "hover:border-os-green/20"
-            )}
-          >
+          )}
+        >
           {active && (
             <span
               className="pointer-events-none absolute inset-x-1 top-0 h-0.5 rounded-full bg-gradient-to-r from-transparent via-os-amber to-transparent opacity-90"
@@ -107,8 +105,7 @@ function ModeDockItem({
               aria-hidden
             />
           )}
-          </DockIcon>
-        </CoolMode>
+        </DockIcon>
       </TooltipTrigger>
       <TooltipContent side="top" className="border-0 bg-transparent p-0 shadow-none">
         <DockModePreview mode={mode} />
@@ -133,22 +130,20 @@ function UtilityDockItem({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <CoolMode options={DEFAULT_COOL_MODE_OPTIONS} className="inline-flex">
-          <DockIcon
-            role="button"
-            tabIndex={0}
-            aria-label={label}
-            onClick={onClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick();
-              }
-            }}
-          >
-            {children}
-          </DockIcon>
-        </CoolMode>
+        <DockIcon
+          role="button"
+          tabIndex={0}
+          aria-label={label}
+          onClick={onClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onClick();
+            }
+          }}
+        >
+          {children}
+        </DockIcon>
       </TooltipTrigger>
       <TooltipContent side="top">{label}</TooltipContent>
     </Tooltip>
@@ -223,7 +218,7 @@ export function DevFactoryDock({
           {spawnOpen && (
             <div
               ref={spawnRef}
-              className="absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 rounded-xl border border-os-border/70 bg-os-panel/80 p-1 shadow-2xl shadow-os-bg/50 ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl"
+              className="absolute bottom-full left-1/2 z-[60] mb-2 w-48 -translate-x-1/2 rounded-xl border border-os-border/70 bg-os-panel/80 p-1 shadow-2xl shadow-os-bg/50 ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl"
             >
               {[
                 {
@@ -263,10 +258,10 @@ export function DevFactoryDock({
                   },
                 },
               ].map((item) => (
-                <Button coolMode
+                <Button
                   key={item.label}
                   type="button"
-                  className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
+                  className="block w-full rounded-md px-2 py-1.5 text-left text-xs leading-snug text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
                   onClick={item.action}
                 >
                   <span className="text-left text-os-green">

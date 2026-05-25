@@ -106,32 +106,26 @@ function OrchestrationStatusStrip({
       )}
       aria-label="Agent orchestration status"
     >
-      <Button coolMode
+      <Button
         type="button"
         onClick={openWorkspace}
-        className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-os-panel/70 sm:px-4"
+        className="flex w-full min-h-[2.25rem] items-center gap-2 px-3 py-2 text-left leading-normal transition-colors hover:bg-os-panel/70 sm:gap-3 sm:px-4"
         title="Open agents workspace"
       >
-        <span className="shrink-0 text-left text-os-dim">
+        <span className="shrink-0 text-left text-[11px] leading-none text-os-dim">
           Orchestration
         </span>
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-os-green/90">
-          <span className="inline text-left text-os-green">
-            {agentLabel}
-          </span>
+        <span className="flex min-w-0 flex-1 items-center gap-1 font-mono text-[11px] leading-normal text-os-green/90">
+          <span className="shrink-0 text-os-green">{agentLabel}</span>
           {currentTask ? (
             <>
-              <span className="text-os-dim/70"> · </span>
-              <span className="inline text-left text-os-green/75">
-                {currentTask}
-              </span>
+              <span className="shrink-0 text-os-dim/70">·</span>
+              <span className="min-w-0 truncate text-os-green/75">{currentTask}</span>
             </>
           ) : isIdle ? (
             <>
-              <span className="text-os-dim/70"> · </span>
-              <span className="inline text-left text-os-dim/80">
-                idle
-              </span>
+              <span className="shrink-0 text-os-dim/70">·</span>
+              <span className="shrink-0 text-os-dim/80">idle</span>
             </>
           ) : null}
         </span>
@@ -355,7 +349,7 @@ function FullscreenHero({ className }: { className?: string }) {
         };
 
   const handlePrimaryCta = () => {
-    setMode("terminal");
+    setMode("workspace");
     dispatchShellCommand("spawn agent kernel.orchestrator");
   };
 
@@ -417,15 +411,18 @@ function FullscreenHero({ className }: { className?: string }) {
         </motion.div>
 
         <motion.div {...fadeUp(1)}>
-          <span className="text-center" style={{ lineHeight: 1.05 }}>
+          <h1 className="agentos-hero-title text-center font-mono font-bold tracking-tight text-white">
             AgentOS
-          </span>
+          </h1>
         </motion.div>
 
         <motion.div {...fadeUp(2)} className="mt-5 max-w-2xl">
-          <span className="text-center" style={{ color: PALETTE.text }}>
-            Spawn agents. Deploy workflows. Watch them think.
-          </span>
+          <p
+            className="text-center text-base leading-relaxed sm:text-lg"
+            style={{ color: PALETTE.text }}
+          >
+            Orchestration you can see — graph, agents, and memory lanes, not a hidden terminal wall.
+          </p>
         </motion.div>
 
         <motion.div
@@ -455,7 +452,7 @@ function FullscreenHero({ className }: { className?: string }) {
           className="mt-10 grid w-full max-w-3xl grid-cols-1 items-center gap-8 lg:max-w-5xl lg:grid-cols-2 lg:gap-12"
         >
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-end">
-            <Button coolMode
+            <Button
               type="button"
               onClick={handlePrimaryCta}
               className={cn(
@@ -483,7 +480,7 @@ function FullscreenHero({ className }: { className?: string }) {
               </span>
             </Button>
 
-            <Button coolMode
+            <Button
               type="button"
               onClick={handleSecondaryCta}
               className="inline-flex items-center justify-center rounded-lg border bg-transparent px-6 py-3 font-mono text-sm tracking-wide transition-colors duration-200 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2"
@@ -508,7 +505,7 @@ function FullscreenHero({ className }: { className?: string }) {
 
         <motion.div
           {...fadeUp(5)}
-          className="agentos-hero-stats mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-[11px] sm:gap-x-6 sm:text-xs"
+          className="agentos-hero-stats mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-2 py-1 font-mono text-[11px] leading-normal sm:gap-x-6 sm:text-xs"
           aria-label="Platform stats"
         >
           <StatNumber to={2847} format={formatAgents} reduce={reduce} />
@@ -563,7 +560,7 @@ function FullscreenHero({ className }: { className?: string }) {
             style={{ color: PALETTE.text, caretColor: PALETTE.accent }}
             aria-label="Type a command"
           />
-          <Button coolMode
+          <Button
             type="submit"
             className="agentos-run-glow inline-flex shrink-0 items-center gap-1 rounded-md border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] transition-transform duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
             style={
@@ -582,11 +579,12 @@ function FullscreenHero({ className }: { className?: string }) {
             <span aria-hidden>↵</span>
           </Button>
         </div>
-        <div className="mt-2" style={{ color: PALETTE.text, opacity: 0.55 }}>
-          <span className="text-center">
-            press enter to dispatch · routed through kernel shell
-          </span>
-        </div>
+        <p
+          className="mt-2 text-center text-[11px] leading-snug sm:text-xs"
+          style={{ color: PALETTE.text, opacity: 0.55 }}
+        >
+          press enter to dispatch · routed through kernel shell
+        </p>
       </motion.form>
 
       <DoomDemoModal open={doomDemoOpen} onClose={() => setDoomDemoOpen(false)} />

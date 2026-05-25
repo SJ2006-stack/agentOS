@@ -33,7 +33,7 @@ const DoomDemoModal = dynamic(
 );
 
 const TAGLINE =
-  "Spawn AI agents from a terminal and watch them orchestrate tasks across a live agent graph.";
+  "Orchestration you can see — spawn agents, watch the graph light up, pipeline move, and memory lanes fill.";
 
 export function LandingPage() {
   const router = useRouter();
@@ -82,7 +82,6 @@ export function LandingPage() {
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <MotionButton
-            coolMode
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -95,7 +94,6 @@ export function LandingPage() {
           </MotionButton>
 
           <MotionButton
-            coolMode
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

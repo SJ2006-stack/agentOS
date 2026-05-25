@@ -2,11 +2,16 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import {
+  AGENT_SPAWNED_EVENT,
+  type AgentSpawnedDetail,
+} from "@/lib/os/shell-events";
+import { getAgentDisplayName } from "@/lib/os/agent-graph-data";
 import { CPU_STEPS, type CpuStep, type IoToolCall } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 
-type FeedKind = "research" | "memory" | "complete" | "dispatch" | "fault";
+type FeedKind = "research" | "memory" | "complete" | "dispatch" | "spawn" | "fault";
 
 interface FeedEntry {
   id: string;
@@ -31,14 +36,16 @@ const KIND_STYLE: Record<FeedKind, string> = {
   memory: "text-violet-300",
   complete: "text-emerald-300",
   dispatch: "text-amber-300",
+  spawn: "text-amber-300",
   fault: "text-red-300",
 };
 
 const KIND_LABEL: Record<FeedKind, string> = {
   research: "Research",
-  memory: "Planning",
-  complete: "Complete",
+  memory: "Memory",
+  complete: "Stage",
   dispatch: "Dispatch",
+  spawn: "Spawn",
   fault: "Fault",
 };
 
@@ -56,7 +63,17 @@ function shortenText(text: string, maxLen = 80): string {
   return `${trimmed.slice(0, maxLen - 1)}…`;
 }
 
+function humanizeToolName(tool: string): string {
+  return tool.replace(/_/g, " ").replace(/\./g, " · ");
+}
+
 function describeIoCall(event: IoToolCall): string {
+  const layerLabel =
+    event.layer === "exec"
+      ? "executing"
+      : event.layer === "fs"
+        ? "reading files"
+        : "researching";
   const argValues = Object.values(event.args ?? {}).filter(
     (v) => typeof v === "string" || typeof v === "number"
   );
@@ -65,8 +82,12 @@ function describeIoCall(event: IoToolCall): string {
       ? argValues[0]
       : typeof argValues[0] === "number"
         ? String(argValues[0])
-        : event.layer;
-  return shortenText(`${event.tool} · ${detail}`, 80);
+        : null;
+  const toolLabel = humanizeToolName(event.tool);
+  if (detail) {
+    return shortenText(`${layerLabel} — ${toolLabel}: ${detail}`, 88);
+  }
+  return shortenText(`${layerLabel} — ${toolLabel}`, 80);
 }
 
 function ioKindFor(event: IoToolCall): FeedKind {
@@ -85,6 +106,8 @@ function ioIconFor(kind: FeedKind): string {
       return "✅";
     case "dispatch":
       return "🚀";
+    case "spawn":
+      return "⚡";
     case "fault":
       return "⚠️";
   }
@@ -93,6 +116,15 @@ function ioIconFor(kind: FeedKind): string {
 function eventKeyForIo(event: IoToolCall): string {
   return `io:${event.ts}:${event.layer}:${event.tool}`;
 }
+
+const STAGE_VERB: Record<CpuStep, string> = {
+  INTAKE: "intake",
+  PLAN: "plan",
+  ROUTE: "route",
+  DISPATCH: "dispatch",
+  VERIFY: "verify",
+  COMMIT: "commit",
+};
 
 export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
   const ioEvents = useOsStore((s) => s.io.events);
@@ -196,7 +228,9 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
         kind: "complete",
         icon: ioIconFor("complete"),
         prefix: KIND_LABEL.complete,
-        text: next ? `${step} → ${next}` : `${step} finished`,
+        text: next
+          ? `Pipeline: ${STAGE_VERB[step]} → ${next}`
+          : `Pipeline: ${STAGE_VERB[step]} complete`,
         ts: Date.now(),
       };
     });
@@ -239,6 +273,28 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
       ]);
     }
   }, [heartbeatStatus]);
+
+  useEffect(() => {
+    const onSpawn = (e: Event) => {
+      const detail = (e as CustomEvent<AgentSpawnedDetail>).detail;
+      const templateId = detail?.templateId;
+      if (!templateId) return;
+      if (!initialisedRef.current) return;
+      const label = getAgentDisplayName(templateId, detail.role);
+      push([
+        {
+          id: nextFeedId(),
+          kind: "spawn",
+          icon: ioIconFor("spawn"),
+          prefix: KIND_LABEL.spawn,
+          text: `${label} joined the graph — watch edges light up`,
+          ts: Date.now(),
+        },
+      ]);
+    };
+    window.addEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+    return () => window.removeEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+  }, []);
 
   useEffect(() => {
     initialisedRef.current = true;
@@ -286,8 +342,11 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="workspace-feed-row flex items-start gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5"
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className={cn(
+                "workspace-feed-row flex items-start gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5",
+                entry.kind === "spawn" && "workspace-feed-row--spawn"
+              )}
             >
               <span aria-hidden className="shrink-0 text-[13px] leading-none">
                 {entry.icon}

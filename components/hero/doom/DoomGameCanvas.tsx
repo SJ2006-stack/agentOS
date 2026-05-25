@@ -125,8 +125,11 @@ export function DoomGameCanvas({
             botTickRef.current += 1;
             lastBotMsRef.current += BOT_TICK_MS;
 
-            if (onNarration && botTickRef.current % 5 === 0) {
-              onNarration(pickNarrationLine(botTickRef.current, state));
+            if (onNarration) {
+              const line = pickNarrationLine(botTickRef.current, state);
+              if (line.startsWith("[agent]") || botTickRef.current % 5 === 0) {
+                onNarration(line);
+              }
             }
           }
 
@@ -183,7 +186,7 @@ export function DoomGameCanvas({
         </p>
       ) : (
         <p className="doom-demo-controls-hint font-mono text-[10px] tracking-wide text-[#94A3B8]/70">
-          Agent autopilot · decisions every {BOT_TICK_MS}ms
+          Agent autopilot · live AI every {BOT_TICK_MS}ms
         </p>
       )}
     </div>

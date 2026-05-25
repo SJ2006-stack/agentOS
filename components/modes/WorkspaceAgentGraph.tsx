@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { AGENT_SPAWNED_EVENT, type AgentSpawnedDetail } from "@/lib/os/shell-events";
 import {
   AGENT_GRAPH,
   getAgentDescription,
@@ -14,12 +15,14 @@ import {
   type AgentSignature,
 } from "@/lib/os/agent-signature";
 import { dispatchShellCommand } from "@/lib/os/shell-events";
+import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 
 const NODE_W = 40;
-const NODE_H = 18;
+const NODE_H = 20;
 const NODE_ANCHOR_X = NODE_W / 2;
 const NODE_ANCHOR_Y = NODE_H / 2;
+const NODE_LABEL_Y = NODE_ANCHOR_Y + 0.5;
 
 const PULSE_GRADIENT: Record<AgentSignature, string> = {
   research: "workspace-pulse-research",
@@ -116,6 +119,36 @@ function formatActiveRoute(fromId: string, toId: string, templates: GraphTemplat
 
 function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] }) {
   const activeNodeIds = useOsStore((s) => s.graph.activeNodeIds);
+  const [spawnPulseIds, setSpawnPulseIds] = useState<ReadonlySet<string>>(
+    () => new Set()
+  );
+
+  useEffect(() => {
+    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const onSpawn = (e: Event) => {
+      const templateId = (e as CustomEvent<AgentSpawnedDetail>).detail?.templateId;
+      if (!templateId) return;
+      setSpawnPulseIds((prev) => new Set(prev).add(templateId));
+      const existing = timers.get(templateId);
+      if (existing) clearTimeout(existing);
+      timers.set(
+        templateId,
+        setTimeout(() => {
+          setSpawnPulseIds((prev) => {
+            const next = new Set(prev);
+            next.delete(templateId);
+            return next;
+          });
+          timers.delete(templateId);
+        }, 1600)
+      );
+    };
+    window.addEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+    return () => {
+      window.removeEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+      for (const t of timers.values()) clearTimeout(t);
+    };
+  }, []);
 
   const spawnTemplate = useCallback((templateId: string) => {
     const command = `spawn agent ${templateId}`;
@@ -145,10 +178,16 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      <div className="workspace-graph-host relative min-h-[220px] flex-1 overflow-auto rounded-lg border border-os-border/60 bg-os-bg/40 p-3">
+      <div
+        className={cn(
+          "workspace-graph-host relative min-h-[220px] flex-1 overflow-auto rounded-lg border border-os-border/60 bg-os-bg/40 p-3",
+          activeNodeIds.size > 0 && "workspace-graph-host--live",
+          spawnPulseIds.size > 0 && "workspace-graph-pulse"
+        )}
+      >
         <svg
-          viewBox="-2 -2 220 78"
-          className="workspace-graph-svg h-full min-h-[220px] w-full"
+          viewBox="-2 -2 220 84"
+          className="workspace-graph-svg h-full min-h-[220px] w-full overflow-visible"
           preserveAspectRatio="xMidYMid meet"
           aria-label="Agent orchestration graph"
         >
@@ -180,7 +219,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
             ))}
           </defs>
 
-          <rect x="-2" y="-2" width="220" height="78" fill="url(#workspace-grid)" className="workspace-graph-grid" />
+          <rect x="-2" y="-2" width="220" height="84" fill="url(#workspace-grid)" className="workspace-graph-grid" />
 
           <g className="workspace-graph-edges-static" aria-hidden>
             {edges.map(({ key, x1, y1, x2, y2, lit, sig, isMemoryHub }) => (
@@ -226,6 +265,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
             {builtinTemplates.map((t) => {
               const pos = AGENT_GRAPH_LAYOUT[t.id] ?? { x: 10, y: 10 };
               const active = activeNodeIds.has(t.id);
+              const spawning = spawnPulseIds.has(t.id);
               const sig = resolveAgentSignature(t.id, t.role);
               const stroke = signatureStroke(sig);
               const label = getAgentDisplayName(t.id, t.role);
@@ -234,7 +274,11 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                 <g
                   key={t.id}
                   transform={`translate(${pos.x}, ${pos.y})`}
-                  className="workspace-graph-node cursor-pointer"
+                  className={cn(
+                    "workspace-graph-node cursor-pointer",
+                    active && "workspace-node-active",
+                    spawning && "workspace-node-heartbeat"
+                  )}
                   role="button"
                   tabIndex={0}
                   aria-label={`Spawn ${label}`}
@@ -246,16 +290,19 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     }
                   }}
                 >
-                  {active && (
+                  {(active || spawning) && (
                     <rect
                       width={NODE_W}
                       height={NODE_H}
                       rx={1.5}
-                      className="workspace-graph-node-halo"
+                      className={cn(
+                        "workspace-graph-node-halo",
+                        spawning && "workspace-graph-node-halo--spawn"
+                      )}
                       fill="none"
-                      stroke={stroke}
-                      strokeWidth={2}
-                      strokeOpacity={0.35}
+                      stroke={spawning ? "var(--os-amber)" : stroke}
+                      strokeWidth={spawning ? 2.4 : 2}
+                      strokeOpacity={spawning ? 0.75 : 0.5}
                     />
                   )}
                   <rect
@@ -263,8 +310,9 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     height={NODE_H}
                     rx={1.5}
                     fill={SIGNATURE_FILL[sig]}
-                    stroke={active ? stroke : "var(--os-border)"}
-                    strokeWidth={active ? 1.2 : 0.65}
+                    stroke={active || spawning ? stroke : "var(--os-border)"}
+                    strokeWidth={active || spawning ? 1.35 : 0.65}
+                    className={spawning ? "workspace-graph-node-body--spawn" : undefined}
                   />
                   <rect
                     x={0.5}
@@ -276,12 +324,13 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     fillOpacity={active ? 0.9 : 0.45}
                   />
                   <text
-                    x={NODE_ANCHOR_X + 1}
-                    y={11.5}
+                    x={NODE_ANCHOR_X}
+                    y={NODE_LABEL_Y}
                     textAnchor="middle"
+                    dominantBaseline="middle"
                     fill={active ? SIGNATURE_LABEL[sig] : "var(--os-green)"}
                     fillOpacity={active ? 1 : 0.78}
-                    fontSize={6}
+                    fontSize={5.5}
                     fontFamily="var(--font-mono)"
                     fontWeight={600}
                     letterSpacing="0.02em"
@@ -294,6 +343,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
             })}
             {customTemplates.map((t, i) => {
               const active = activeNodeIds.has(t.id);
+              const spawning = spawnPulseIds.has(t.id);
               const sig = resolveAgentSignature(t.id, t.role);
               const stroke = signatureStroke(sig);
               const label = getAgentDisplayName(t.id, t.role);
@@ -301,8 +351,12 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
               return (
                 <g
                   key={t.id}
-                  transform={`translate(${8 + (i % 4) * 44}, ${58})`}
-                  className="workspace-graph-node cursor-pointer"
+                  transform={`translate(${8 + (i % 4) * 44}, ${64})`}
+                  className={cn(
+                    "workspace-graph-node cursor-pointer",
+                    active && "workspace-node-active",
+                    spawning && "workspace-node-heartbeat"
+                  )}
                   role="button"
                   tabIndex={0}
                   aria-label={`Spawn ${label}`}
@@ -314,15 +368,32 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     }
                   }}
                 >
+                  {(active || spawning) && (
+                    <rect
+                      width={NODE_W}
+                      height={NODE_H}
+                      rx={1.5}
+                      className={cn(
+                        "workspace-graph-node-halo",
+                        spawning && "workspace-graph-node-halo--spawn"
+                      )}
+                      fill="none"
+                      stroke={spawning ? "var(--os-amber)" : stroke}
+                      strokeWidth={2}
+                      strokeOpacity={spawning ? 0.7 : 0.4}
+                      strokeDasharray="2.5 1.2"
+                    />
+                  )}
                   <rect
                     width={NODE_W}
                     height={NODE_H}
                     rx={1.5}
                     fill="transparent"
                     stroke={stroke}
-                    strokeWidth={active ? 1.2 : 0.85}
+                    strokeWidth={active || spawning ? 1.35 : 0.85}
                     strokeDasharray="2.5 1.2"
-                    strokeOpacity={active ? 1 : 0.45}
+                    strokeOpacity={active || spawning ? 1 : 0.45}
+                    className={spawning ? "workspace-graph-node-body--spawn" : undefined}
                   />
                   <rect
                     x={0.5}
@@ -334,12 +405,13 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     fillOpacity={active ? 0.85 : 0.4}
                   />
                   <text
-                    x={NODE_ANCHOR_X + 1}
-                    y={11.5}
+                    x={NODE_ANCHOR_X}
+                    y={NODE_LABEL_Y}
                     textAnchor="middle"
+                    dominantBaseline="middle"
                     fill={active ? "var(--os-amber)" : "var(--os-green)"}
                     fillOpacity={active ? 1 : 0.78}
-                    fontSize={6}
+                    fontSize={5.5}
                     fontFamily="var(--font-mono)"
                     fontWeight={600}
                     letterSpacing="0.02em"

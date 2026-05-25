@@ -229,7 +229,7 @@ function DesktopWindow({
         <span className="text-left text-os-green/90">
           {title}
         </span>
-        <Button coolMode
+        <Button
           type="button"
           onClick={onClose}
           className="rounded px-2 py-0.5 text-[10px] text-white/60 transition-colors hover:bg-white/10 hover:text-white"
@@ -409,7 +409,7 @@ export function DesktopMode() {
                 const accent = DESKTOP_ICON_ACCENTS[item.id];
                 const { Icon } = item;
                 return (
-                  <Button coolMode
+                  <Button
                     key={item.id}
                     type="button"
                     onClick={() => onIconClick(item)}
@@ -626,7 +626,7 @@ export function DesktopMode() {
             })
           )}
         </ul>
-        <Button coolMode
+        <Button
           type="button"
           className="mt-3 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] hover:bg-white/15"
           onClick={() => dispatchShellCommand("spawn agent cpu.plan")}
@@ -638,7 +638,7 @@ export function DesktopMode() {
       </DesktopWindow>
 
       <div className="desktop-taskbar absolute inset-x-0 bottom-0 z-40 flex h-12 items-center gap-2 px-3 backdrop-blur-xl">
-        <Button coolMode
+        <Button
           type="button"
           className="flex size-9 items-center justify-center rounded-lg border border-os-green/25 bg-gradient-to-b from-os-green/25 to-os-panel/80 shadow-[0_0_12px_color-mix(in_srgb,var(--os-green)_20%,transparent)]"
           aria-label="Start — open terminal"
