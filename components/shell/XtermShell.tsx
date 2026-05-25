@@ -197,6 +197,7 @@ export function XtermShell({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ command: line, modelId }),
+          cache: "no-store",
         });
 
         if (gen !== commandGenRef.current || termRef.current !== activeTerm) {

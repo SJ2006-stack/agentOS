@@ -63,10 +63,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const needsLlm =
-    parsed.type === "submit" ||
-    parsed.type === "kill" ||
-    parsed.type === "unknown";
+  const needsLlm = parsed.type === "kill" || parsed.type === "unknown";
 
   if (needsLlm && !isAgentLlmConfigured()) {
     return new Response(

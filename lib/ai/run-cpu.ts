@@ -65,7 +65,7 @@ async function runToolOnlyStep(
     case "PLAN":
       await byName.plan_task?.execute({
         plan: task.slice(0, 200),
-        steps: CPU_STEPS as unknown as string[],
+        steps: [...CPU_STEPS],
       });
       break;
     case "ROUTE":
@@ -105,7 +105,7 @@ async function runToolOnlyStep(
 async function broadcastStep(
   step: CpuStep,
   taskId: string,
-  completedSteps: CpuStep[],
+  completedSteps: string[],
   phase: "start" | "complete",
   message?: string
 ): Promise<void> {
@@ -118,7 +118,7 @@ async function broadcastStep(
   const pipeline = {
     currentStep: phase === "start" ? step : null,
     taskId,
-    completedSteps,
+    completedSteps: completedSteps as CpuStep[],
   };
   await Promise.all([
     broadcastOsEvent(
