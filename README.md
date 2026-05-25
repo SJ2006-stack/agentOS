@@ -146,7 +146,8 @@ npx vercel
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Client subscribe |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server broadcast only |
 | `NEXT_PUBLIC_APP_URL` | No | Production URL for server-side callbacks |
-| `DEMO_DEPLOY_URL` | No | URL shown when demo build completes (falls back to `NEXT_PUBLIC_APP_URL`) |
+| `DEMO_DEPLOY_URL` | No | URL shown when demo build completes (server); auto-detects `VERCEL_URL` on Vercel |
+| `NEXT_PUBLIC_DEMO_DEPLOY_URL` | No | Same URL for client deploy modal; set with `DEMO_DEPLOY_URL` on Vercel |
 | `TAVILY_API_KEY` | No | Web search for Researcher create-agent flow (preferred) |
 | `SERPER_API_KEY` | No | Web search fallback if Tavily unset |
 | `NEXT_PUBLIC_ENABLE_DOOM_DEMO` | No | `1` / `0` — DOOM hero demo; on in dev when unset |
@@ -160,7 +161,10 @@ Never commit real API keys — copy from `.env.example` into `.env.local` or Ver
 The kernel heartbeat endpoint is used by the shell (`useKernelHeartbeat`) and is suitable for uptime probes:
 
 ```bash
+# POST (matches shell client poll)
 curl -sS -X POST https://<your-host>/api/os/heartbeat
+# GET (load balancers that only allow GET)
+curl -sS https://<your-host>/api/os/heartbeat
 # → {"ok":true,"uptimeMs":<number>}
 ```
 

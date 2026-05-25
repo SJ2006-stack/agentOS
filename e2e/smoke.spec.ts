@@ -68,7 +68,9 @@ test.describe("DevFactory OS smoke", () => {
     await overlay.getByRole("button", { name: "Continue" }).click();
 
     await expect(overlay.getByRole("button", { name: "Templates" })).toBeVisible();
-    await expect(overlay.getByText(/No spawnable templates|cpu\./i)).toBeVisible();
+    await expect(
+      overlay.getByRole("button", { name: /Planner cpu\.plan/i })
+    ).toBeVisible();
   });
 
   test("shell status command does not crash the page", async ({ page }) => {

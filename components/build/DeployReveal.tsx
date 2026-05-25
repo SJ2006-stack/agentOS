@@ -1,6 +1,9 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  resolveDemoDeployUrlForDisplay,
+} from "@/lib/config/deploy-url";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Copy, ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +40,15 @@ function QrPlaceholder({ url }: { url: string }) {
 }
 
 export const DeployReveal = memo(function DeployReveal() {
-  const deployUrl = useOsStore((s) => s.build.deployUrl);
+  const storedDeployUrl = useOsStore((s) => s.build.deployUrl);
+  const deployUrl = useMemo(
+    () =>
+      resolveDemoDeployUrlForDisplay(storedDeployUrl, {
+        clientOrigin:
+          typeof window !== "undefined" ? window.location.origin : undefined,
+      }),
+    [storedDeployUrl]
+  );
   const dismiss = useOsStore((s) => s.dismissDeployReveal);
   const [copied, setCopied] = useState(false);
 

@@ -26,6 +26,7 @@ export const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: optionalNonEmpty,
   NEXT_PUBLIC_APP_URL: optionalNonEmpty,
   DEMO_DEPLOY_URL: optionalNonEmpty,
+  NEXT_PUBLIC_DEMO_DEPLOY_URL: optionalNonEmpty,
   TAVILY_API_KEY: optionalNonEmpty,
   SERPER_API_KEY: optionalNonEmpty,
 });
@@ -49,6 +50,7 @@ function readEnvRecord(): Record<string, string | undefined> {
     SUPABASE_SERVICE_ROLE_KEY: readTrimmedEnv("SUPABASE_SERVICE_ROLE_KEY"),
     NEXT_PUBLIC_APP_URL: readTrimmedEnv("NEXT_PUBLIC_APP_URL"),
     DEMO_DEPLOY_URL: readTrimmedEnv("DEMO_DEPLOY_URL"),
+    NEXT_PUBLIC_DEMO_DEPLOY_URL: readTrimmedEnv("NEXT_PUBLIC_DEMO_DEPLOY_URL"),
     TAVILY_API_KEY: readTrimmedEnv("TAVILY_API_KEY"),
     SERPER_API_KEY: readTrimmedEnv("SERPER_API_KEY"),
   };

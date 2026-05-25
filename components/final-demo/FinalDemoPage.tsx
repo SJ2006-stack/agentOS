@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { resolveDemoDeployUrlForDisplay } from "@/lib/config/deploy-url";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { ExternalLink, Play, RotateCcw, Sparkles } from "lucide-react";
@@ -24,7 +25,15 @@ export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean })
   useOsRealtime(hydraConfigured);
 
   const buildActive = useOsStore((s) => s.build.buildActive);
-  const deployUrl = useOsStore((s) => s.build.deployUrl);
+  const storedDeployUrl = useOsStore((s) => s.build.deployUrl);
+  const deployUrl = useMemo(
+    () =>
+      resolveDemoDeployUrlForDisplay(storedDeployUrl, {
+        clientOrigin:
+          typeof window !== "undefined" ? window.location.origin : undefined,
+      }),
+    [storedDeployUrl]
+  );
   const verifyStatus = useOsStore((s) => s.build.verifyStatus);
   const kernelConnected = useOsStore((s) => s.kernel.connected);
   const activeCores = useOsStore((s) => s.build.activeCores);

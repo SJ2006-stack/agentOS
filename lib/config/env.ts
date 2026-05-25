@@ -1,5 +1,7 @@
 import "server-only";
 
+import { resolveDemoDeployUrl } from "@/lib/config/deploy-url";
+
 /** Primary + legacy alias for Google Gemini API key. */
 const GEMINI_ENV_KEYS = ["GEMINI_API_KEY", "GOOGLE_API_KEY"] as const;
 
@@ -29,9 +31,5 @@ export function isGeminiApiKeySet(): boolean {
 
 /** Deploy URL shown at end of demo build flow. */
 export function getDemoDeployUrl(): string {
-  const explicit = readTrimmedEnv("DEMO_DEPLOY_URL");
-  if (explicit) return explicit;
-  const appUrl = readTrimmedEnv("NEXT_PUBLIC_APP_URL");
-  if (appUrl) return appUrl.replace(/\/$/, "");
-  return "http://localhost:3000 (set DEMO_DEPLOY_URL)";
+  return resolveDemoDeployUrl();
 }
