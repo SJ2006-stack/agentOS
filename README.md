@@ -145,16 +145,35 @@ npx vercel
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Realtime panels |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Client subscribe |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server broadcast only |
-| `NEXT_PUBLIC_APP_URL` | No | Production URL for server-side callbacks |
-| `DEMO_DEPLOY_URL` | No | URL shown when demo build completes (server); auto-detects `VERCEL_URL` on Vercel |
-| `NEXT_PUBLIC_DEMO_DEPLOY_URL` | No | Same URL for client deploy modal; set with `DEMO_DEPLOY_URL` on Vercel |
+| `DEMO_DEPLOY_URL` | Recommended | Production URL for deploy modal (server), e.g. `https://your-app.vercel.app` |
+| `NEXT_PUBLIC_DEMO_DEPLOY_URL` | Recommended | Same as `DEMO_DEPLOY_URL` (client deploy modal) |
+| `NEXT_PUBLIC_APP_URL` | Recommended | Same production URL for callbacks; do not use `localhost` on Vercel |
+| `GITHUB_PAGES` | No | Must be **unset** or `false` on Vercel (static export is GitHub Pages only) |
 | `TAVILY_API_KEY` | No | Web search for Researcher create-agent flow (preferred) |
 | `SERPER_API_KEY` | No | Web search fallback if Tavily unset |
 | `NEXT_PUBLIC_ENABLE_DOOM_DEMO` | No | `1` / `0` — DOOM hero demo; on in dev when unset |
 
-3. Redeploy after env changes. `vercel.json` sets longer `maxDuration` for agent and HydraDB routes.
+**Recommended production trio** (replace with your Vercel production domain):
+
+```bash
+DEMO_DEPLOY_URL=https://<your-production-domain>.vercel.app
+NEXT_PUBLIC_DEMO_DEPLOY_URL=https://<your-production-domain>.vercel.app
+NEXT_PUBLIC_APP_URL=https://<your-production-domain>.vercel.app
+```
+
+If unset, Vercel auto-detects `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL` at build and runtime.
+
+3. Redeploy after env changes. `vercel.json` sets `GITHUB_PAGES=false`, longer `maxDuration` for agent/HydraDB routes, and `/demo` → `/final-demo`.
 
 Never commit real API keys — copy from `.env.example` into `.env.local` or Vercel only.
+
+### Change to a new Vercel project URL
+
+1. Create or select the new Vercel project and note its **production** URL.
+2. In **Project → Settings → Environment Variables** (Production), set `DEMO_DEPLOY_URL`, `NEXT_PUBLIC_DEMO_DEPLOY_URL`, and `NEXT_PUBLIC_APP_URL` to that URL.
+3. **Redeploy** — `NEXT_PUBLIC_*` values are baked in at build time.
+4. Optional: on the **old** project, set `DEMO_DEPLOY_LEGACY_HOST` (old hostname) and `DEMO_DEPLOY_URL` (new URL); `middleware.ts` redirects visitors.
+5. Do **not** set `GITHUB_PAGES=true` on Vercel (breaks API routes).
 
 ### Health check (monitoring)
 

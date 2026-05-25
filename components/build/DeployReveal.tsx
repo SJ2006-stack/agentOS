@@ -2,10 +2,13 @@
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  DEPLOY_URL_UNCONFIGURED,
+  ensureHttpsDeployUrl,
+  isDeployUrlUnresolved,
   resolveDemoDeployUrlForDisplay,
 } from "@/lib/config/deploy-url";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Copy, ExternalLink, X } from "lucide-react";
+import { AlertTriangle, Check, Copy, ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
@@ -49,6 +52,9 @@ export const DeployReveal = memo(function DeployReveal() {
       }),
     [storedDeployUrl]
   );
+  const openUrl = deployUrl ? ensureHttpsDeployUrl(deployUrl) : null;
+  const unresolved = storedDeployUrl != null && (deployUrl == null || isDeployUrlUnresolved(deployUrl));
+  const showModal = storedDeployUrl != null;
   const dismiss = useOsStore((s) => s.dismissDeployReveal);
   const [copied, setCopied] = useState(false);
 
@@ -57,28 +63,28 @@ export const DeployReveal = memo(function DeployReveal() {
   }, [dismiss]);
 
   useEffect(() => {
-    if (!deployUrl) return;
+    if (!showModal) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onDismiss();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [deployUrl, onDismiss]);
+  }, [showModal, onDismiss]);
 
   const onCopy = useCallback(async () => {
-    if (!deployUrl) return;
+    if (!openUrl) return;
     try {
-      await navigator.clipboard.writeText(deployUrl);
+      await navigator.clipboard.writeText(openUrl);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       /* ignore */
     }
-  }, [deployUrl]);
+  }, [openUrl]);
 
   return (
     <AnimatePresence>
-      {deployUrl ? (
+      {showModal ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -104,48 +110,71 @@ export const DeployReveal = memo(function DeployReveal() {
             </Button>
 
             <div className="flex items-start gap-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-os-green/40 bg-os-green/10">
-                <Check className="size-5 text-os-green" aria-hidden />
+              <div
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-full border bg-os-green/10",
+                  unresolved
+                    ? "border-os-amber/40"
+                    : "border-os-green/40"
+                )}
+              >
+                {unresolved ? (
+                  <AlertTriangle className="size-5 text-os-amber" aria-hidden />
+                ) : (
+                  <Check className="size-5 text-os-green" aria-hidden />
+                )}
               </div>
               <div className="min-w-0 flex-1 pr-6">
-                <h2 className="text-left text-os-green">Deploy complete</h2>
+                <h2 className="text-left text-os-green">
+                  {unresolved ? "Deploy URL not set" : "Deploy complete"}
+                </h2>
                 <p className="mt-1 text-left text-[11px] text-os-dim">
-                  Demo shell is live at the URL below.
+                  {unresolved
+                    ? "Build finished, but no production URL is configured for this deployment."
+                    : "Demo shell is live at the URL below."}
                 </p>
               </div>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-4">
-              <QrPlaceholder url={deployUrl} />
+              {openUrl ? <QrPlaceholder url={openUrl} /> : null}
               <div className="min-w-0 flex-1">
-                <p className="break-all rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-[11px] text-os-green/90">
-                  {deployUrl}
+                <p
+                  className={cn(
+                    "break-all rounded-lg border px-3 py-2 font-mono text-[11px]",
+                    unresolved
+                      ? "border-os-amber/30 bg-os-amber/5 text-os-amber/90"
+                      : "border-white/10 bg-black/30 text-os-green/90"
+                  )}
+                >
+                  {unresolved ? DEPLOY_URL_UNCONFIGURED : openUrl}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    onClick={onCopy}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-os-green/35 bg-os-green/10 px-3 py-1.5 text-[11px] text-os-green hover:bg-os-green/15"
-                  >
-                    {copied ? (
-                      <Check className="size-3.5" aria-hidden />
-                    ) : (
-                      <Copy className="size-3.5" aria-hidden />
-                    )}
-                    {copied ? "Copied" : "Copy URL"}
-                  </Button>
-                  <a
-                    href={deployUrl.startsWith("http") ? deployUrl : undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-[11px] text-os-dim transition-colors hover:border-os-green/35 hover:text-os-green",
-                      !deployUrl.startsWith("http") && "pointer-events-none opacity-50"
-                    )}
-                  >
-                    <ExternalLink className="size-3.5" aria-hidden />
-                    Open
-                  </a>
+                  {openUrl ? (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={onCopy}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-os-green/35 bg-os-green/10 px-3 py-1.5 text-[11px] text-os-green hover:bg-os-green/15"
+                      >
+                        {copied ? (
+                          <Check className="size-3.5" aria-hidden />
+                        ) : (
+                          <Copy className="size-3.5" aria-hidden />
+                        )}
+                        {copied ? "Copied" : "Copy URL"}
+                      </Button>
+                      <a
+                        href={openUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-[11px] text-os-dim transition-colors hover:border-os-green/35 hover:text-os-green"
+                      >
+                        <ExternalLink className="size-3.5" aria-hidden />
+                        Open
+                      </a>
+                    </>
+                  ) : null}
                 </div>
               </div>
             </div>

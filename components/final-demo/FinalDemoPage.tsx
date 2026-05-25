@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { resolveDemoDeployUrlForDisplay } from "@/lib/config/deploy-url";
+import {
+  ensureHttpsDeployUrl,
+  isDeployUrlUnresolved,
+  resolveDemoDeployUrlForDisplay,
+} from "@/lib/config/deploy-url";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { ExternalLink, Play, RotateCcw, Sparkles } from "lucide-react";
@@ -34,6 +38,10 @@ export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean })
       }),
     [storedDeployUrl]
   );
+  const openDeployUrl =
+    deployUrl && !isDeployUrlUnresolved(deployUrl)
+      ? ensureHttpsDeployUrl(deployUrl)
+      : null;
   const verifyStatus = useOsStore((s) => s.build.verifyStatus);
   const kernelConnected = useOsStore((s) => s.kernel.connected);
   const activeCores = useOsStore((s) => s.build.activeCores);
@@ -207,15 +215,12 @@ export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean })
                       {verifyStatus === "running" ? "Verifying…" : verifyStatus}
                     </span>
                   )}
-                  {deployUrl && (
+                  {openDeployUrl && (
                     <a
-                      href={deployUrl.startsWith("http") ? deployUrl : undefined}
+                      href={openDeployUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-full border border-os-green/40 bg-os-green/10 px-2.5 py-0.5 text-os-green transition-colors hover:bg-os-green/15",
-                        !deployUrl.startsWith("http") && "pointer-events-none opacity-60"
-                      )}
+                      className="inline-flex items-center gap-1 rounded-full border border-os-green/40 bg-os-green/10 px-2.5 py-0.5 text-os-green transition-colors hover:bg-os-green/15"
                     >
                       Deployed
                       <ExternalLink className="size-2.5" aria-hidden />
