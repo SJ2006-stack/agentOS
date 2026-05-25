@@ -1,8 +1,14 @@
 import "server-only";
+import {
+  BUILD_GEMINI_KEY_FAULT,
+  generateWebAppShell,
+  getBuildModelId,
+  isBuildGeminiConfigured,
+} from "@/lib/ai/gemini-build";
 import { getDemoDeployUrl } from "@/lib/config/env";
 import { broadcastGraphNodeActive } from "@/lib/os/graph-broadcast";
 import { templateIdForCpuStep } from "@/lib/os/agent-graph-data";
-import { DEMO_WEB_SHELL_FILES } from "@/lib/os/build-manifest";
+import type { BuildManifestFile } from "@/lib/os/build-manifest";
 import { setPipeline, startPipeline } from "@/lib/os/pipeline";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import { CPU_STEPS, type CpuStep } from "@/lib/os/types";
@@ -85,8 +91,17 @@ export async function runBuildDemo(
   _origin?: string,
   write?: PipelineWrite
 ): Promise<void> {
+  if (!isBuildGeminiConfigured()) {
+    write?.(BUILD_GEMINI_KEY_FAULT);
+    return;
+  }
+
   startPipeline(taskId, task);
   write?.(`[cpu] build demo ${taskId} starting…\n`);
+
+  const pitch =
+    task.replace(/^build\s+/i, "").trim() || "minimal SaaS dashboard shell";
+  let shellFiles: BuildManifestFile[] = [];
 
   const completedSteps: CpuStep[] = [];
 
@@ -102,7 +117,16 @@ export async function runBuildDemo(
     setPipeline(taskId, { task, currentStep: step, completedSteps });
 
     if (step === "DISPATCH") {
-      const fileCount = DEMO_WEB_SHELL_FILES.length;
+      write?.(`[gpu] Gemini ${getBuildModelId()} generating web shell…\n`);
+      const { files, source } = await generateWebAppShell(pitch);
+      shellFiles = files;
+      write?.(
+        source === "gemini"
+          ? `[build] Gemini generated ${shellFiles.length} files\n`
+          : `[build] fallback shell (${shellFiles.length} files)\n`
+      );
+
+      const fileCount = shellFiles.length;
       const hotZones = defaultHotZones(fileCount);
       await broadcastOsEvent("os:gpu", "dispatch", {
         hotZones,
@@ -119,7 +143,7 @@ export async function runBuildDemo(
         });
       }
 
-      const manifestFiles = DEMO_WEB_SHELL_FILES.map((f, i) => ({
+      const manifestFiles = shellFiles.map((f, i) => ({
         path: f.path,
         core: i,
       }));
@@ -128,7 +152,7 @@ export async function runBuildDemo(
       write?.(`[build] manifest ${manifestFiles.length} files\n`);
 
       await Promise.all(
-        DEMO_WEB_SHELL_FILES.map((file, core) =>
+        shellFiles.map((file, core) =>
           streamFileChunks(taskId, file.path, file.content, core)
         )
       );

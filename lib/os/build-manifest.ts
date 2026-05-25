@@ -5,7 +5,7 @@ export interface BuildManifestFile {
   content: string;
 }
 
-/** Static demo web shell — streamed as os:build chunks during DISPATCH. */
+/** Fallback web shell when Gemini build fails or key is unset. */
 export const DEMO_WEB_SHELL_FILES: BuildManifestFile[] = [
   {
     path: "app/layout.tsx",

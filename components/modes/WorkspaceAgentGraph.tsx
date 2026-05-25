@@ -1,7 +1,16 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { withBasePath } from "@/lib/api/url";
+import { executeOsCommand } from "@/lib/os/execute-command";
 import { AGENT_SPAWNED_EVENT, type AgentSpawnedDetail } from "@/lib/os/shell-events";
+import {
+  WORKSPACE_DEMO_COMMANDS,
+  WORKSPACE_PANEL_IDS,
+  highlightWorkspacePanel,
+} from "@/lib/os/workspace-demo";
 import {
   AGENT_GRAPH,
   getAgentDescription,
@@ -117,11 +126,60 @@ function formatActiveRoute(fromId: string, toId: string, templates: GraphTemplat
   return `${fromLabel} → ${toLabel}`;
 }
 
+const GEMINI_BUILD_COMMAND = WORKSPACE_DEMO_COMMANDS.submitWebShell;
+const GEMINI_KEY_HINT =
+  "Set GEMINI_API_KEY in .env.local and restart npm run dev";
+
 function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] }) {
   const activeNodeIds = useOsStore((s) => s.graph.activeNodeIds);
+  const buildActive = useOsStore((s) => s.build.buildActive);
+  const storeGeminiConfigured = useOsStore((s) => s.geminiConfigured);
+  const [geminiConfigured, setGeminiConfigured] = useState<boolean | null>(null);
+  const [buildStarting, setBuildStarting] = useState(false);
+  const buildRunningRef = useRef(false);
   const [spawnPulseIds, setSpawnPulseIds] = useState<ReadonlySet<string>>(
     () => new Set()
   );
+
+  const geminiOk = geminiConfigured ?? storeGeminiConfigured;
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(withBasePath("/api/os/verify"), { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { geminiConfigured?: boolean } | null) => {
+        if (!cancelled) setGeminiConfigured(Boolean(data?.geminiConfigured));
+      })
+      .catch(() => {
+        if (!cancelled) setGeminiConfigured(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const runGeminiBuild = useCallback(async () => {
+    if (buildRunningRef.current || buildActive) return;
+    if (!geminiOk) {
+      useOsStore.getState().setKernelCommandError(GEMINI_KEY_HINT);
+      return;
+    }
+    buildRunningRef.current = true;
+    setBuildStarting(true);
+    useOsStore.getState().resetBuild();
+    useOsStore.getState().setKernelCommand(GEMINI_BUILD_COMMAND);
+    highlightWorkspacePanel(WORKSPACE_PANEL_IDS.agentGraph);
+    try {
+      await executeOsCommand(GEMINI_BUILD_COMMAND);
+    } finally {
+      buildRunningRef.current = false;
+      setBuildStarting(false);
+    }
+    window.setTimeout(
+      () => highlightWorkspacePanel(WORKSPACE_PANEL_IDS.activeTask),
+      400
+    );
+  }, [buildActive, geminiOk]);
 
   useEffect(() => {
     const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -176,13 +234,52 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
     [edges, templates]
   );
 
+  const buildBusy = buildStarting || buildActive;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-0.5">
+        <span className="text-left text-[10px] leading-snug text-os-dim/85">
+          {buildBusy
+            ? "Building — graph pulses on DISPATCH"
+            : "Gemini Flash assembles a web shell"}
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {geminiOk === false && (
+            <span className="text-left text-[10px] text-os-fault" role="status">
+              GEMINI_API_KEY missing
+            </span>
+          )}
+          <Button
+            type="button"
+            title={
+              geminiOk === false
+                ? GEMINI_KEY_HINT
+                : "submit build agent dashboard shell"
+            }
+            disabled={buildBusy || geminiOk === false || geminiOk === null}
+            onClick={() => void runGeminiBuild()}
+            className={cn(
+              "inline-flex h-auto items-center gap-2 rounded-lg border px-3 py-1.5 text-[11px] font-normal transition-[background-color,border-color,box-shadow,opacity]",
+              buildBusy
+                ? "workspace-demo-chip-running border-os-amber/60 bg-os-amber/15 text-os-amber"
+                : "border-os-green/35 bg-os-bg/40 text-os-green hover:border-os-amber/45 hover:bg-os-amber/10 hover:text-os-amber"
+            )}
+          >
+            <Sparkles className="size-3 shrink-0" aria-hidden />
+            <span className="text-left">
+              {buildBusy ? "Building…" : "Build web app (Gemini)"}
+            </span>
+          </Button>
+        </div>
+      </div>
+
       <div
         className={cn(
           "workspace-graph-host relative min-h-[220px] flex-1 overflow-auto rounded-lg border border-os-border/60 bg-os-bg/40 p-4",
           activeNodeIds.size > 0 && "workspace-graph-host--live",
-          spawnPulseIds.size > 0 && "workspace-graph-pulse"
+          spawnPulseIds.size > 0 && "workspace-graph-pulse",
+          buildBusy && "workspace-graph-host--live"
         )}
       >
         <svg

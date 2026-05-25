@@ -1,6 +1,16 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
+  "env": {
+    "GITHUB_PAGES": "false"
+  },
+  "redirects": [
+    {
+      "source": "/demo",
+      "destination": "/final-demo",
+      "permanent": false
+    }
+  ],
   "functions": {
     "app/api/hydradb/**/route.ts": {
       "maxDuration": 30

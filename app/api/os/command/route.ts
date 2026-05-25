@@ -1,5 +1,9 @@
 export const dynamic = "force-dynamic";
 
+import {
+  BUILD_GEMINI_KEY_FAULT,
+  isBuildGeminiConfigured,
+} from "@/lib/ai/gemini-build";
 import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
@@ -311,6 +315,11 @@ export async function POST(req: Request) {
         void writeUserInteraction(command, `submit task ${taskId}`, taskId);
       }
       if (isBuildDemoTask(parsed.task)) {
+        if (!isBuildGeminiConfigured()) {
+          return new Response(BUILD_GEMINI_KEY_FAULT, {
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          });
+        }
         return incrementalStreamResponse(
           `[kernel] build demo queued: ${taskId}\n`,
           async (write) => {

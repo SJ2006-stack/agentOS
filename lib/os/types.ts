@@ -49,7 +49,7 @@ export interface BuildDeployEvent {
   url: string;
 }
 
-/** Matches `submit build …` demo tasks (no Gemini LLM required). */
+/** Matches `submit build …` demo tasks (uses Gemini Flash via runBuildDemo). */
 export function isBuildDemoTask(task: string): boolean {
   return task.trim().toLowerCase().startsWith("build");
 }

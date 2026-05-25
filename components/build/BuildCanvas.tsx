@@ -6,12 +6,12 @@ import { useTypewriterChunks } from "@/hooks/build/useTypewriterChunks";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 
-const SOURCE_TABS = [
+const DEFAULT_TAB_ORDER = [
   "app/layout.tsx",
   "app/globals.css",
   "components/Hero.tsx",
   "app/page.tsx",
-] as const;
+];
 
 function fileLabel(path: string): string {
   return path.split("/").pop() ?? path;
@@ -50,7 +50,7 @@ export const BuildCanvas = memo(function BuildCanvas() {
   const deployUrl = useOsStore((s) => s.build.deployUrl);
   const activeCores = useOsStore((s) => s.build.activeCores);
   const buildActive = useOsStore((s) => s.build.buildActive);
-  const [activeTab, setActiveTab] = useState<string>(SOURCE_TABS[0]);
+  const [activeTab, setActiveTab] = useState<string>(DEFAULT_TAB_ORDER[0]!);
 
   const isAssembling = streamingPath !== null || activeCores.length > 0;
   const isDeployPending =
@@ -58,9 +58,7 @@ export const BuildCanvas = memo(function BuildCanvas() {
   const isComplete = verifyStatus === "pass" && !isAssembling && Boolean(deployUrl);
 
   useEffect(() => {
-    if (streamingPath && SOURCE_TABS.includes(streamingPath as (typeof SOURCE_TABS)[number])) {
-      setActiveTab(streamingPath);
-    }
+    if (streamingPath) setActiveTab(streamingPath);
   }, [streamingPath]);
 
   const previewSrc = useMemo(() => {
@@ -76,8 +74,11 @@ export const BuildCanvas = memo(function BuildCanvas() {
   }, [previewSrc]);
 
   const tabPaths = useMemo(() => {
-    const fromManifest = SOURCE_TABS.filter((p) => p in files || p === activeTab);
-    return fromManifest.length ? fromManifest : [...SOURCE_TABS];
+    const keys = Object.keys(files).filter((p) => p !== "preview.html");
+    const ordered = DEFAULT_TAB_ORDER.filter((p) => p in files || p === activeTab);
+    const extras = keys.filter((p) => !ordered.includes(p)).sort();
+    const merged = [...ordered, ...extras];
+    return merged.length ? merged : [...DEFAULT_TAB_ORDER];
   }, [files, activeTab]);
 
   return (
