@@ -6,9 +6,12 @@ import type { GraphTemplate } from "@/lib/os/agent-graph-layout";
 import { BUILTIN_GRAPH_TEMPLATES } from "@/lib/os/builtin-graph-templates";
 import { AgentGraphControls } from "@/components/graph/AgentGraphControls";
 import { WorkspaceAgentGraph } from "@/components/modes/WorkspaceAgentGraph";
-import { ComicText } from "@/components/ui/comic-text";
 import { cn } from "@/lib/utils";
-import { SHELL_COMMAND_EVENT, type ShellCommandDetail } from "@/lib/os/shell-events";
+import {
+  CREATE_AGENT_COMPLETE_EVENT,
+  SHELL_COMMAND_EVENT,
+  type ShellCommandDetail,
+} from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 
 export function AgentGraphPanel({
@@ -64,8 +67,15 @@ export function AgentGraphPanel({
         window.setTimeout(() => void loadCustomTemplates(), 1200);
       }
     };
+    const onCreateComplete = () => {
+      window.setTimeout(() => void loadCustomTemplates(), 600);
+    };
     window.addEventListener(SHELL_COMMAND_EVENT, onShellCommand);
-    return () => window.removeEventListener(SHELL_COMMAND_EVENT, onShellCommand);
+    window.addEventListener(CREATE_AGENT_COMPLETE_EVENT, onCreateComplete);
+    return () => {
+      window.removeEventListener(SHELL_COMMAND_EVENT, onShellCommand);
+      window.removeEventListener(CREATE_AGENT_COMPLETE_EVENT, onCreateComplete);
+    };
   }, [loadCustomTemplates]);
 
   return (
@@ -78,25 +88,20 @@ export function AgentGraphPanel({
           )}
         >
           {showHeader && (
-            <ComicText fontSize={1.3} className="text-left text-os-dim">
+            <span className="text-left text-os-dim">
               agent graph
-            </ComicText>
+            </span>
           )}
           {activeNodeIds.size > 0 && (
-            <ComicText fontSize={1} className="rounded border border-os-green/30 bg-os-green/5 px-1.5 py-0.5 text-left text-os-green">
+            <span className="rounded border border-os-green/30 bg-os-green/5 px-1.5 py-0.5 text-left text-os-green">
               {`${activeNodeIds.size} active`}
-            </ComicText>
+            </span>
           )}
         </div>
       )}
 
-      {!hideCreateAgent && hydraConfigured && (
-        <AgentGraphControls
-          templates={templates}
-          hydraConfigured={hydraConfigured}
-          section="create"
-          onTemplatesChange={loadCustomTemplates}
-        />
+      {!hideCreateAgent && (
+        <AgentGraphControls templates={templates} section="create" />
       )}
 
       <div className="min-h-0 flex-1">
@@ -104,13 +109,7 @@ export function AgentGraphPanel({
       </div>
 
       <div className="shrink-0">
-        <AgentGraphControls
-          templates={templates}
-          hydraConfigured={hydraConfigured}
-          hideCreateAgent
-          section="list"
-          onTemplatesChange={loadCustomTemplates}
-        />
+        <AgentGraphControls templates={templates} hideCreateAgent section="list" />
       </div>
     </div>
   );

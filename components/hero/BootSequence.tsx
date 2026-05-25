@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import { AnimatedSpan, TypingAnimation } from "@/components/ui/terminal";
-import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 
 const BOOT_LINES = [
@@ -54,7 +54,6 @@ export function HeroBootSequence({
                 key={line.text}
                 delay={line.delay}
                 startOnView={false}
-                duration={40}
                 className={line.className}
               >
                 {`> ${line.text}`}
@@ -74,14 +73,13 @@ export function HeroBootSequence({
             ✔ AgentOS ready
           </AnimatedSpan>
         </div>
-        <RippleButton
+        <Button coolMode
           type="button"
-          rippleColor="var(--hero-cyan)"
           onClick={onSkip ?? onComplete}
           className="mt-6 text-[10px] uppercase tracking-wider text-hero-muted transition-colors hover:text-hero-cyan"
         >
           Skip boot →
-        </RippleButton>
+        </Button>
       </motion.div>
     </div>
   );

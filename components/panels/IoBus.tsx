@@ -2,7 +2,6 @@
 
 import { memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ComicText } from "@/components/ui/comic-text";
 import { ExpandableText } from "@/components/ui/expandable-text";
 import { formatIoArgs } from "@/lib/os/format-io-args";
 import type { IoToolCall } from "@/lib/os/types";
@@ -37,16 +36,16 @@ export const IoBus = memo(function IoBus({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {showHeader && (
-        <ComicText fontSize={1.5} className="mb-1 shrink-0 text-left text-os-amber">
+        <span className="mb-1 shrink-0 text-left text-os-amber">
           I/O BUS
-        </ComicText>
+        </span>
       )}
       <div className="min-h-0 flex-1 overflow-y-auto font-mono text-[10px]">
         <AnimatePresence initial={false}>
           {events.length === 0 && (
-            <ComicText fontSize={1.1} className="text-left text-os-dim">
+            <span className="text-left text-os-dim">
               awaiting tool calls…
-            </ComicText>
+            </span>
           )}
           {events.map((e, i) => (
             <IoBusEventRow key={`${e.ts}-${i}`} event={e} />

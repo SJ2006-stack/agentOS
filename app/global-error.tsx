@@ -1,7 +1,7 @@
 "use client";
 
 import { FlickeringGridBackground } from "@/components/FlickeringGridBackground";
-import { RippleButton } from "@/components/ui/ripple-button";
+import { Button } from "@/components/ui/button";
 
 export default function GlobalError({
   reset,
@@ -15,9 +15,9 @@ export default function GlobalError({
         <FlickeringGridBackground />
         <div className="relative z-10 flex min-h-full flex-col items-center justify-center gap-4 p-8">
           <h1>Something went wrong</h1>
-          <RippleButton type="button" onClick={() => reset()}>
+          <Button coolMode type="button" onClick={() => reset()}>
             Try again
-          </RippleButton>
+          </Button>
         </div>
       </body>
     </html>

@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { withBasePath } from "@/lib/api/url";
 import {
   listCreateAgentTemplateCards,
   type CreateAgentTemplateCard,
 } from "@/lib/os/create-agent-templates";
-import { dispatchShellCommand } from "@/lib/os/shell-events";
-import { ComicText } from "@/components/ui/comic-text";
-import { RippleButton } from "@/components/ui/ripple-button";
+import {
+  dispatchCreateAgentComplete,
+  dispatchShellCommand,
+} from "@/lib/os/shell-events";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 
@@ -21,11 +23,14 @@ export function CreateAgentFlow({
   onComplete,
   hydraConfigured,
   className,
+  variant = "inline",
 }: {
   onClose: () => void;
   onComplete?: () => void;
   hydraConfigured: boolean;
   className?: string;
+  /** overlay = full-screen panel with taller template list */
+  variant?: "inline" | "overlay";
 }) {
   const [step, setStep] = useState<Step>("name");
   const [agentName, setAgentName] = useState("");
@@ -100,6 +105,7 @@ export function CreateAgentFlow({
         .setKernelCommand(
           `spawn agent ${selected.templateId} /* ${agentName.trim()} */`
         );
+      dispatchCreateAgentComplete();
       onComplete?.();
       handleClose();
     } catch (e) {
@@ -142,6 +148,7 @@ export function CreateAgentFlow({
           dispatchShellCommand(`spawn agent ${agentId}`);
         }, 600);
       }
+      dispatchCreateAgentComplete();
       onComplete?.();
       handleClose();
     } catch (e) {
@@ -152,24 +159,25 @@ export function CreateAgentFlow({
     }
   }, [agentName, customRole, onComplete, handleClose]);
 
-  if (!hydraConfigured) {
-    return (
-      <div className={cn("text-[11px] text-os-dim", className)}>
-        <ComicText fontSize={1.2} className="text-left text-os-dim">
-          HydraDB is not configured — set HYDRADB_API_KEY to create agents.
-        </ComicText>
-      </div>
-    );
-  }
+  const templateListClass =
+    variant === "overlay"
+      ? "min-h-[200px] max-h-[min(52vh,480px)] space-y-2 overflow-y-auto pr-1"
+      : "max-h-52 space-y-1.5 overflow-y-auto pr-0.5";
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
+      {!hydraConfigured && (
+        <p className="rounded-md border border-os-fault/35 bg-os-fault/10 px-2.5 py-2 text-[11px] text-os-fault/90">
+          HydraDB is not configured — set HYDRADB_API_KEY to register and spawn
+          agents. You can still browse templates below.
+        </p>
+      )}
       {step === "name" && (
         <>
           <label className="space-y-1">
-            <ComicText fontSize={1.1} className="text-left text-os-dim">
+            <span className="text-left text-os-dim">
               Agent name
-            </ComicText>
+            </span>
             <input
               type="text"
               value={agentName}
@@ -188,25 +196,25 @@ export function CreateAgentFlow({
             />
           </label>
           <div className="flex justify-end gap-1.5">
-            <RippleButton
+            <Button coolMode
               type="button"
               onClick={handleClose}
               className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim hover:text-os-green"
             >
-              <ComicText fontSize={1.1} className="text-center text-os-dim">
+              <span className="text-center text-os-dim">
                 Cancel
-              </ComicText>
-            </RippleButton>
-            <RippleButton
+              </span>
+            </Button>
+            <Button coolMode
               type="button"
               disabled={!agentName.trim()}
               onClick={goNextFromName}
               className="rounded-md border border-os-amber/40 bg-os-amber/10 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/20 disabled:opacity-40"
             >
-              <ComicText fontSize={1.1} className="text-center text-os-amber">
+              <span className="text-center text-os-amber">
                 Continue
-              </ComicText>
-            </RippleButton>
+              </span>
+            </Button>
           </div>
         </>
       )}
@@ -214,22 +222,22 @@ export function CreateAgentFlow({
       {step === "pick" && (
         <>
           <div className="flex items-center justify-between gap-2">
-            <ComicText fontSize={1.2} className="text-left text-os-amber">
+            <span className="text-left text-os-amber">
               {agentName.trim()}
-            </ComicText>
-            <RippleButton
+            </span>
+            <Button coolMode
               type="button"
               onClick={() => setStep("name")}
               className="text-[10px] text-os-dim hover:text-os-green"
             >
-              <ComicText fontSize={1} className="text-left text-os-dim">
+              <span className="text-left text-os-dim">
                 ← Name
-              </ComicText>
-            </RippleButton>
+              </span>
+            </Button>
           </div>
           <div className="flex gap-1 rounded-md border border-os-border/60 p-0.5">
             {(["templates", "custom"] as const).map((tab) => (
-              <RippleButton
+              <Button coolMode
                 key={tab}
                 type="button"
                 onClick={() => setPickTab(tab)}
@@ -240,25 +248,30 @@ export function CreateAgentFlow({
                     : "text-os-dim hover:text-os-green"
                 )}
               >
-                <ComicText fontSize={1} className="text-center">
+                <span className="text-center">
                   {tab === "templates" ? "Templates" : "Customize your own"}
-                </ComicText>
-              </RippleButton>
+                </span>
+              </Button>
             ))}
           </div>
           {pickTab === "templates" ? (
-            <div className="max-h-52 space-y-1.5 overflow-y-auto pr-0.5">
+            <div className={templateListClass}>
+              {TEMPLATE_CARDS.length === 0 ? (
+                <p className="rounded-md border border-dashed border-os-border/60 px-3 py-4 text-center text-[11px] text-os-dim">
+                  No spawnable templates found in the agent graph.
+                </p>
+              ) : null}
               {TEMPLATE_CARDS.map((card) => (
-                <RippleButton
+                <Button coolMode
                   key={card.templateId}
                   type="button"
                   onClick={() => selectTemplate(card)}
                   className="w-full rounded-lg border border-os-border/60 bg-os-bg/30 px-2.5 py-2 text-left transition-colors hover:border-os-amber/40 hover:bg-os-amber/5"
                 >
                   <div className="flex items-baseline justify-between gap-2">
-                    <ComicText fontSize={1.2} className="text-left text-os-green">
+                    <span className="text-left text-os-green">
                       {card.displayName}
-                    </ComicText>
+                    </span>
                     <span className="shrink-0 font-mono text-[9px] text-os-dim/80">
                       {card.templateId}
                     </span>
@@ -269,67 +282,67 @@ export function CreateAgentFlow({
                   <p className="mt-0.5 text-[9px] text-os-dim/70">
                     {card.edgesSummary}
                   </p>
-                </RippleButton>
+                </Button>
               ))}
             </div>
           ) : (
             <div className="space-y-2">
-              <ComicText fontSize={1.1} className="text-left text-os-dim">
+              <span className="text-left text-os-dim">
                 Freeform custom agent — registered in HydraDB and spawnable from
                 the graph.
-              </ComicText>
+              </span>
               <input
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
                 placeholder="Role (e.g. reviews PRs for security issues)"
                 className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
               />
-              <RippleButton
+              <Button coolMode
                 type="button"
-                disabled={!customRole.trim() || busy}
+                disabled={!customRole.trim() || busy || !hydraConfigured}
                 onClick={() => {
                   setPickTab("custom");
                   setStep("custom");
                 }}
                 className="w-full rounded-md border border-os-amber/40 bg-os-amber/10 py-1.5 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/20 disabled:opacity-40"
               >
-                <ComicText fontSize={1.1} className="text-center text-os-amber">
+                <span className="text-center text-os-amber">
                   Continue to create
-                </ComicText>
-              </RippleButton>
+                </span>
+              </Button>
             </div>
           )}
-          <RippleButton
+          <Button coolMode
             type="button"
             onClick={handleClose}
             className="self-start text-[10px] text-os-dim hover:text-os-green"
           >
-            <ComicText fontSize={1} className="text-left text-os-dim">
+            <span className="text-left text-os-dim">
               Cancel
-            </ComicText>
-          </RippleButton>
+            </span>
+          </Button>
         </>
       )}
 
       {step === "prompt" && selected && (
         <>
           <div className="flex items-center justify-between gap-2">
-            <ComicText fontSize={1.3} className="text-left text-os-amber">
+            <span className="text-left text-os-amber">
               {selected.displayName}
-            </ComicText>
-            <RippleButton
+            </span>
+            <Button coolMode
               type="button"
               onClick={() => setStep("pick")}
               className="text-[10px] text-os-dim hover:text-os-green"
             >
-              <ComicText fontSize={1} className="text-left text-os-dim">
+              <span className="text-left text-os-dim">
                 ← Templates
-              </ComicText>
-            </RippleButton>
+              </span>
+            </Button>
           </div>
-          <ComicText fontSize={1.3} className="text-left text-os-green">
+          <span className="text-left text-os-green">
             {selected.promptQuestion}
-          </ComicText>
+          </span>
           <textarea
             value={userQuery}
             onChange={(e) => setUserQuery(e.target.value)}
@@ -342,34 +355,34 @@ export function CreateAgentFlow({
             <p className="text-[11px] text-os-fault/90">{error}</p>
           )}
           <div className="flex justify-end gap-1.5">
-            <RippleButton
+            <Button coolMode
               type="button"
               onClick={handleClose}
               className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim"
             >
-              <ComicText fontSize={1.1} className="text-center text-os-dim">
+              <span className="text-center text-os-dim">
                 Cancel
-              </ComicText>
-            </RippleButton>
-            <RippleButton
+              </span>
+            </Button>
+            <Button coolMode
               type="button"
-              disabled={busy || !userQuery.trim()}
+              disabled={busy || !userQuery.trim() || !hydraConfigured}
               onClick={() => void runTemplateActivate()}
               className="rounded-md border border-os-amber/40 bg-os-amber/15 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber hover:bg-os-amber/25 disabled:opacity-40"
             >
-              <ComicText fontSize={1.1} className="text-center text-os-amber">
+              <span className="text-center text-os-amber">
                 {busy ? "Working…" : "Run & spawn"}
-              </ComicText>
-            </RippleButton>
+              </span>
+            </Button>
           </div>
         </>
       )}
 
       {step === "custom" && (
         <>
-          <ComicText fontSize={1.2} className="text-left text-os-green">
+          <span className="text-left text-os-green">
             {`Custom agent ${agentName}`}
-          </ComicText>
+          </span>
           <input
             value={customRole}
             onChange={(e) => setCustomRole(e.target.value)}
@@ -380,34 +393,34 @@ export function CreateAgentFlow({
             <p className="text-[11px] text-os-fault/90">{error}</p>
           )}
           <div className="flex justify-end gap-1.5">
-            <RippleButton
+            <Button coolMode
               type="button"
               onClick={() => setStep("pick")}
               className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim"
             >
-              <ComicText fontSize={1.1} className="text-center text-os-dim">
+              <span className="text-center text-os-dim">
                 Back
-              </ComicText>
-            </RippleButton>
-            <RippleButton
+              </span>
+            </Button>
+            <Button coolMode
               type="button"
-              disabled={busy || !customRole.trim()}
+              disabled={busy || !customRole.trim() || !hydraConfigured}
               onClick={() => void runCustomCreate()}
               className="rounded-md border border-os-amber/40 bg-os-amber/15 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber disabled:opacity-40"
             >
-              <ComicText fontSize={1.1} className="text-center text-os-amber">
+              <span className="text-center text-os-amber">
                 {busy ? "Creating…" : "Create agent"}
-              </ComicText>
-            </RippleButton>
+              </span>
+            </Button>
           </div>
         </>
       )}
 
       {step === "working" && (
         <div className="py-4">
-          <ComicText fontSize={1.2} className="text-center text-os-amber">
+          <span className="text-center text-os-amber">
             Running template action and spawning agent…
-          </ComicText>
+          </span>
         </div>
       )}
     </div>

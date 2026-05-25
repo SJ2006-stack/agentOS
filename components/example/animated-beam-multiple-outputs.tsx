@@ -70,17 +70,16 @@ export default function AnimatedBeamMultipleOutputDemo({
         </div>
       </div>
 
-      <AnimatedBeam containerRef={containerRef} fromRef={cpuRef} toRef={kernelRef} duration={3} />
-      <AnimatedBeam containerRef={containerRef} fromRef={hydraRef} toRef={kernelRef} duration={3.2} />
-      <AnimatedBeam containerRef={containerRef} fromRef={gpuRef} toRef={kernelRef} duration={3.4} />
+      <AnimatedBeam containerRef={containerRef} fromRef={cpuRef} toRef={kernelRef} />
+      <AnimatedBeam containerRef={containerRef} fromRef={hydraRef} toRef={kernelRef} />
+      <AnimatedBeam containerRef={containerRef} fromRef={gpuRef} toRef={kernelRef} />
       <AnimatedBeam
         containerRef={containerRef}
         fromRef={ioRef}
         toRef={kernelRef}
-        duration={3.6}
         curvature={-40}
       />
-      <AnimatedBeam containerRef={containerRef} fromRef={kernelRef} toRef={shellRef} duration={3} />
+      <AnimatedBeam containerRef={containerRef} fromRef={kernelRef} toRef={shellRef} />
     </div>
   );
 }

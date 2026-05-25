@@ -2,7 +2,6 @@
 
 import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ComicText } from "@/components/ui/comic-text";
 import { MissionPipeline } from "@/components/pipeline/MissionPipeline";
 import { CPU_STEPS, type CpuStep } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
@@ -107,15 +106,15 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
-        <ComicText fontSize={1.3} className="text-left text-os-dim">
+        <span className="text-left text-os-dim">
           Mission Pipeline
-        </ComicText>
+        </span>
         {currentStep && (
           <span className="inline-flex items-center gap-1.5 text-[color:var(--workspace-accent)]">
             <span className="workspace-dot-active size-1.5 rounded-full bg-[color:var(--workspace-accent)]" />
-            <ComicText fontSize={1.1} className="text-left text-[color:var(--workspace-accent)]">
+            <span className="text-left text-[color:var(--workspace-accent)]">
               Running
-            </ComicText>
+            </span>
           </span>
         )}
       </header>
@@ -136,15 +135,15 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
         >
           {displayedStage ? (
             <>
-              <ComicText fontSize={1} className="text-left text-os-dim">
+              <span className="text-left text-os-dim">
                 {currentStep ? "Running" : "Last completed"}
-              </ComicText>
-              <ComicText fontSize={1.8} className="mt-0.5 text-left text-os-green">
+              </span>
+              <span className="mt-0.5 text-left text-os-green">
                 {STAGE_TITLE[displayedStage]}
-              </ComicText>
-              <ComicText fontSize={1.3} className="mt-1 text-left text-os-green/80">
+              </span>
+              <span className="mt-1 text-left text-os-green/80">
                 {STAGE_DESCRIPTION[displayedStage]}
-              </ComicText>
+              </span>
               <AnimatePresence mode="wait" initial={false}>
                 {currentStep ? (
                   <motion.div
@@ -156,9 +155,9 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
                     className="mt-2 flex items-center gap-2 text-[11px] text-os-amber"
                   >
                     <ThinkingDots />
-                    <ComicText fontSize={1.1} className="text-left text-os-amber">
+                    <span className="text-left text-os-amber">
                       Working…
-                    </ComicText>
+                    </span>
                   </motion.div>
                 ) : preview ? (
                   <motion.p
@@ -176,15 +175,15 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
             </>
           ) : (
             <div className="flex flex-col items-start gap-1">
-              <ComicText fontSize={1} className="text-left text-os-dim">
+              <span className="text-left text-os-dim">
                 Idle
-              </ComicText>
-              <ComicText fontSize={1.4} className="text-left text-os-green/85">
+              </span>
+              <span className="text-left text-os-green/85">
                 Send a command to start a mission.
-              </ComicText>
-              <ComicText fontSize={1.1} className="text-left text-os-dim">
+              </span>
+              <span className="text-left text-os-dim">
                 Try submit or spawn an agent on the left.
-              </ComicText>
+              </span>
             </div>
           )}
         </div>

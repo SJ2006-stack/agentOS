@@ -1,10 +1,9 @@
 "use client";
 
 import { memo, useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
 import { Play, Sparkles, X } from "lucide-react";
-import { ComicText } from "@/components/ui/comic-text";
-import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 import {
   WORKSPACE_DEMO_COMMANDS,
@@ -70,9 +69,9 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <ComicText fontSize={1.2} className="text-left text-os-amber">
+                <span className="text-left text-os-amber">
                   First run — watch an agent work
-                </ComicText>
+                </span>
                 <ol className="mt-1.5 space-y-1 text-[11px] leading-snug text-os-green/90">
                   {FIRST_RUN_STEPS.map((step, i) => (
                     <li key={step} className="flex gap-2">
@@ -82,14 +81,14 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
                   ))}
                 </ol>
               </div>
-              <RippleButton
+              <Button coolMode
                 type="button"
                 onClick={dismissFirstRun}
                 className="shrink-0 rounded-md border border-os-border/60 p-1 text-os-dim transition-colors hover:border-os-amber/40 hover:text-os-amber"
                 aria-label="Dismiss first run guide"
               >
                 <X className="size-3.5" aria-hidden />
-              </RippleButton>
+              </Button>
             </div>
           </motion.aside>
         )}
@@ -103,9 +102,9 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
       >
         <span className="inline-flex items-center gap-1.5 text-os-dim">
           <Sparkles className="size-3 text-os-amber" aria-hidden />
-          <ComicText fontSize={1.1} className="text-left text-os-dim">
+          <span className="text-left text-os-dim">
             Try this
-          </ComicText>
+          </span>
         </span>
         {!compact && (
           <p className="hidden text-[10px] text-os-dim/90 sm:inline">
@@ -116,7 +115,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
           {DEMO_CHIPS.map((chip) => {
             const isRunning = runningCommand === chip.command;
             return (
-              <RippleButton
+              <Button coolMode
                 key={chip.command}
                 type="button"
                 title={chip.hint}
@@ -130,10 +129,10 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
                 )}
               >
                 <Play className="size-3 shrink-0" aria-hidden />
-                <ComicText fontSize={1.1} className="text-left text-os-green">
+                <span className="text-left text-os-green">
                   {chip.label}
-                </ComicText>
-              </RippleButton>
+                </span>
+              </Button>
             );
           })}
         </div>

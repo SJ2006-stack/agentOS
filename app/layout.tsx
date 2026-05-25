@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bangers, Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
 import { FlickeringGridBackground } from "@/components/FlickeringGridBackground";
 import "react-day-picker/style.css";
 import "./globals.css";
@@ -19,12 +19,6 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-const bangers = Bangers({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-bangers",
-});
-
 export const metadata: Metadata = {
   title: "DevFactory OS",
   description: "Terminal-style OS monitor with live agents, HydraDB, and Supabase Realtime",
@@ -36,11 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${bangers.variable} h-full dark`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className="h-full dark" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -49,7 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${bangers.variable} h-full antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} h-full antialiased`}
       >
         <FlickeringGridBackground />
         <div className="relative z-10 min-h-full">{children}</div>

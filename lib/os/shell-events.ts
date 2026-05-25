@@ -100,3 +100,16 @@ export function dispatchAgentSpawned(detail: AgentSpawnedDetail): void {
     new CustomEvent<AgentSpawnedDetail>(AGENT_SPAWNED_EVENT, { detail })
   );
 }
+
+export const CREATE_AGENT_OPEN_EVENT = "devfactory:create-agent-open";
+export const CREATE_AGENT_COMPLETE_EVENT = "devfactory:create-agent-complete";
+
+export function dispatchCreateAgentOpen(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(CREATE_AGENT_OPEN_EVENT));
+}
+
+export function dispatchCreateAgentComplete(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(CREATE_AGENT_COMPLETE_EVENT));
+}

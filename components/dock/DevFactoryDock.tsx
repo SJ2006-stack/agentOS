@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Home, LayoutGrid, Network, Plus, Terminal } from "lucide-react";
-import { CreateAgentFlow } from "@/components/create-agent/CreateAgentFlow";
 import { DevFactoryCommandBar } from "@/components/dock/DevFactoryCommandBar";
 import { Dock, DockIcon } from "@/components/magicui/dock";
 import {
@@ -12,11 +12,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DockModePreview } from "@/components/modes/DockModePreview";
-import { ComicText } from "@/components/ui/comic-text";
 import { CoolMode, DEFAULT_COOL_MODE_OPTIONS } from "@/components/ui/cool-mode";
-import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
-import { dispatchShellCommand } from "@/lib/os/shell-events";
+import {
+  dispatchCreateAgentOpen,
+  dispatchShellCommand,
+} from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 import {
   UI_MODE_LABELS,
@@ -154,11 +155,13 @@ function UtilityDockItem({
   );
 }
 
-export function DevFactoryDock({ hydraConfigured }: { hydraConfigured: boolean }) {
+export function DevFactoryDock({
+  hydraConfigured: _hydraConfigured,
+}: {
+  hydraConfigured: boolean;
+}) {
   const [spawnOpen, setSpawnOpen] = useState(false);
-  const [createAgentOpen, setCreateAgentOpen] = useState(false);
   const spawnRef = useRef<HTMLDivElement>(null);
-  const createAgentRef = useRef<HTMLDivElement>(null);
   const mode = useUiModeStore((s) => s.mode);
   const setMode = useUiModeStore((s) => s.setMode);
 
@@ -180,26 +183,26 @@ export function DevFactoryDock({ hydraConfigured }: { hydraConfigured: boolean }
   );
 
   useEffect(() => {
-    if (!spawnOpen && !createAgentOpen) return;
+    if (!spawnOpen) return;
     const onDoc = (e: MouseEvent) => {
       const target = e.target as Node;
       if (spawnOpen && spawnRef.current && !spawnRef.current.contains(target)) {
         setSpawnOpen(false);
       }
-      if (
-        createAgentOpen &&
-        createAgentRef.current &&
-        !createAgentRef.current.contains(target)
-      ) {
-        setCreateAgentOpen(false);
-      }
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
-  }, [spawnOpen, createAgentOpen]);
+  }, [spawnOpen]);
+
+  const openCreateAgent = useCallback(() => {
+    setSpawnOpen(false);
+    dispatchCreateAgentOpen();
+    requestAnimationFrame(() =>
+      document.getElementById("devfactory-command-input")?.blur()
+    );
+  }, []);
 
   const showCommandBar = mode !== "hero" && mode !== "desktop";
-  const showCreateAgentPanel = createAgentOpen && mode !== "hero";
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -210,26 +213,6 @@ export function DevFactoryDock({ hydraConfigured }: { hydraConfigured: boolean }
           "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-32 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_100%,color-mix(in_srgb,var(--os-green)_8%,transparent),transparent)]"
         )}
       >
-        {showCreateAgentPanel && (
-          <div
-            ref={createAgentRef}
-            className="pointer-events-auto w-full max-w-xl rounded-xl border border-os-amber/30 bg-os-panel/70 p-3 shadow-xl shadow-os-bg/40 backdrop-blur-xl ring-1 ring-inset ring-white/[0.05]"
-          >
-            <ComicText fontSize={1.3} className="mb-2 text-left text-os-amber">
-              Create agent
-            </ComicText>
-            <CreateAgentFlow
-              hydraConfigured={hydraConfigured}
-              onClose={() => setCreateAgentOpen(false)}
-            />
-            <p className="mt-2 text-[10px] text-os-dim/80">
-              Or type{" "}
-              <code className="text-os-green/90">create agent &lt;name&gt; &quot;&lt;role&gt;&quot;</code>{" "}
-              in the command bar{mode === "desktop" ? "" : " below"}.
-            </p>
-          </div>
-        )}
-
         {showCommandBar && (
           <div className="pointer-events-auto w-full max-w-xl">
             <DevFactoryCommandBar variant="compact" />
@@ -245,13 +228,7 @@ export function DevFactoryDock({ hydraConfigured }: { hydraConfigured: boolean }
               {[
                 {
                   label: "Create agent…",
-                  action: () => {
-                    setSpawnOpen(false);
-                    setCreateAgentOpen(true);
-                    requestAnimationFrame(() =>
-                      document.getElementById("devfactory-command-input")?.blur()
-                    );
-                  },
+                  action: openCreateAgent,
                 },
                 {
                   label: "Agent status",
@@ -286,17 +263,16 @@ export function DevFactoryDock({ hydraConfigured }: { hydraConfigured: boolean }
                   },
                 },
               ].map((item) => (
-                <RippleButton
+                <Button coolMode
                   key={item.label}
                   type="button"
-                  rippleColor="var(--os-green)"
                   className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
                   onClick={item.action}
                 >
-                  <ComicText fontSize={1.1} className="text-left text-os-green">
+                  <span className="text-left text-os-green">
                     {item.label}
-                  </ComicText>
-                </RippleButton>
+                  </span>
+                </Button>
               ))}
             </div>
           )}

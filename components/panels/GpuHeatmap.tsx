@@ -2,7 +2,6 @@
 
 import { memo } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ComicText } from "@/components/ui/comic-text";
 import { GRID_SIZE } from "@/lib/os/types";
 import { useOsStore } from "@/store/os/osStore";
 
@@ -23,18 +22,18 @@ export const GpuHeatmap = memo(function GpuHeatmap({
     <div className="flex h-full flex-col">
       {showHeader ? (
         <div className="mb-1 flex items-center justify-between">
-          <ComicText fontSize={1.5} className="text-left text-os-amber">
+          <span className="text-left text-os-amber">
             GPU HEATMAP 16×16
-          </ComicText>
-          <ComicText fontSize={1} className="text-left text-os-dim">
+          </span>
+          <span className="text-left text-os-dim">
             {statusLabel}
-          </ComicText>
+          </span>
         </div>
       ) : (
         <div className="mb-1 flex justify-end">
-          <ComicText fontSize={1} className="text-left text-os-dim">
+          <span className="text-left text-os-dim">
             {statusLabel}
-          </ComicText>
+          </span>
         </div>
       )}
       <motion.div

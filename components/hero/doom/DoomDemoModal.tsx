@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
-import { RippleButton } from "@/components/ui/ripple-button";
-import { ComicText } from "@/components/ui/comic-text";
 import { cn } from "@/lib/utils";
 import { DoomBuildPreview } from "./DoomBuildPreview";
 import { DoomGameCanvas, type DoomPlayMode } from "./DoomGameCanvas";
@@ -81,7 +80,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
           aria-modal="true"
           aria-label="DOOM demo"
         >
-          <RippleButton
+          <Button
             type="button"
             coolMode={false}
             className="absolute inset-0 bg-[#080C14]/88 backdrop-blur-sm"
@@ -102,90 +101,90 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
             <header className="flex shrink-0 items-center justify-between border-b border-[#1E2D3D] px-4 py-3">
               <div className="flex items-center gap-2 text-[#00FFB2]">
                 <span className="inline-block h-2 w-2 rounded-full bg-[#00FFB2] shadow-[0_0_8px_#00FFB2]" />
-                <ComicText fontSize={1.2} className="text-left text-[#00FFB2]">
+                <span className="text-left text-[#00FFB2]">
                   agentos · doom sector
-                </ComicText>
+                </span>
               </div>
-              <RippleButton
+              <Button coolMode
                 type="button"
                 onClick={onClose}
                 className="rounded border border-[#1E2D3D] px-2 py-1 transition-colors hover:border-[#00FFB2]/40"
               >
-                <ComicText fontSize={1} className="text-left text-[#94A3B8]">
+                <span className="text-left text-[#94A3B8]">
                   ESC close
-                </ComicText>
-              </RippleButton>
+                </span>
+              </Button>
             </header>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 sm:p-5">
               {screen === "choice" ? (
                 <div className="flex flex-col items-center gap-6 py-4 text-center">
-                  <ComicText fontSize={3} className="text-center">
+                  <span className="text-center">
                     Low-level DOOM
-                  </ComicText>
-                  <ComicText fontSize={1.5} className="max-w-md text-center text-[#94A3B8]">
+                  </span>
+                  <span className="max-w-md text-center text-[#94A3B8]">
                     Raycaster sector demo — pick how the agent participates.
-                  </ComicText>
+                  </span>
                   <div className="grid w-full max-w-lg gap-3 sm:grid-cols-2">
-                    <RippleButton
+                    <Button coolMode
                       type="button"
                       onClick={startAutoplay}
                       className="doom-demo-choice-btn group rounded-lg border border-[#00FFB2]/35 bg-[#080C14] p-4 text-left transition hover:border-[#00FFB2]"
                     >
-                      <ComicText fontSize={1.4} className="text-left text-[#00FFB2]">
+                      <span className="text-left text-[#00FFB2]">
                         Watch the agent play
-                      </ComicText>
-                      <ComicText fontSize={1.1} className="mt-2 text-left text-[#94A3B8]">
+                      </span>
+                      <span className="mt-2 text-left text-[#94A3B8]">
                         Autonomous bot — pathfinding, combat, live narration sidebar.
-                      </ComicText>
-                    </RippleButton>
-                    <RippleButton
+                      </span>
+                    </Button>
+                    <Button coolMode
                       type="button"
                       onClick={startBuildFlow}
                       className="doom-demo-choice-btn group rounded-lg border border-[#8B5CF6]/35 bg-[#080C14] p-4 text-left transition hover:border-[#8B5CF6]"
                     >
-                      <ComicText fontSize={1.4} className="text-left text-[#8B5CF6]">
+                      <span className="text-left text-[#8B5CF6]">
                         Watch the agent build for you
-                      </ComicText>
-                      <ComicText fontSize={1.1} className="mt-2 text-left text-[#94A3B8]">
+                      </span>
+                      <span className="mt-2 text-left text-[#94A3B8]">
                         Pick a template — agent constructs the level — then you play.
-                      </ComicText>
-                    </RippleButton>
+                      </span>
+                    </Button>
                   </div>
                 </div>
               ) : null}
 
               {screen === "build-select" ? (
                 <div className="flex flex-col gap-4">
-                  <ComicText fontSize={1.5} className="text-left text-[#94A3B8]">
+                  <span className="text-left text-[#94A3B8]">
                     Select a level template
-                  </ComicText>
+                  </span>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {DOOM_LEVEL_TEMPLATES.map((t) => (
-                      <RippleButton
+                      <Button coolMode
                         key={t.id}
                         type="button"
                         onClick={() => onPickTemplate(t.id)}
                         className="rounded-lg border border-[#1E2D3D] bg-[#080C14] p-3 text-left transition hover:border-[#8B5CF6]/50"
                       >
-                        <ComicText fontSize={1.2} className="text-left text-[#8B5CF6]">
+                        <span className="text-left text-[#8B5CF6]">
                           {t.name}
-                        </ComicText>
+                        </span>
                         <p className="mt-1 font-mono text-[10px] leading-snug text-[#94A3B8]/85">
                           {t.description}
                         </p>
-                      </RippleButton>
+                      </Button>
                     ))}
                   </div>
-                  <RippleButton
+                  <Button coolMode
                     type="button"
                     onClick={() => setScreen("choice")}
                     className="self-start font-mono text-[10px] text-[#94A3B8] underline-offset-2 hover:underline"
                   >
-                    <ComicText fontSize={1} className="text-left text-[#94A3B8]">
+                    <span className="text-left text-[#94A3B8]">
                       ← Back
-                    </ComicText>
-                  </RippleButton>
+                    </span>
+                  </Button>
                 </div>
               ) : null}
 
@@ -214,9 +213,9 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                   </div>
                   {screen === "autoplay" ? (
                     <aside className="doom-demo-narration w-full shrink-0 rounded-lg border border-[#1E2D3D] bg-[#080C14] p-3 font-mono text-[11px] leading-relaxed text-[#94A3B8] lg:w-52">
-                      <ComicText fontSize={1.1} className="mb-2 text-left text-[#8B5CF6]">
+                      <span className="mb-2 text-left text-[#8B5CF6]">
                         Agent log
-                      </ComicText>
+                      </span>
                       <span className="font-mono">{narration}</span>
                     </aside>
                   ) : null}
@@ -226,7 +225,7 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
 
             {screen !== "choice" ? (
               <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[#1E2D3D] px-4 py-2">
-                <RippleButton
+                <Button coolMode
                   type="button"
                   onClick={() => {
                     if (inGame) setScreen("choice");
@@ -235,14 +234,14 @@ export function DoomDemoModal({ open, onClose }: DoomDemoModalProps) {
                   }}
                   className="font-mono text-[10px] text-[#94A3B8] hover:text-[#00FFB2]"
                 >
-                  <ComicText fontSize={1} className="text-left text-[#94A3B8]">
+                  <span className="text-left text-[#94A3B8]">
                     ← Menu
-                  </ComicText>
-                </RippleButton>
+                  </span>
+                </Button>
                 {inGame && screen === "build-play" ? (
-                  <ComicText fontSize={1.1} className="text-left text-[#00FFB2]/80">
+                  <span className="text-left text-[#00FFB2]/80">
                     {`${selectedTemplate.name} — your turn`}
-                  </ComicText>
+                  </span>
                 ) : null}
               </footer>
             ) : null}

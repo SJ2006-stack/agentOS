@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ComicText } from "@/components/ui/comic-text";
 import { useOsStore } from "@/store/os/osStore";
 
 function truncateModelId(id: string, max = 22): string {
@@ -36,37 +35,37 @@ export function KernelBar() {
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-          <ComicText fontSize={1.5} className="text-left text-os-amber">
+          <span className="text-left text-os-amber">
             DEVFACTORY OS
-          </ComicText>
+          </span>
           <motion.span
             animate={{ opacity: [1, 0.4, 1] }}
             transition={{ repeat: Infinity, duration: 2 }}
             className={`inline-flex items-center gap-1 capitalize ${statusClass(status)}`}
           >
             <span aria-hidden>●</span>
-            <ComicText fontSize={1.1} className={`inline text-left ${statusClass(status)}`}>
+            <span className={`inline text-left ${statusClass(status)}`}>
               {status}
-            </ComicText>
+            </span>
           </motion.span>
           {uptime != null && (
-            <ComicText fontSize={1} className="inline text-left text-os-dim">
+            <span className="inline text-left text-os-dim">
               {uptime}
-            </ComicText>
+            </span>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-os-dim">
           <span title={selectedModelId}>
-            <ComicText fontSize={1} className="inline text-left text-os-dim">
+            <span className="inline text-left text-os-dim">
               {`Model ${truncateModelId(selectedModelId)}`}
-            </ComicText>
+            </span>
           </span>
           {usage && (
             <span title="Last OpenRouter usage">
-              <ComicText fontSize={1} className="inline text-left text-os-dim">
+              <span className="inline text-left text-os-dim">
                 {`Tokens ${usage.promptTokens}+${usage.completionTokens}`}
-              </ComicText>
+              </span>
             </span>
           )}
         </div>
@@ -76,9 +75,9 @@ export function KernelBar() {
         <div className="flex flex-wrap gap-x-3 text-[10px] text-os-dim/70">
           {integrations.map(({ label, value }) => (
             <span key={label}>
-              <ComicText fontSize={1} className="inline text-left text-os-dim">
+              <span className="inline text-left text-os-dim">
                 {`${label} ${value}`}
-              </ComicText>
+              </span>
             </span>
           ))}
         </div>

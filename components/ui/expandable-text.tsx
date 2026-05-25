@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RippleButton } from "@/components/ui/ripple-button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const CLAMP_CLASS = {
@@ -45,14 +45,13 @@ export function ExpandableText({
         {text}
       </p>
       {overflows && (
-        <RippleButton
+        <Button coolMode
           type="button"
-          rippleColor="var(--os-amber)"
           onClick={() => setExpanded((v) => !v)}
           className="mt-0.5 text-[9px] text-os-amber hover:underline"
         >
           {expanded ? lessLabel : moreLabel}
-        </RippleButton>
+        </Button>
       )}
     </div>
   );

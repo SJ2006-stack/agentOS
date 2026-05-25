@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { flushSync } from "react-dom";
 
-import { RippleButton } from "@/components/ui/ripple-button";
+import { withBasePath } from "@/lib/api/url";
 import { cn } from "@/lib/utils";
 
 const THEME_DELAY_MS = 3000;
 const ZA_WARUDO_SRC = "/sounds/za-warudo.mp3";
+const ZA_WARUDO_URL = withBasePath(ZA_WARUDO_SRC);
 
 export type TransitionVariant =
   | "circle"
@@ -147,26 +149,45 @@ export const AnimatedThemeToggler = ({
   const pendingRef = useRef(false);
   const delayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zaWarudoRef = useRef<HTMLAudioElement | null>(null);
+  const zaWarudoReadyRef = useRef(false);
+  const zaWarudoPlayFailedLoggedRef = useRef(false);
 
   const playZaWarudo = useCallback(() => {
-    if (!zaWarudoRef.current) {
-      zaWarudoRef.current = new Audio(ZA_WARUDO_SRC);
-      zaWarudoRef.current.volume = 1;
-    }
     const audio = zaWarudoRef.current;
-    audio.currentTime = 0;
-    void audio.play().catch((err) => {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[ZA WARUDO] playback failed:", err);
+    if (!audio || audio.error) return;
+
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        void playPromise.catch(() => {
+          if (
+            process.env.NODE_ENV === "development" &&
+            !zaWarudoPlayFailedLoggedRef.current
+          ) {
+            zaWarudoPlayFailedLoggedRef.current = true;
+            console.warn("[ZA WARUDO] playback unavailable (autoplay or codec)");
+          }
+        });
       }
-    });
+    } catch {
+      if (
+        process.env.NODE_ENV === "development" &&
+        !zaWarudoPlayFailedLoggedRef.current
+      ) {
+        zaWarudoPlayFailedLoggedRef.current = true;
+        console.warn("[ZA WARUDO] playback unavailable (autoplay or codec)");
+      }
+    }
   }, []);
 
-  useEffect(() => {
-    return () => {
-      zaWarudoRef.current?.pause();
-      zaWarudoRef.current = null;
-    };
+  const onZaWarudoCanPlayThrough = useCallback(() => {
+    zaWarudoReadyRef.current = true;
+  }, []);
+
+  const onZaWarudoError = useCallback(() => {
+    zaWarudoReadyRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -232,6 +253,16 @@ export const AnimatedThemeToggler = ({
       return;
     }
 
+    let transition: ViewTransition;
+    try {
+      transition = document.startViewTransition(() => {
+        flushSync(applyTheme);
+      });
+    } catch {
+      applyTheme();
+      return;
+    }
+
     const clipPath = getThemeTransitionClipPaths(
       shape,
       x,
@@ -254,9 +285,6 @@ export const AnimatedThemeToggler = ({
       root.style.removeProperty("--magicui-theme-vt-clip-from");
     };
 
-    const transition = document.startViewTransition(() => {
-      flushSync(applyTheme);
-    });
     if (typeof transition?.finished?.finally === "function") {
       transition.finished.finally(cleanup);
     } else {
@@ -307,9 +335,18 @@ export const AnimatedThemeToggler = ({
   }, [applyTheme, runViewTransition, playZaWarudo]);
 
   return (
-    <RippleButton
+    <>
+    <audio
+      ref={zaWarudoRef}
+      src={ZA_WARUDO_URL}
+      preload="auto"
+      className="hidden"
+      aria-hidden
+      onCanPlayThrough={onZaWarudoCanPlayThrough}
+      onError={onZaWarudoError}
+    />
+    <Button coolMode
       type="button"
-      rippleColor="var(--os-green)"
       ref={buttonRef}
       onClick={toggleTheme}
       disabled={isPending}
@@ -364,6 +401,7 @@ export const AnimatedThemeToggler = ({
       <span className="sr-only">
         {isPending ? "Theme change in progress" : "Toggle theme"}
       </span>
-    </RippleButton>
+    </Button>
+    </>
   );
 };

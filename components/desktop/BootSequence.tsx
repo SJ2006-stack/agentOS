@@ -5,7 +5,7 @@ import { AnimatedSpan, TypingAnimation } from "@/components/ui/terminal";
 export function BootSequence({ hydraConfigured }: { hydraConfigured: boolean }) {
   return (
     <div className="shrink-0 space-y-0.5 border-b border-os-border bg-os-panel/40 px-4 py-2 text-xs">
-      <TypingAnimation delay={100} startOnView={false} duration={35}>
+      <TypingAnimation delay={100} startOnView={false}>
         $ boot devfactory-os --init
       </TypingAnimation>
       <AnimatedSpan delay={1400} className="text-os-green">

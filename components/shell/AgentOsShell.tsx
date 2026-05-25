@@ -1,13 +1,17 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
+import { CreateAgentOverlay } from "@/components/create-agent/CreateAgentOverlay";
 import { AgentOsHero } from "@/components/hero/AgentOsHero";
 import { HeroBootSequence } from "@/components/hero/BootSequence";
 import { DevFactoryDock } from "@/components/dock/DevFactoryDock";
+import {
+  CREATE_AGENT_OPEN_EVENT,
+  dispatchCreateAgentComplete,
+} from "@/lib/os/shell-events";
 import { consumeSkipHeroBoot } from "@/components/landing/OsSpawnBootstrap";
-import { ComicText } from "@/components/ui/comic-text";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { hydrateThemePreset, ThemePresetPicker } from "@/components/ui/theme-preset-picker";
 import { withBasePath } from "@/lib/api/url";
@@ -62,6 +66,7 @@ function shouldShowOrchestrationStrip(mode: UiMode, hasActivity: boolean): boole
 }
 
 export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) {
+  const [createAgentOpen, setCreateAgentOpen] = useState(false);
   const mode = useUiModeStore((s) => s.mode);
   const hydrated = useUiModeStore((s) => s.hydrated);
   const bootComplete = useOsStore((s) => s.bootComplete);
@@ -89,6 +94,12 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   }, [hydraConfigured]);
 
   useEffect(() => {
+    const onOpen = () => setCreateAgentOpen(true);
+    window.addEventListener(CREATE_AGENT_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(CREATE_AGENT_OPEN_EVENT, onOpen);
+  }, []);
+
+  useEffect(() => {
     if (!hydraConfigured) return;
     const boot = () => {
       void fetch(withBasePath("/api/hydradb/boot"), { method: "POST" });
@@ -108,9 +119,9 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   if (!hydrated) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-os-bg/70 font-mono text-os-dim">
-        <ComicText fontSize={2.5} className="text-center text-os-dim">
+        <span className="text-center text-os-dim">
           AgentOS…
-        </ComicText>
+        </span>
       </div>
     );
   }
@@ -149,13 +160,13 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           {mode !== "desktop" && (
             <div className="shrink-0 border-b border-os-border/50 px-3 py-1">
-              <ComicText fontSize={1.3} className="text-center text-os-dim">
+              <span className="text-center text-os-dim">
                 {UI_MODE_LABELS[mode]}
-              </ComicText>
+              </span>
               {UI_MODE_STRIP_HINTS[mode] && (
-                <ComicText fontSize={1} className="mt-0.5 text-center text-os-dim/65">
+                <span className="mt-0.5 text-center text-os-dim/65">
                   {UI_MODE_STRIP_HINTS[mode]}
-                </ComicText>
+                </span>
               )}
             </div>
           )}
@@ -218,6 +229,13 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
       )}
 
       <DevFactoryDock hydraConfigured={hydraConfigured} />
+
+      <CreateAgentOverlay
+        open={createAgentOpen}
+        onClose={() => setCreateAgentOpen(false)}
+        hydraConfigured={hydraConfigured}
+        onComplete={() => dispatchCreateAgentComplete()}
+      />
     </div>
   );
 }

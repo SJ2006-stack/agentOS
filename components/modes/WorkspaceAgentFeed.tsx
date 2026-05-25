@@ -3,7 +3,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CPU_STEPS, type CpuStep, type IoToolCall } from "@/lib/os/types";
-import { ComicText } from "@/components/ui/comic-text";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 
@@ -253,12 +252,12 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
-        <ComicText fontSize={1.3} className="text-left text-os-dim">
+        <span className="text-left text-os-dim">
           Agent Feed
-        </ComicText>
-        <ComicText fontSize={1} className="text-left text-os-dim">
+        </span>
+        <span className="text-left text-os-dim">
           {feed.length === 0 ? "idle" : String(feed.length)}
-        </ComicText>
+        </span>
       </header>
 
       <ul
@@ -275,9 +274,9 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
               exit={{ opacity: 0 }}
               className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-4 text-center text-[11px] text-os-dim"
             >
-              <ComicText fontSize={1.1} className="text-center text-os-dim">
+              <span className="text-center text-os-dim">
                 Waiting for agent activity…
-              </ComicText>
+              </span>
             </motion.li>
           )}
           {visible.map((entry) => (
@@ -295,12 +294,9 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="flex items-baseline gap-1.5 text-[11px] leading-snug">
-                  <ComicText
-                    fontSize={1}
-                    className={cn("inline text-left", KIND_STYLE[entry.kind])}
-                  >
+                  <span className={cn("inline text-left", KIND_STYLE[entry.kind])}>
                     {`${entry.prefix}:`}
-                  </ComicText>
+                  </span>
                   <span className="break-words text-os-green/90">
                     {entry.text}
                   </span>

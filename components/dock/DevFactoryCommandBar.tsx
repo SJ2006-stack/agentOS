@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Terminal } from "lucide-react";
-import { ComicText } from "@/components/ui/comic-text";
-import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 import { dispatchShellCommand, SHELL_FOCUS_INPUT_EVENT } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
@@ -43,25 +42,25 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
   if (variant === "hero") {
     return (
       <div className="w-full max-w-2xl px-2">
-        <ComicText fontSize={3} className="text-center text-white/95">
+        <span className="text-center text-white/95">
           What should we build?
-        </ComicText>
-        <ComicText fontSize={2} className="mt-2 text-center text-white/50">
+        </span>
+        <span className="mt-2 text-center text-white/50">
           Natural language commands — submit builds, spawn agents, check status
-        </ComicText>
+        </span>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           {DESKTOP_COMMAND_SUGGESTIONS.map(({ label, command }) => (
-            <RippleButton
+            <Button coolMode
               key={command}
               type="button"
               onClick={() => submitCommand(command)}
               className="rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur-md transition-[background-color,box-shadow,transform] hover:scale-[1.02] hover:border-white/35 hover:bg-white/15 hover:shadow-[0_0_16px_rgba(255,255,255,0.08)] active:scale-[0.98]"
             >
-              <ComicText fontSize={1.2} className="text-center text-white/85">
+              <span className="text-center text-white/85">
                 {label}
-              </ComicText>
-            </RippleButton>
+              </span>
+            </Button>
           ))}
         </div>
 
@@ -91,14 +90,14 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
           <span className="hidden text-[10px] text-white/40 sm:inline">
             {selectedModelId.split("/").pop()}
           </span>
-          <RippleButton
+          <Button coolMode
             type="submit"
             className="shrink-0 rounded-lg border border-white/25 bg-white/15 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-white transition-[background-color,box-shadow] hover:border-sky-400/40 hover:bg-sky-500/20 hover:shadow-[0_0_12px_rgba(56,189,248,0.2)]"
           >
-            <ComicText fontSize={1.2} className="text-center text-white">
+            <span className="text-center text-white">
               Run
-            </ComicText>
-          </RippleButton>
+            </span>
+          </Button>
         </form>
       </div>
     );
@@ -131,14 +130,14 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
       <span className="hidden text-[10px] text-os-dim sm:inline">
         {selectedModelId.split("/").pop()}
       </span>
-      <RippleButton
+      <Button coolMode
         type="submit"
         className="rounded-md border border-os-border/70 bg-os-bg/30 px-2 py-1 text-[10px] uppercase tracking-wide text-os-amber transition-[background-color,box-shadow] hover:border-os-amber/40 hover:bg-os-amber/10 hover:shadow-[0_0_10px_color-mix(in_srgb,var(--os-amber)_25%,transparent)]"
       >
-        <ComicText fontSize={1.2} className="text-center text-os-amber">
+        <span className="text-center text-os-amber">
           Run
-        </ComicText>
-      </RippleButton>
+        </span>
+      </Button>
     </form>
   );
 }

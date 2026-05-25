@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
 import {
   useEffect,
   useRef,
@@ -20,8 +21,6 @@ import {
   dispatchShellCommand,
   type AgentSpawnedDetail,
 } from "@/lib/os/shell-events";
-import { ComicText } from "@/components/ui/comic-text";
-import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 import { type UiMode, useUiModeStore } from "@/store/ui/uiModeStore";
@@ -107,33 +106,32 @@ function OrchestrationStatusStrip({
       )}
       aria-label="Agent orchestration status"
     >
-      <RippleButton
+      <Button coolMode
         type="button"
-        rippleColor="var(--os-green)"
         onClick={openWorkspace}
         className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-os-panel/70 sm:px-4"
         title="Open agents workspace"
       >
-        <ComicText fontSize={1} className="shrink-0 text-left text-os-dim">
+        <span className="shrink-0 text-left text-os-dim">
           Orchestration
-        </ComicText>
+        </span>
         <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-os-green/90">
-          <ComicText fontSize={1.1} className="inline text-left text-os-green">
+          <span className="inline text-left text-os-green">
             {agentLabel}
-          </ComicText>
+          </span>
           {currentTask ? (
             <>
               <span className="text-os-dim/70"> · </span>
-              <ComicText fontSize={1.1} className="inline text-left text-os-green/75">
+              <span className="inline text-left text-os-green/75">
                 {currentTask}
-              </ComicText>
+              </span>
             </>
           ) : isIdle ? (
             <>
               <span className="text-os-dim/70"> · </span>
-              <ComicText fontSize={1.1} className="inline text-left text-os-dim/80">
+              <span className="inline text-left text-os-dim/80">
                 idle
-              </ComicText>
+              </span>
             </>
           ) : null}
         </span>
@@ -146,9 +144,9 @@ function OrchestrationStatusStrip({
               exit={{ opacity: 0 }}
               className="shrink-0"
             >
-              <ComicText fontSize={1} className="text-left text-os-amber">
+              <span className="text-left text-os-amber">
                 {spawnFlash}
-              </ComicText>
+              </span>
             </motion.span>
           ) : (
             <motion.span
@@ -158,13 +156,13 @@ function OrchestrationStatusStrip({
               exit={{ opacity: 0 }}
               className="hidden shrink-0 sm:inline"
             >
-              <ComicText fontSize={0.9} className="text-left text-os-dim/70">
+              <span className="text-left text-os-dim/70">
                 view graph →
-              </ComicText>
+              </span>
             </motion.span>
           )}
         </AnimatePresence>
-      </RippleButton>
+      </Button>
     </section>
   );
 }
@@ -324,9 +322,9 @@ function StatNumber({
   }, [to, reduce, delay, mv]);
 
   return (
-    <ComicText fontSize={1.2} className="agentos-hero-stats-num text-left">
+    <span className="agentos-hero-stats-num text-left">
       {display}
-    </ComicText>
+    </span>
   );
 }
 
@@ -413,21 +411,21 @@ function FullscreenHero({ className }: { className?: string }) {
             style={{ backgroundColor: PALETTE.accent }}
             aria-hidden
           />
-          <ComicText fontSize={1.2} className="text-left" style={{ color: PALETTE.accent }}>
+          <span className="text-left" style={{ color: PALETTE.accent }}>
             Live agent orchestration
-          </ComicText>
+          </span>
         </motion.div>
 
         <motion.div {...fadeUp(1)}>
-          <ComicText fontSize={5.5} className="text-center" style={{ lineHeight: 1.05 }}>
+          <span className="text-center" style={{ lineHeight: 1.05 }}>
             AgentOS
-          </ComicText>
+          </span>
         </motion.div>
 
         <motion.div {...fadeUp(2)} className="mt-5 max-w-2xl">
-          <ComicText fontSize={2.5} className="text-center" style={{ color: PALETTE.text }}>
+          <span className="text-center" style={{ color: PALETTE.text }}>
             Spawn agents. Deploy workflows. Watch them think.
-          </ComicText>
+          </span>
         </motion.div>
 
         <motion.div
@@ -445,9 +443,9 @@ function FullscreenHero({ className }: { className?: string }) {
               }}
             >
               <span aria-hidden>{pill.icon}</span>
-              <ComicText fontSize={1.1} className="text-left" style={{ color: PALETTE.text }}>
+              <span className="text-left" style={{ color: PALETTE.text }}>
                 {pill.label}
-              </ComicText>
+              </span>
             </span>
           ))}
         </motion.div>
@@ -457,9 +455,8 @@ function FullscreenHero({ className }: { className?: string }) {
           className="mt-10 grid w-full max-w-3xl grid-cols-1 items-center gap-8 lg:max-w-5xl lg:grid-cols-2 lg:gap-12"
         >
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-end">
-            <RippleButton
+            <Button coolMode
               type="button"
-              rippleColor={PALETTE.accent}
               onClick={handlePrimaryCta}
               className={cn(
                 "agentos-cta-glow group relative inline-flex items-center justify-center gap-2 rounded-lg border px-7 py-3 font-mono text-sm font-medium tracking-wide transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
@@ -475,20 +472,19 @@ function FullscreenHero({ className }: { className?: string }) {
                 } as CSSProperties
               }
             >
-              <ComicText fontSize={1.2} className="text-left" style={{ color: PALETTE.accent }}>
+              <span className="text-left" style={{ color: PALETTE.accent }}>
                 Spawn your first agent
-              </ComicText>
+              </span>
               <span
                 aria-hidden
                 className="transition-transform duration-200 group-hover:translate-x-0.5"
               >
                 →
               </span>
-            </RippleButton>
+            </Button>
 
-            <RippleButton
+            <Button coolMode
               type="button"
-              rippleColor="#ffffff"
               onClick={handleSecondaryCta}
               className="inline-flex items-center justify-center rounded-lg border bg-transparent px-6 py-3 font-mono text-sm tracking-wide transition-colors duration-200 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2"
               style={
@@ -499,10 +495,10 @@ function FullscreenHero({ className }: { className?: string }) {
                 } as CSSProperties
               }
             >
-              <ComicText fontSize={1.2} className="text-left" style={{ color: PALETTE.text }}>
-                Watch demo
-              </ComicText>
-            </RippleButton>
+              <span className="text-left" style={{ color: PALETTE.text }}>
+                Watch DOOM demo
+              </span>
+            </Button>
           </div>
 
           <div className="hidden w-full justify-start lg:flex">
@@ -567,9 +563,8 @@ function FullscreenHero({ className }: { className?: string }) {
             style={{ color: PALETTE.text, caretColor: PALETTE.accent }}
             aria-label="Type a command"
           />
-          <RippleButton
+          <Button coolMode
             type="submit"
-            rippleColor={PALETTE.accent}
             className="agentos-run-glow inline-flex shrink-0 items-center gap-1 rounded-md border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] transition-transform duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
             style={
               {
@@ -581,16 +576,16 @@ function FullscreenHero({ className }: { className?: string }) {
             }
             aria-label="Run command"
           >
-            <ComicText fontSize={1.1} className="text-left" style={{ color: PALETTE.accent }}>
+            <span className="text-left" style={{ color: PALETTE.accent }}>
               Run
-            </ComicText>
+            </span>
             <span aria-hidden>↵</span>
-          </RippleButton>
+          </Button>
         </div>
         <div className="mt-2" style={{ color: PALETTE.text, opacity: 0.55 }}>
-          <ComicText fontSize={1} className="text-center">
+          <span className="text-center">
             press enter to dispatch · routed through kernel shell
-          </ComicText>
+          </span>
         </div>
       </motion.form>
 
