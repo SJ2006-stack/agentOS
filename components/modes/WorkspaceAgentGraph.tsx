@@ -13,8 +13,9 @@ import {
   signatureStroke,
   type AgentSignature,
 } from "@/lib/os/agent-signature";
+import { ComicText } from "@/components/ui/comic-text";
 import { dispatchShellCommand } from "@/lib/os/shell-events";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 
 const NODE_W = 40;
 const NODE_H = 18;
@@ -359,7 +360,9 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
           className="workspace-graph-active-route shrink-0 rounded border border-os-cyan/30 bg-os-cyan/5 px-2.5 py-1.5 text-[11px] text-os-cyan"
           aria-live="polite"
         >
-          <span className="font-semibold uppercase tracking-wider">Active route</span>
+          <ComicText fontSize={1.1} className="inline text-left">
+            Active route
+          </ComicText>
           <span className="mx-1.5 text-os-dim">·</span>
           <span className="font-mono">{activeRoutes.join(" · ")}</span>
         </div>
@@ -372,7 +375,9 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
               className="workspace-graph-legend-swatch size-2 rounded-full"
               style={{ backgroundColor: signatureStroke(sig) }}
             />
-            <span className="font-mono uppercase tracking-wider">{label}</span>
+            <ComicText fontSize={1} className="text-left">
+              {label}
+            </ComicText>
           </span>
         ))}
       </div>

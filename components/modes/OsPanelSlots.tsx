@@ -2,10 +2,10 @@
 
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import { KernelBar } from "@/components/KernelBar";
+import { KernelBar } from "@/components/panels/KernelBar";
 
 const AgentGraphPanel = dynamic(
-  () => import("@/components/AgentGraphPanel").then((m) => m.AgentGraphPanel),
+  () => import("@/components/graph/AgentGraphPanel").then((m) => m.AgentGraphPanel),
   {
     ssr: false,
     loading: () => (
@@ -15,27 +15,27 @@ const AgentGraphPanel = dynamic(
 );
 
 const CpuScheduler = dynamic(
-  () => import("@/components/CpuScheduler").then((m) => m.CpuScheduler),
+  () => import("@/components/panels/CpuScheduler").then((m) => m.CpuScheduler),
   { ssr: false }
 );
 
 const HydraMemoryPanel = dynamic(
-  () => import("@/components/HydraMemoryPanel").then((m) => m.HydraMemoryPanel),
+  () => import("@/components/panels/HydraMemoryPanel").then((m) => m.HydraMemoryPanel),
   { ssr: false }
 );
 
 const IoBus = dynamic(
-  () => import("@/components/IoBus").then((m) => m.IoBus),
+  () => import("@/components/panels/IoBus").then((m) => m.IoBus),
   { ssr: false }
 );
 
 const GpuHeatmap = dynamic(
-  () => import("@/components/GpuHeatmap").then((m) => m.GpuHeatmap),
+  () => import("@/components/panels/GpuHeatmap").then((m) => m.GpuHeatmap),
   { ssr: false }
 );
 
 const ConfigurePanel = dynamic(
-  () => import("@/components/ConfigurePanel").then((m) => m.ConfigurePanel),
+  () => import("@/components/panels/ConfigurePanel").then((m) => m.ConfigurePanel),
   { ssr: false }
 );
 

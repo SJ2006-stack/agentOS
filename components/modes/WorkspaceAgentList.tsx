@@ -3,7 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus } from "lucide-react";
-import { withBasePath } from "@/lib/api-url";
+import { withBasePath } from "@/lib/api/url";
 import { BUILTIN_GRAPH_TEMPLATES } from "@/lib/os/builtin-graph-templates";
 import type { GraphTemplate } from "@/lib/os/agent-graph-layout";
 import {
@@ -19,8 +19,10 @@ import {
   SHELL_COMMAND_EVENT,
   type ShellCommandDetail,
 } from "@/lib/os/shell-events";
+import { ComicText } from "@/components/ui/comic-text";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 
 const SIGNATURE_TAG_LABEL: Record<AgentSignature, string> = {
   research: "RESEARCH",
@@ -167,9 +169,9 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
-        <h2 className="font-mono text-[10px] uppercase tracking-[0.22em] text-os-dim">
+        <ComicText fontSize={1.3} className="text-left text-os-dim">
           Active Agents
-        </h2>
+        </ComicText>
         <span
           className={cn(
             "workspace-count-pill inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] tabular-nums",
@@ -201,7 +203,9 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
               exit={{ opacity: 0 }}
               className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-4 text-center text-[11px] text-os-dim"
             >
-              No agents yet. Spawn one to begin.
+              <ComicText fontSize={1.1} className="text-center text-os-dim">
+                No agents yet. Spawn one to begin.
+              </ComicText>
             </motion.li>
           )}
           {agents.map((agent) => (
@@ -251,7 +255,9 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
                   SIGNATURE_TAG_CLASS[agent.signature]
                 )}
               >
-                {SIGNATURE_TAG_LABEL[agent.signature]}
+                <ComicText fontSize={0.9} className="text-left">
+                  {SIGNATURE_TAG_LABEL[agent.signature]}
+                </ComicText>
               </span>
             </motion.li>
           ))}
@@ -259,14 +265,17 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
       </ul>
 
       <footer className="shrink-0 border-t border-white/10 p-2.5">
-        <button
+        <RippleButton
           type="button"
+          rippleColor="var(--workspace-accent, var(--os-green))"
           onClick={onSpawn}
           className="workspace-spawn-btn group flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--workspace-accent)]/50 bg-[color:var(--workspace-accent)]/[0.08] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--workspace-accent)] transition-[background-color,border-color,box-shadow]"
         >
           <Plus className="size-3.5" aria-hidden />
-          <span>Spawn Agent</span>
-        </button>
+          <ComicText fontSize={1.2} className="text-center text-[color:var(--workspace-accent)]">
+            Spawn Agent
+          </ComicText>
+        </RippleButton>
       </footer>
     </section>
   );

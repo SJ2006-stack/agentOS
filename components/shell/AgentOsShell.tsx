@@ -5,16 +5,17 @@ import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { AgentOsHero } from "@/components/hero/AgentOsHero";
 import { HeroBootSequence } from "@/components/hero/BootSequence";
-import { DevFactoryDock } from "@/components/DevFactoryDock";
+import { DevFactoryDock } from "@/components/dock/DevFactoryDock";
 import { consumeSkipHeroBoot } from "@/components/landing/OsSpawnBootstrap";
+import { ComicText } from "@/components/ui/comic-text";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { hydrateThemePreset, ThemePresetPicker } from "@/components/ui/theme-preset-picker";
-import { withBasePath } from "@/lib/api-url";
-import { useKernelHeartbeat } from "@/hooks/useKernelHeartbeat";
-import { useOsRealtime } from "@/hooks/useOsRealtime";
-import { useOsStore } from "@/store/osStore";
+import { withBasePath } from "@/lib/api/url";
+import { useKernelHeartbeat } from "@/hooks/os/useKernelHeartbeat";
+import { useOsRealtime } from "@/hooks/realtime/useOsRealtime";
+import { useOsStore } from "@/store/os/osStore";
 import { cn } from "@/lib/utils";
-import { UI_MODE_LABELS, UI_MODE_STRIP_HINTS, type UiMode, useUiModeStore } from "@/store/uiModeStore";
+import { UI_MODE_LABELS, UI_MODE_STRIP_HINTS, type UiMode, useUiModeStore } from "@/store/ui/uiModeStore";
 
 const DesktopMode = dynamic(
   () => import("@/components/modes/DesktopMode").then((m) => m.DesktopMode),
@@ -106,8 +107,10 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
 
   if (!hydrated) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-os-bg font-mono text-os-dim">
-        AgentOS…
+      <div className="flex h-screen w-screen items-center justify-center bg-os-bg/70 font-mono text-os-dim">
+        <ComicText fontSize={2.5} className="text-center text-os-dim">
+          AgentOS…
+        </ComicText>
       </div>
     );
   }
@@ -126,7 +129,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   const showActiveWorkspace = mode !== "hero";
 
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg font-mono text-os-green">
+    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg/75 font-mono text-os-green">
       <div className="fixed top-3 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-2">
         <ThemePresetPicker className="rounded-full border border-os-border/80 bg-os-surface/90 px-1.5 py-1 backdrop-blur-sm" />
         <AnimatedThemeToggler
@@ -146,13 +149,13 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           {mode !== "desktop" && (
             <div className="shrink-0 border-b border-os-border/50 px-3 py-1">
-              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-os-dim">
+              <ComicText fontSize={1.3} className="text-center text-os-dim">
                 {UI_MODE_LABELS[mode]}
-              </p>
+              </ComicText>
               {UI_MODE_STRIP_HINTS[mode] && (
-                <p className="mt-0.5 text-center text-[9px] tracking-wide text-os-dim/65">
+                <ComicText fontSize={1} className="mt-0.5 text-center text-os-dim/65">
                   {UI_MODE_STRIP_HINTS[mode]}
-                </p>
+                </ComicText>
               )}
             </div>
           )}
@@ -214,7 +217,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
         </motion.div>
       )}
 
-      <DevFactoryDock />
+      <DevFactoryDock hydraConfigured={hydraConfigured} />
     </div>
   );
 }

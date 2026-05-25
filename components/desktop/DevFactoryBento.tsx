@@ -3,8 +3,9 @@
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { Activity, Bell, Database, Share2 } from "lucide-react";
 
+import { ComicText } from "@/components/ui/comic-text";
 import { cn } from "@/lib/utils";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 import { Calendar } from "@/components/ui/calendar";
 import AnimatedBeamMultipleOutputDemo from "@/components/example/animated-beam-multiple-outputs";
 import AnimatedListDemo from "@/components/example/animated-list-demo";
@@ -170,10 +171,12 @@ export function DevFactoryBento() {
   return (
     <div className="flex min-h-0 flex-col gap-2.5">
       <div className="flex items-baseline justify-between gap-2 rounded-lg border border-os-border/50 bg-os-panel/30 px-2.5 py-1.5 ring-1 ring-inset ring-white/[0.03] backdrop-blur-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-os-green drop-shadow-[0_0_8px_color-mix(in_srgb,var(--os-green)_35%,transparent)]">
+        <ComicText fontSize={1.5} className="text-left text-os-green">
           DevFactory overview
-        </h2>
-        <span className="text-[10px] text-os-dim/90">scroll monitor below</span>
+        </ComicText>
+        <ComicText fontSize={1} className="text-left text-os-dim/90">
+          scroll monitor below
+        </ComicText>
       </div>
       <BentoGrid className="min-h-0 flex-1 gap-3.5">
         {features.map((feature, idx) => (

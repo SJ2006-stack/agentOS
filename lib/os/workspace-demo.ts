@@ -1,5 +1,5 @@
 import { dispatchShellCommand } from "@/lib/os/shell-events";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 
 export const WORKSPACE_DEMO_COMMANDS = {
   submitRestApi: "submit build a REST API",

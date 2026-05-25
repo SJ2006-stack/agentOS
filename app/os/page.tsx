@@ -1,4 +1,4 @@
-import { DevFactoryOs } from "@/components/DevFactoryOs";
+import { DevFactoryOs } from "@/components/shell/DevFactoryOs";
 import { OsSpawnBootstrap } from "@/components/landing/OsSpawnBootstrap";
 import { isHydraConfigured } from "@/lib/hydradb/client";
 

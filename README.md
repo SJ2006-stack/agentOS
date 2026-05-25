@@ -14,6 +14,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) for the hero landing page, then **Spawn your first agent** to enter the OS at `/os`.
 
+### App routes (`app/`)
+
+| Path | URL | Role |
+|------|-----|------|
+| `(marketing)/page.tsx` | `/` | Landing |
+| `os/page.tsx` | `/os` | DevFactory OS shell |
+| `api/os/*` | `/api/os/...` | Command, verify, heartbeat, search, create-agent |
+| `api/agents/*` | `/api/agents/...` | Kernel, CPU, GPU, registry |
+| `api/hydradb/*` | `/api/hydradb/...` | Tenant boot, memories, recall, verify |
+
 > **GitHub Pages:** builds use `GITHUB_PAGES=true`, which sets `basePath` to `/agentOS` (site URL: `https://<user>.github.io/agentOS/`). Local dev and Vercel deploy serve the app at `/` with no base path.
 
 ## Shell commands

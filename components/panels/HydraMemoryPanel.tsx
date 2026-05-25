@@ -2,12 +2,14 @@
 
 import { memo, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { ComicText } from "@/components/ui/comic-text";
 import {
   ExpandableText,
   formatMemoryPreview,
 } from "@/components/ui/expandable-text";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 import type { MemorySlotWrite } from "@/lib/os/types";
 
 type AgentMemorySummary = {
@@ -77,14 +79,16 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
     return (
       <div className="flex h-full flex-col font-mono">
         {showHeader && (
-          <h2 className="mb-2 text-xs text-os-amber tracking-wider">HYDRA MEMORY</h2>
+          <ComicText fontSize={1.5} className="mb-2 text-left text-os-amber">
+            HYDRA MEMORY
+          </ComicText>
         )}
-        <p className="text-[10px] text-os-fault">
+        <ComicText fontSize={1.1} className="text-left text-os-fault">
           HYDRADB_API_KEY missing — set in .env.local
-        </p>
-        <p className="mt-1 text-[10px] text-os-dim">
-          Run: submit &lt;task&gt; after configuring HydraDB
-        </p>
+        </ComicText>
+        <ComicText fontSize={1} className="mt-1 text-left text-os-dim">
+          Run: submit task after configuring HydraDB
+        </ComicText>
       </div>
     );
   }
@@ -105,7 +109,9 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
   return (
     <div className="flex h-full flex-col overflow-hidden font-mono">
       {showHeader && (
-        <h2 className="mb-2 text-xs text-os-amber tracking-wider">HYDRA MEMORY</h2>
+        <ComicText fontSize={1.5} className="mb-2 text-left text-os-amber">
+          HYDRA MEMORY
+        </ComicText>
       )}
 
       <div
@@ -116,14 +122,15 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p
+            <ComicText
+              fontSize={1.1}
               className={cn(
-                "text-[10px] leading-snug",
+                "text-left leading-snug",
                 isIdle ? "text-os-dim" : "text-os-green"
               )}
             >
               {summaryLine}
-            </p>
+            </ComicText>
             {isActive && agents.length > 0 && !showDetails && (
               <div className="mt-1 flex flex-wrap gap-1">
                 {agents.slice(0, 4).map((a) => (
@@ -152,14 +159,17 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
           </div>
 
           {memory.slots.length > 0 && (
-            <button
+            <RippleButton
               type="button"
+              rippleColor="var(--os-green)"
               onClick={() => setShowDetails((v) => !v)}
               className="shrink-0 text-[9px] uppercase tracking-wider text-os-dim transition-colors hover:text-os-green"
               aria-expanded={showDetails}
             >
-              {showDetails ? "Hide" : "Details"}
-            </button>
+              <ComicText fontSize={1} className="text-left text-os-dim">
+                {showDetails ? "Hide" : "Details"}
+              </ComicText>
+            </RippleButton>
           )}
         </div>
 

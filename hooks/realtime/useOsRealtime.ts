@@ -11,7 +11,7 @@ import type {
   MemoryRecallResult,
   MemorySlotWrite,
 } from "@/lib/os/types";
-import { useOsStore, type RealtimeBatch } from "@/store/osStore";
+import { useOsStore, type RealtimeBatch } from "@/store/os/osStore";
 
 const REALTIME_FLUSH_MS = 100;
 

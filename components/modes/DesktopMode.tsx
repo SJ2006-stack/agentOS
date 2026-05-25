@@ -25,9 +25,11 @@ import {
   signatureClass,
   signatureStroke,
 } from "@/lib/os/agent-signature";
+import { ComicText } from "@/components/ui/comic-text";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
-import { CPU_STEPS, useOsStore } from "@/store/osStore";
-import { useUiModeStore } from "@/store/uiModeStore";
+import { CPU_STEPS, useOsStore } from "@/store/os/osStore";
+import { useUiModeStore } from "@/store/ui/uiModeStore";
 
 type DesktopIconId =
   | "agents"
@@ -174,9 +176,9 @@ function DesktopGlassCard({
     >
       {title ? (
         <header className="border-b border-white/10 px-3 py-2">
-          <h2 className="text-[10px] font-semibold uppercase tracking-widest text-white/50">
+          <ComicText fontSize={1.2} className="text-left text-white/50">
             {title}
-          </h2>
+          </ComicText>
         </header>
       ) : null}
       <div className="p-3">{children}</div>
@@ -225,16 +227,17 @@ function DesktopWindow({
         onPointerDown={(e) => dragControls.start(e)}
         className="flex cursor-grab items-center justify-between border-b border-os-green/10 bg-os-panel/20 px-3 py-2 active:cursor-grabbing"
       >
-        <span className="font-mono text-xs font-medium tracking-wide text-os-green/90">
+        <ComicText fontSize={1.2} className="text-left text-os-green/90">
           {title}
-        </span>
-        <button
+        </ComicText>
+        <RippleButton
           type="button"
+          rippleColor="#ffffff"
           onClick={onClose}
           className="rounded px-2 py-0.5 text-[10px] text-white/60 transition-colors hover:bg-white/10 hover:text-white"
         >
           ✕
-        </button>
+        </RippleButton>
       </div>
       <div className="max-h-[280px] overflow-auto p-3 text-xs leading-relaxed text-white/85">
         {children}
@@ -322,12 +325,12 @@ export function DesktopMode() {
       <div className="relative z-10 flex h-full min-h-0 flex-col pb-12">
         <header className="flex shrink-0 items-start justify-between gap-3 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
           <div className="min-w-0">
-            <h1 className="text-base font-semibold tracking-tight text-white/95 drop-shadow-sm sm:text-lg">
+            <ComicText fontSize={2.5} className="text-left text-white/95">
               DevFactory OS
-            </h1>
-            <p className="font-mono text-[10px] text-os-green/50">
+            </ComicText>
+            <ComicText fontSize={1} className="text-left text-os-green/50">
               Desktop launcher · same six apps as Agents workspace
-            </p>
+            </ComicText>
             <div className="mt-1 space-y-1">
               <p className="text-xs text-white/70">
                 {taskId ? (
@@ -400,17 +403,18 @@ export function DesktopMode() {
 
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-4 pb-3 sm:px-5 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:gap-5">
           <section className="flex flex-col">
-            <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/45">
+            <ComicText fontSize={1.3} className="mb-2 text-left text-white/45">
               Applications
-            </h2>
+            </ComicText>
             <div className="grid grid-cols-3 gap-x-3 gap-y-3">
               {DESKTOP_ICONS.map((item) => {
                 const accent = DESKTOP_ICON_ACCENTS[item.id];
                 const { Icon } = item;
                 return (
-                  <button
+                  <RippleButton
                     key={item.id}
                     type="button"
+                    rippleColor="var(--os-green)"
                     onClick={() => onIconClick(item)}
                     className="desktop-glossy-icon group flex flex-col items-center gap-1 rounded-xl p-2 text-center transition-transform hover:scale-[1.03] active:scale-[0.98]"
                   >
@@ -432,18 +436,16 @@ export function DesktopMode() {
                         strokeWidth={1.35}
                       />
                     </span>
-                    <span
-                      className={cn(
-                        "max-w-[96px] text-[11px] font-semibold leading-tight drop-shadow",
-                        accent.label
-                      )}
+                    <ComicText
+                      fontSize={1.1}
+                      className={cn("max-w-[96px] text-left leading-tight", accent.label)}
                     >
                       {item.label}
-                    </span>
+                    </ComicText>
                     <span className="hidden max-w-[96px] text-[9px] leading-snug text-white/50 group-hover:text-white/65 sm:block">
                       {item.description}
                     </span>
-                  </button>
+                  </RippleButton>
                 );
               })}
             </div>
@@ -455,9 +457,9 @@ export function DesktopMode() {
                 <div className="flex items-start gap-2 p-2.5">
                   <Cpu className="mt-0.5 size-3.5 shrink-0 text-sky-300/80" />
                   <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-wider text-white/45">
+                    <ComicText fontSize={1} className="text-left text-white/45">
                       Kernel
-                    </p>
+                    </ComicText>
                     <p
                       className={cn(
                         "truncate text-sm font-semibold capitalize",
@@ -479,9 +481,9 @@ export function DesktopMode() {
                 <div className="flex items-start gap-2 p-2.5">
                   <Zap className="mt-0.5 size-3.5 shrink-0 text-amber-300/80" />
                   <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-wider text-white/45">
+                    <ComicText fontSize={1} className="text-left text-white/45">
                       Tokens
-                    </p>
+                    </ComicText>
                     <p className="truncate text-sm font-semibold text-white/90">
                       {tokensLabel}
                     </p>
@@ -499,9 +501,9 @@ export function DesktopMode() {
                 <div className="flex items-start gap-2 p-2.5">
                   <Bot className="mt-0.5 size-3.5 shrink-0 text-violet-300/80" />
                   <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-wider text-white/45">
+                    <ComicText fontSize={1} className="text-left text-white/45">
                       Agents
-                    </p>
+                    </ComicText>
                     <p className="text-sm font-semibold text-white/90">
                       {agentCount} active
                     </p>
@@ -516,9 +518,9 @@ export function DesktopMode() {
                 <div className="flex items-start gap-2 p-2.5">
                   <Activity className="mt-0.5 size-3.5 shrink-0 text-emerald-300/80" />
                   <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-wider text-white/45">
+                    <ComicText fontSize={1} className="text-left text-white/45">
                       Subsystems
-                    </p>
+                    </ComicText>
                     <p className="text-sm font-semibold text-white/90">
                       GPU ×{gpuWorkers}
                     </p>
@@ -630,27 +632,36 @@ export function DesktopMode() {
             })
           )}
         </ul>
-        <button
+        <RippleButton
           type="button"
+          rippleColor="#ffffff"
           className="mt-3 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] hover:bg-white/15"
           onClick={() => dispatchShellCommand("spawn agent cpu.plan")}
         >
-          Run research spawn
-        </button>
+          <ComicText fontSize={1.1} className="text-center text-white">
+            Run research spawn
+          </ComicText>
+        </RippleButton>
       </DesktopWindow>
 
       <div className="desktop-taskbar absolute inset-x-0 bottom-0 z-40 flex h-12 items-center gap-2 px-3 backdrop-blur-xl">
-        <button
+        <RippleButton
           type="button"
+          rippleColor="var(--os-green)"
           className="flex size-9 items-center justify-center rounded-lg border border-os-green/25 bg-gradient-to-b from-os-green/25 to-os-panel/80 shadow-[0_0_12px_color-mix(in_srgb,var(--os-green)_20%,transparent)]"
-          aria-label="Start"
+          aria-label="Start — open terminal"
+          onClick={() => {
+            setMode("terminal");
+            focusCommandInput();
+            focusPanel("devfactory-shell");
+          }}
         >
           <Cpu className="size-4 text-os-green" />
-        </button>
+        </RippleButton>
         <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
-          <span className="shrink-0 text-[9px] uppercase tracking-wider text-os-dim/70">
+          <ComicText fontSize={1} className="shrink-0 text-left text-os-dim/70">
             agents
-          </span>
+          </ComicText>
           {activeAgents.length === 0 ? (
             <span className="text-[10px] text-os-dim/60">none active</span>
           ) : (

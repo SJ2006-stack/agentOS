@@ -1,7 +1,7 @@
 import "server-only";
 import { OpenRouter } from "@openrouter/sdk";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
-import { getOpenRouterApiKey } from "@/lib/env";
+import { getOpenRouterApiKey } from "@/lib/config/env";
 
 /** True when OPENROUTER_API_KEY (or OPENROUTER_KEY) is set and non-empty after trim. */
 export function isOpenRouterConfigured(): boolean {

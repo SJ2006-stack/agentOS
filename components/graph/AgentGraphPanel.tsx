@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { withBasePath } from "@/lib/api-url";
+import { withBasePath } from "@/lib/api/url";
 import type { GraphTemplate } from "@/lib/os/agent-graph-layout";
 import { BUILTIN_GRAPH_TEMPLATES } from "@/lib/os/builtin-graph-templates";
-import { AgentGraphControls } from "@/components/AgentGraphControls";
+import { AgentGraphControls } from "@/components/graph/AgentGraphControls";
 import { WorkspaceAgentGraph } from "@/components/modes/WorkspaceAgentGraph";
+import { ComicText } from "@/components/ui/comic-text";
 import { cn } from "@/lib/utils";
 import { SHELL_COMMAND_EVENT, type ShellCommandDetail } from "@/lib/os/shell-events";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 
 export function AgentGraphPanel({
   hydraConfigured,
@@ -77,12 +78,14 @@ export function AgentGraphPanel({
           )}
         >
           {showHeader && (
-            <span className="uppercase tracking-wider text-os-dim">agent graph</span>
+            <ComicText fontSize={1.3} className="text-left text-os-dim">
+              agent graph
+            </ComicText>
           )}
           {activeNodeIds.size > 0 && (
-            <span className="rounded border border-os-green/30 bg-os-green/5 px-1.5 py-0.5 text-[10px] text-os-green">
-              {activeNodeIds.size} active
-            </span>
+            <ComicText fontSize={1} className="rounded border border-os-green/30 bg-os-green/5 px-1.5 py-0.5 text-left text-os-green">
+              {`${activeNodeIds.size} active`}
+            </ComicText>
           )}
         </div>
       )}

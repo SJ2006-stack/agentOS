@@ -3,8 +3,9 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ExpandableText } from "@/components/ui/expandable-text";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
-import { CPU_STEPS, useOsStore } from "@/store/osStore";
+import { CPU_STEPS, useOsStore } from "@/store/os/osStore";
 import type { CpuStep } from "@/lib/os/types";
 
 const STEP_META: Record<
@@ -190,8 +191,9 @@ export const PipelineTimeline = memo(function PipelineTimeline() {
                   aria-hidden
                 />
               )}
-              <button
+              <RippleButton
                 type="button"
+                rippleColor="var(--os-green)"
                 disabled={!isSelectable}
                 onClick={() => isSelectable && setSelectedStep(step)}
                 className="pipeline-node-btn"
@@ -217,7 +219,7 @@ export const PipelineTimeline = memo(function PipelineTimeline() {
                 </span>
                 <span className="pipeline-step-code">{step}</span>
                 <span className="pipeline-step-label">{STEP_META[step].label}</span>
-              </button>
+              </RippleButton>
             </div>
           );
         })}

@@ -5,7 +5,7 @@ import {
   dispatchShellCommand,
   SHELL_READY_EVENT,
 } from "@/lib/os/shell-events";
-import { useUiModeStore } from "@/store/uiModeStore";
+import { useUiModeStore } from "@/store/ui/uiModeStore";
 
 const PENDING_COMMAND_KEY = "devfactory-pending-command";
 const SKIP_BOOT_KEY = "devfactory-skip-hero-boot";

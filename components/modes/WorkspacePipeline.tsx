@@ -2,10 +2,11 @@
 
 import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { ComicText } from "@/components/ui/comic-text";
 import { MissionPipeline } from "@/components/pipeline/MissionPipeline";
 import { CPU_STEPS, type CpuStep } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 
 const STAGE_ICON: Record<CpuStep, string> = {
   INTAKE: "📥",
@@ -106,13 +107,15 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
-        <h2 className="font-mono text-[10px] uppercase tracking-[0.22em] text-os-dim">
+        <ComicText fontSize={1.3} className="text-left text-os-dim">
           Mission Pipeline
-        </h2>
+        </ComicText>
         {currentStep && (
-          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--workspace-accent)]">
+          <span className="inline-flex items-center gap-1.5 text-[color:var(--workspace-accent)]">
             <span className="workspace-dot-active size-1.5 rounded-full bg-[color:var(--workspace-accent)]" />
-            Running
+            <ComicText fontSize={1.1} className="text-left text-[color:var(--workspace-accent)]">
+              Running
+            </ComicText>
           </span>
         )}
       </header>
@@ -133,15 +136,15 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
         >
           {displayedStage ? (
             <>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-os-dim">
+              <ComicText fontSize={1} className="text-left text-os-dim">
                 {currentStep ? "Running" : "Last completed"}
-              </p>
-              <p className="mt-0.5 text-[15px] font-semibold text-os-green">
+              </ComicText>
+              <ComicText fontSize={1.8} className="mt-0.5 text-left text-os-green">
                 {STAGE_TITLE[displayedStage]}
-              </p>
-              <p className="mt-1 text-[12px] leading-relaxed text-os-green/80">
+              </ComicText>
+              <ComicText fontSize={1.3} className="mt-1 text-left text-os-green/80">
                 {STAGE_DESCRIPTION[displayedStage]}
-              </p>
+              </ComicText>
               <AnimatePresence mode="wait" initial={false}>
                 {currentStep ? (
                   <motion.div
@@ -153,7 +156,9 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
                     className="mt-2 flex items-center gap-2 text-[11px] text-os-amber"
                   >
                     <ThinkingDots />
-                    <span>Working…</span>
+                    <ComicText fontSize={1.1} className="text-left text-os-amber">
+                      Working…
+                    </ComicText>
                   </motion.div>
                 ) : preview ? (
                   <motion.p
@@ -171,17 +176,15 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
             </>
           ) : (
             <div className="flex flex-col items-start gap-1">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-os-dim">
+              <ComicText fontSize={1} className="text-left text-os-dim">
                 Idle
-              </p>
-              <p className="text-[13px] text-os-green/85">
+              </ComicText>
+              <ComicText fontSize={1.4} className="text-left text-os-green/85">
                 Send a command to start a mission.
-              </p>
-              <p className="text-[11px] text-os-dim">
-                Try{" "}
-                <span className="font-mono text-os-green/85">submit …</span> or
-                spawn an agent on the left.
-              </p>
+              </ComicText>
+              <ComicText fontSize={1.1} className="text-left text-os-dim">
+                Try submit or spawn an agent on the left.
+              </ComicText>
             </div>
           )}
         </div>

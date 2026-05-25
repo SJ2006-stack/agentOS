@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import { Terminal } from "@/components/ui/terminal";
-import { BootSequence } from "@/components/BootSequence";
-import { DevFactoryBento } from "@/components/DevFactoryBento";
+import { BootSequence } from "@/components/desktop/BootSequence";
+import { DevFactoryBento } from "@/components/desktop/DevFactoryBento";
 import { cn } from "@/lib/utils";
 
 export type OsLayoutVariant = "terminal" | "workspace";

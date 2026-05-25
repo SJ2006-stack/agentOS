@@ -5,10 +5,10 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
-import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
+import { MODEL_CHANGE_EVENT } from "@/components/panels/ConfigurePanel";
 import { cn } from "@/lib/utils";
-import { useOsStore } from "@/store/osStore";
-import { withBasePath } from "@/lib/api-url";
+import { useOsStore } from "@/store/os/osStore";
+import { withBasePath } from "@/lib/api/url";
 import {
   AGENT_SPAWNED_EVENT,
   dispatchAgentSpawned,

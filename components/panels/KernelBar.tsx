@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useOsStore } from "@/store/osStore";
+import { ComicText } from "@/components/ui/comic-text";
+import { useOsStore } from "@/store/os/osStore";
 
 function truncateModelId(id: string, max = 22): string {
   const short = id.includes("/") ? (id.split("/").pop() ?? id) : id;
@@ -35,29 +36,37 @@ export function KernelBar() {
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-          <span className="font-bold tracking-widest text-os-amber">DEVFACTORY OS</span>
+          <ComicText fontSize={1.5} className="text-left text-os-amber">
+            DEVFACTORY OS
+          </ComicText>
           <motion.span
             animate={{ opacity: [1, 0.4, 1] }}
             transition={{ repeat: Infinity, duration: 2 }}
             className={`inline-flex items-center gap-1 capitalize ${statusClass(status)}`}
           >
             <span aria-hidden>●</span>
-            {status}
+            <ComicText fontSize={1.1} className={`inline text-left ${statusClass(status)}`}>
+              {status}
+            </ComicText>
           </motion.span>
-          {uptime != null && <span className="text-os-dim">{uptime}</span>}
+          {uptime != null && (
+            <ComicText fontSize={1} className="inline text-left text-os-dim">
+              {uptime}
+            </ComicText>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-os-dim">
           <span title={selectedModelId}>
-            Model{" "}
-            <span className="text-os-green">{truncateModelId(selectedModelId)}</span>
+            <ComicText fontSize={1} className="inline text-left text-os-dim">
+              {`Model ${truncateModelId(selectedModelId)}`}
+            </ComicText>
           </span>
           {usage && (
             <span title="Last OpenRouter usage">
-              Tokens{" "}
-              <span className="text-os-green">
-                {usage.promptTokens}+{usage.completionTokens}
-              </span>
+              <ComicText fontSize={1} className="inline text-left text-os-dim">
+                {`Tokens ${usage.promptTokens}+${usage.completionTokens}`}
+              </ComicText>
             </span>
           )}
         </div>
@@ -67,7 +76,9 @@ export function KernelBar() {
         <div className="flex flex-wrap gap-x-3 text-[10px] text-os-dim/70">
           {integrations.map(({ label, value }) => (
             <span key={label}>
-              {label} <span className="text-os-green/80">{value}</span>
+              <ComicText fontSize={1} className="inline text-left text-os-dim">
+                {`${label} ${value}`}
+              </ComicText>
             </span>
           ))}
         </div>

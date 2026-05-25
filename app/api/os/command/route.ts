@@ -37,7 +37,7 @@ import {
 import {
   createAndPersistCustomAgent,
   isCustomTemplateId,
-} from "@/lib/agents/custom-registry";
+} from "@/lib/os/custom-registry";
 
 export const maxDuration = 120;
 

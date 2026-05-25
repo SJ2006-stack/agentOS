@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { withBasePath } from "@/lib/api-url";
+import { withBasePath } from "@/lib/api/url";
 
 const HEARTBEAT_MS = 5000;
 

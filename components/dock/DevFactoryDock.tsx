@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Home, LayoutGrid, Network, Plus, Terminal } from "lucide-react";
-import { DevFactoryCommandBar } from "@/components/DevFactoryCommandBar";
+import { CreateAgentFlow } from "@/components/create-agent/CreateAgentFlow";
+import { DevFactoryCommandBar } from "@/components/dock/DevFactoryCommandBar";
 import { Dock, DockIcon } from "@/components/magicui/dock";
 import {
   Tooltip,
@@ -11,14 +12,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DockModePreview } from "@/components/modes/DockModePreview";
+import { ComicText } from "@/components/ui/comic-text";
+import { CoolMode, DEFAULT_COOL_MODE_OPTIONS } from "@/components/ui/cool-mode";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 import { dispatchShellCommand } from "@/lib/os/shell-events";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 import {
   UI_MODE_LABELS,
   type UiMode,
   useUiModeStore,
-} from "@/store/uiModeStore";
+} from "@/store/ui/uiModeStore";
 
 function scrollToId(id: string) {
   const el = document.getElementById(id);
@@ -58,20 +62,21 @@ function ModeDockItem({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <DockIcon
-          role="button"
-          tabIndex={0}
-          aria-label={label}
-          aria-pressed={active}
-          onClick={onClick}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onClick();
-            }
-          }}
-          className={cn(
-            "relative overflow-visible transition-[background-color,box-shadow,border-color] duration-300",
+        <CoolMode options={DEFAULT_COOL_MODE_OPTIONS} className="inline-flex">
+          <DockIcon
+            role="button"
+            tabIndex={0}
+            aria-label={label}
+            aria-pressed={active}
+            onClick={onClick}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }}
+            className={cn(
+              "relative overflow-visible transition-[background-color,box-shadow,border-color] duration-300",
             active
               ? [
                   "border-os-amber/50 bg-gradient-to-b from-os-amber/15 to-os-green/10",
@@ -79,8 +84,8 @@ function ModeDockItem({
                   "ring-2 ring-os-amber/80 ring-offset-1 ring-offset-os-panel/80",
                 ].join(" ")
               : "hover:border-os-green/20"
-          )}
-        >
+            )}
+          >
           {active && (
             <span
               className="pointer-events-none absolute inset-x-1 top-0 h-0.5 rounded-full bg-gradient-to-r from-transparent via-os-amber to-transparent opacity-90"
@@ -101,7 +106,8 @@ function ModeDockItem({
               aria-hidden
             />
           )}
-        </DockIcon>
+          </DockIcon>
+        </CoolMode>
       </TooltipTrigger>
       <TooltipContent side="top" className="border-0 bg-transparent p-0 shadow-none">
         <DockModePreview mode={mode} />
@@ -126,31 +132,31 @@ function UtilityDockItem({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <DockIcon
-          role="button"
-          tabIndex={0}
-          aria-label={label}
-          onClick={onClick}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onClick();
-            }
-          }}
-        >
-          {children}
-        </DockIcon>
+        <CoolMode options={DEFAULT_COOL_MODE_OPTIONS} className="inline-flex">
+          <DockIcon
+            role="button"
+            tabIndex={0}
+            aria-label={label}
+            onClick={onClick}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }}
+          >
+            {children}
+          </DockIcon>
+        </CoolMode>
       </TooltipTrigger>
       <TooltipContent side="top">{label}</TooltipContent>
     </Tooltip>
   );
 }
 
-export function DevFactoryDock() {
+export function DevFactoryDock({ hydraConfigured }: { hydraConfigured: boolean }) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [createAgentOpen, setCreateAgentOpen] = useState(false);
-  const [createName, setCreateName] = useState("");
-  const [createRole, setCreateRole] = useState("");
   const spawnRef = useRef<HTMLDivElement>(null);
   const createAgentRef = useRef<HTMLDivElement>(null);
   const mode = useUiModeStore((s) => s.mode);
@@ -192,16 +198,6 @@ export function DevFactoryDock() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [spawnOpen, createAgentOpen]);
 
-  const submitCreateAgent = useCallback(() => {
-    const name = createName.trim();
-    const role = createRole.trim();
-    if (!name || !role) return;
-    setCreateAgentOpen(false);
-    setCreateName("");
-    setCreateRole("");
-    submitCommand(`create agent ${name} "${role.replace(/"/g, "")}"`);
-  }, [createName, createRole, submitCommand]);
-
   const showCommandBar = mode !== "hero" && mode !== "desktop";
   const showCreateAgentPanel = createAgentOpen && mode !== "hero";
 
@@ -219,62 +215,13 @@ export function DevFactoryDock() {
             ref={createAgentRef}
             className="pointer-events-auto w-full max-w-xl rounded-xl border border-os-amber/30 bg-os-panel/70 p-3 shadow-xl shadow-os-bg/40 backdrop-blur-xl ring-1 ring-inset ring-white/[0.05]"
           >
-            <p className="mb-2 text-[10px] uppercase tracking-wider text-os-amber">
+            <ComicText fontSize={1.3} className="mb-2 text-left text-os-amber">
               Create agent
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <label className="min-w-0 flex-1 space-y-1">
-                <span className="text-[10px] text-os-dim">Name</span>
-                <input
-                  type="text"
-                  value={createName}
-                  onChange={(e) => setCreateName(e.target.value)}
-                  placeholder="e.g. security-audit"
-                  className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </label>
-              <label className="min-w-0 flex-[1.4] space-y-1">
-                <span className="text-[10px] text-os-dim">Role</span>
-                <input
-                  type="text"
-                  value={createRole}
-                  onChange={(e) => setCreateRole(e.target.value)}
-                  placeholder="e.g. reviews code for vulnerabilities"
-                  className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
-                  autoComplete="off"
-                  spellCheck={false}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      submitCreateAgent();
-                    }
-                  }}
-                />
-              </label>
-              <div className="flex shrink-0 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCreateAgentOpen(false);
-                    setCreateName("");
-                    setCreateRole("");
-                  }}
-                  className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim transition-colors hover:border-os-border hover:text-os-green"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!createName.trim() || !createRole.trim()}
-                  onClick={submitCreateAgent}
-                  className="rounded-md border border-os-amber/40 bg-os-amber/10 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber transition-colors hover:bg-os-amber/20 disabled:opacity-40"
-                >
-                  Create
-                </button>
-              </div>
-            </div>
+            </ComicText>
+            <CreateAgentFlow
+              hydraConfigured={hydraConfigured}
+              onClose={() => setCreateAgentOpen(false)}
+            />
             <p className="mt-2 text-[10px] text-os-dim/80">
               Or type{" "}
               <code className="text-os-green/90">create agent &lt;name&gt; &quot;&lt;role&gt;&quot;</code>{" "}
@@ -339,14 +286,17 @@ export function DevFactoryDock() {
                   },
                 },
               ].map((item) => (
-                <button
+                <RippleButton
                   key={item.label}
                   type="button"
+                  rippleColor="var(--os-green)"
                   className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
                   onClick={item.action}
                 >
-                  {item.label}
-                </button>
+                  <ComicText fontSize={1.1} className="text-left text-os-green">
+                    {item.label}
+                  </ComicText>
+                </RippleButton>
               ))}
             </div>
           )}

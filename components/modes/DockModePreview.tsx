@@ -1,6 +1,7 @@
 "use client";
 
-import type { UiMode } from "@/store/uiModeStore";
+import { ComicText } from "@/components/ui/comic-text";
+import type { UiMode } from "@/store/ui/uiModeStore";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_COPY: Record<UiMode, { tag: string; hint: string }> = {
@@ -78,15 +79,19 @@ export function DockModePreview({ mode }: { mode: UiMode }) {
   return (
     <div className="w-[168px] overflow-hidden rounded-md border border-os-border/50 bg-os-panel/95 shadow-lg">
       <div className="flex items-center justify-between border-b border-os-border/50 px-2 py-1">
-        <span className="text-[9px] font-medium uppercase tracking-wider text-os-amber">
+        <ComicText fontSize={1} className="text-left text-os-amber">
           {tag}
-        </span>
+        </ComicText>
         <span className="size-1.5 rounded-full bg-os-green/80 shadow-[0_0_4px_var(--os-green)]" />
       </div>
       <div className="mx-2 my-1.5 h-[52px] overflow-hidden rounded border border-os-border/40 bg-os-bg/90">
         <MiniPanels mode={mode} />
       </div>
-      <p className="px-2 pb-1.5 text-[9px] leading-snug text-os-dim">{hint}</p>
+      <div className="px-2 pb-1.5">
+        <ComicText fontSize={0.95} className="text-left text-os-dim">
+          {hint}
+        </ComicText>
+      </div>
     </div>
   );
 }

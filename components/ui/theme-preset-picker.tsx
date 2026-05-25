@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 
 export const THEME_PRESET_STORAGE_KEY = "devfactory-theme-preset";
@@ -72,9 +73,10 @@ export function ThemePresetPicker({ className }: ThemePresetPickerProps) {
       {THEME_PRESETS.map((preset) => {
         const isActive = active === preset.id;
         return (
-          <button
+          <RippleButton
             key={preset.id}
             type="button"
+            rippleColor={preset.swatch}
             title={preset.label}
             aria-label={`${preset.label} preset`}
             aria-pressed={isActive}

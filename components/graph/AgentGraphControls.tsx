@@ -1,0 +1,90 @@
+"use client";
+
+import { useState } from "react";
+import { CreateAgentFlow } from "@/components/create-agent/CreateAgentFlow";
+import type { GraphTemplate } from "@/lib/os/agent-graph-layout";
+import { getAgentDisplayName } from "@/lib/os/agent-graph-data";
+import { ComicText } from "@/components/ui/comic-text";
+import { RippleButton } from "@/components/ui/ripple-button";
+import { cn } from "@/lib/utils";
+import { useOsStore } from "@/store/os/osStore";
+
+export function AgentGraphControls({
+  templates,
+  hydraConfigured,
+  hideCreateAgent = false,
+  section = "all",
+  onTemplatesChange,
+}: {
+  templates: GraphTemplate[];
+  hydraConfigured: boolean;
+  hideCreateAgent?: boolean;
+  section?: "create" | "list" | "all";
+  onTemplatesChange: () => Promise<void>;
+}) {
+  const activeNodeIds = useOsStore((s) => s.graph.activeNodeIds);
+  const [listExpanded, setListExpanded] = useState(false);
+  const [createExpanded, setCreateExpanded] = useState(false);
+
+  return (
+    <>
+      {hydraConfigured && !hideCreateAgent && (section === "create" || section === "all") && (
+        <div className="workspace-graph-create shrink-0 rounded-lg border border-os-amber/35 bg-os-amber/5 p-2.5">
+          {!createExpanded ? (
+            <RippleButton
+              type="button"
+              rippleColor="var(--os-amber)"
+              onClick={() => setCreateExpanded(true)}
+              className="workspace-graph-create-cta flex w-full items-center justify-center gap-2 rounded-md border border-os-amber/60 bg-os-amber/15 px-3 py-2 text-[12px] font-semibold uppercase tracking-wider text-os-amber transition-colors hover:border-os-amber hover:bg-os-amber/25"
+            >
+              <ComicText fontSize={1.2} className="text-center text-os-amber">
+                + Create agent
+              </ComicText>
+            </RippleButton>
+          ) : (
+            <CreateAgentFlow
+              hydraConfigured={hydraConfigured}
+              onClose={() => setCreateExpanded(false)}
+              onComplete={() => void onTemplatesChange()}
+            />
+          )}
+        </div>
+      )}
+
+      {templates.length > 0 && (section === "list" || section === "all") && (
+        <div className="shrink-0 border-t border-os-border/50 pt-1.5">
+          <RippleButton
+            type="button"
+            rippleColor="var(--os-green)"
+            onClick={() => setListExpanded((open) => !open)}
+            className="flex w-full items-center justify-between gap-2 text-left text-[10px] text-os-dim transition-colors hover:text-os-green"
+            aria-expanded={listExpanded}
+          >
+            <ComicText fontSize={1.1} className="text-left text-os-dim">
+              {`${templates.length} agent${templates.length === 1 ? "" : "s"}${activeNodeIds.size > 0 ? ` · ${activeNodeIds.size} active` : ""}`}
+            </ComicText>
+            <span aria-hidden className="text-os-dim/70">
+              {listExpanded ? "▾" : "▸"}
+            </span>
+          </RippleButton>
+          {listExpanded && (
+            <div className="mt-1 max-h-24 space-y-0.5 overflow-y-auto text-os-dim">
+              {templates.slice(0, 8).map((t) => (
+                <div
+                  key={t.id}
+                  className={cn(
+                    "break-words text-[10px]",
+                    activeNodeIds.has(t.id) && "text-os-amber"
+                  )}
+                >
+                  {getAgentDisplayName(t.id, t.role)}
+                  {t.custom && <span className="text-os-dim/70"> · custom</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}

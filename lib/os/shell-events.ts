@@ -1,4 +1,4 @@
-import { useUiModeStore } from "@/store/uiModeStore";
+import { useUiModeStore } from "@/store/ui/uiModeStore";
 
 export const SHELL_COMMAND_EVENT = "devfactory:shell-command";
 export const SHELL_READY_EVENT = "devfactory:shell-ready";

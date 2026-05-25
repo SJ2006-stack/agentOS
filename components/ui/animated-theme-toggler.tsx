@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { flushSync } from "react-dom";
 
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 
 const THEME_DELAY_MS = 3000;
@@ -306,8 +307,9 @@ export const AnimatedThemeToggler = ({
   }, [applyTheme, runViewTransition, playZaWarudo]);
 
   return (
-    <button
+    <RippleButton
       type="button"
+      rippleColor="var(--os-green)"
       ref={buttonRef}
       onClick={toggleTheme}
       disabled={isPending}
@@ -362,6 +364,6 @@ export const AnimatedThemeToggler = ({
       <span className="sr-only">
         {isPending ? "Theme change in progress" : "Toggle theme"}
       </span>
-    </button>
+    </RippleButton>
   );
 };

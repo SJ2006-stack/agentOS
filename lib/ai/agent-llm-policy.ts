@@ -1,7 +1,7 @@
 import "server-only";
 import { AGENT_GRAPH } from "@/lib/os/agent-graph-data";
 import { templateIdForCpuStep } from "@/lib/os/agent-graph-data";
-import { isCustomTemplateId } from "@/lib/agents/custom-registry";
+import { isCustomTemplateId } from "@/lib/os/custom-registry";
 import { CPU_STEPS, type CpuStep } from "@/lib/os/types";
 
 /**

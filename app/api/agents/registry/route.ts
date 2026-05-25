@@ -5,7 +5,7 @@ import {
   createAndPersistCustomAgent,
   listCustomRecords,
   loadCustomAgentsFromHydra,
-} from "@/lib/agents/custom-registry";
+} from "@/lib/os/custom-registry";
 import { listAllAgentTemplates } from "@/lib/os/agent-graph";
 import { isHydraConfigured } from "@/lib/hydradb/client";
 

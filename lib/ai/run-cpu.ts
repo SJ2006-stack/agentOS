@@ -1,5 +1,5 @@
 import "server-only";
-import { absoluteApiUrl } from "@/lib/api-url";
+import { absoluteApiUrl } from "@/lib/api/url";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
 import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";

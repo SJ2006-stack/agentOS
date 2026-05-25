@@ -5,7 +5,7 @@ import "./workspace-ux.css";
 import { WorkspaceAgentList } from "@/components/modes/WorkspaceAgentList";
 import { WorkspaceAgentFeed } from "@/components/modes/WorkspaceAgentFeed";
 import { WorkspacePipeline } from "@/components/modes/WorkspacePipeline";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore } from "@/store/os/osStore";
 
 export function WorkspaceMode({ hydraConfigured }: { hydraConfigured: boolean }) {
   useEffect(() => {

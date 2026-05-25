@@ -1,5 +1,5 @@
 import "server-only";
-import { getCustomTemplate, listCustomTemplates } from "@/lib/agents/custom-registry";
+import { getCustomTemplate, listCustomTemplates } from "@/lib/os/custom-registry";
 export type { AgentTemplate } from "@/lib/os/agent-graph-data";
 export {
   AGENT_GRAPH,

@@ -1,6 +1,7 @@
 "use client";
 
 import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
+import { ComicText } from "@/components/ui/comic-text";
 
 export const MODEL_CHANGE_EVENT = "devfactory:model-change";
 
@@ -8,10 +9,12 @@ export function ConfigurePanel() {
   return (
     <div className="flex h-full min-w-0 flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xs tracking-wider text-os-amber">CONFIGURE</h2>
-        <span className="text-[10px] uppercase tracking-wider text-os-dim">
+        <ComicText fontSize={1.5} className="text-left text-os-amber">
+          CONFIGURE
+        </ComicText>
+        <ComicText fontSize={1} className="text-left text-os-dim">
           OpenRouter
-        </span>
+        </ComicText>
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-[10px] text-os-dim">Model</span>

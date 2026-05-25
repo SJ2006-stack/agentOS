@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { motion } from "motion/react";
 import { AnimatedSpan, TypingAnimation } from "@/components/ui/terminal";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
 
 const BOOT_LINES = [
@@ -73,13 +74,14 @@ export function HeroBootSequence({
             ✔ AgentOS ready
           </AnimatedSpan>
         </div>
-        <button
+        <RippleButton
           type="button"
+          rippleColor="var(--hero-cyan)"
           onClick={onSkip ?? onComplete}
           className="mt-6 text-[10px] uppercase tracking-wider text-hero-muted transition-colors hover:text-hero-cyan"
         >
           Skip boot →
-        </button>
+        </RippleButton>
       </motion.div>
     </div>
   );
