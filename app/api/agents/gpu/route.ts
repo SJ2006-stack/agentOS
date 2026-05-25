@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { getGeminiKeyFault } from "@/lib/config/deploy-hint";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { GPU_SYSTEM } from "@/lib/ai/agents";
 import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
@@ -16,10 +17,10 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   if (!isGeminiConfigured()) {
-    return new Response(
-      "[fault] GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local and restart npm run dev\n",
-      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
-    );
+    return new Response(getGeminiKeyFault(), {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 
   const { taskId, workerCount = 8, hotZones, modelId } = (await req.json()) as {

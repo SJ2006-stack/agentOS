@@ -8,20 +8,37 @@ const repoName = "agentOS";
 const isGitHubPages = process.env.GITHUB_PAGES === "true";
 const basePath = isGitHubPages ? `/${repoName}` : "";
 
-/** Prefer stable production host on Vercel production builds; preview uses deployment host. */
+function isPerDeploymentVercelHost(host) {
+  const h = host.replace(/^https?:\/\//, "").replace(/\/$/, "").toLowerCase();
+  return h.endsWith("-projects.vercel.app") || h.includes("-git-");
+}
+
+/** Prefer explicit DEMO_DEPLOY_URL, then stable Vercel production host (never *-projects.vercel.app). */
 function resolveVercelDeployUrlForBuild() {
-  const vercelEnv = process.env.VERCEL_ENV?.trim();
+  const explicit =
+    process.env.DEMO_DEPLOY_URL?.trim() ??
+    process.env.NEXT_PUBLIC_DEMO_DEPLOY_URL?.trim() ??
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (explicit) {
+    const bare = explicit.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    return bare.startsWith("http") ? bare : `https://${bare}`;
+  }
+
   const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const branchHost = process.env.VERCEL_BRANCH_URL?.trim();
   const deploymentHost = process.env.VERCEL_URL?.trim();
 
-  const host =
-    vercelEnv === "production" && productionHost
-      ? productionHost
-      : deploymentHost ?? productionHost;
-  if (!host) return "";
+  for (const host of [productionHost, branchHost, deploymentHost]) {
+    if (!host) continue;
+    const bare = host.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (!isPerDeploymentVercelHost(bare)) return `https://${bare}`;
+  }
 
-  const bare = host.replace(/^https?:\/\//, "").replace(/\/$/, "");
-  return `https://${bare}`;
+  if (productionHost) {
+    const bare = productionHost.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    return `https://${bare}`;
+  }
+  return "";
 }
 
 const vercelDeployUrl = resolveVercelDeployUrlForBuild();

@@ -82,9 +82,12 @@ export function queueFirstAgentSpawn(): void {
   queuePendingOsCommand("spawn agent cpu.plan", "terminal");
 }
 
-export function queueBuildWebShellDemo(): void {
-  queuePendingOsCommand(WORKSPACE_DEMO_COMMANDS.submitWebShell, "workspace");
+export function queueBuildWebAppDemo(): void {
+  queuePendingOsCommand(WORKSPACE_DEMO_COMMANDS.submitWebApp, "workspace");
 }
+
+/** @deprecated Use queueBuildWebAppDemo */
+export const queueBuildWebShellDemo = queueBuildWebAppDemo;
 
 export function consumeSkipHeroBoot(): boolean {
   if (typeof window === "undefined") return false;

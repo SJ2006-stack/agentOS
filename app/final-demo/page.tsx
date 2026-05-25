@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Finale Demo — DevFactory OS",
-  description: "Multi-agent web shell build — live code assembly and deploy reveal",
+  description: "Multi-agent web app build — live code assembly and deploy reveal",
 };
 
 export default function FinalDemoRoute() {

@@ -34,7 +34,7 @@
 | `DevFactoryCommandBar.tsx` | Suggestions + Run submit |
 | `AgentGraphControls.tsx` | Create agent expand, list toggle |
 | `PipelineTimeline.tsx` | Selectable step buttons |
-| `WorkspaceDemoBar.tsx` | Build web shell chip → `runWorkspaceDemo` |
+| `WorkspaceDemoBar.tsx` | Build web app chip → `runWorkspaceDemo` |
 | `LandingPage.tsx` | Spawn CTA → `/os` + `queueFirstAgentSpawn` |
 | `HydraMemoryPanel.tsx` | Details toggle |
 

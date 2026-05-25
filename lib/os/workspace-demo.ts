@@ -2,6 +2,9 @@ import { dispatchShellCommand } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/os/osStore";
 
 export const WORKSPACE_DEMO_COMMANDS = {
+  /** Primary — builds hosted web app at /demo */
+  submitWebApp: "submit build agent dashboard app",
+  /** Alias for scripts and older copy */
   submitWebShell: "submit build agent dashboard shell",
   submitRestApi: "submit build a REST API",
   spawnPlanner: "spawn agent cpu.plan",
@@ -9,9 +12,9 @@ export const WORKSPACE_DEMO_COMMANDS = {
 
 export const WORKSPACE_DEMO_CHIPS = [
   {
-    label: "Build web shell",
+    label: "Build web app",
     hint: "Live code assembly → deploy URL",
-    command: WORKSPACE_DEMO_COMMANDS.submitWebShell,
+    command: WORKSPACE_DEMO_COMMANDS.submitWebApp,
   },
   {
     label: "Build REST API",

@@ -5,8 +5,8 @@ export interface BuildManifestFile {
   content: string;
 }
 
-/** Fallback web shell when Gemini build fails or key is unset. */
-export const DEMO_WEB_SHELL_FILES: BuildManifestFile[] = [
+/** Fallback web app when Gemini build fails or key is unset. */
+export const DEMO_WEB_APP_FILES: BuildManifestFile[] = [
   {
     path: "app/layout.tsx",
     content: `import type { Metadata } from "next";
@@ -14,7 +14,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Agent Dashboard",
-  description: "DevFactory OS demo shell",
+  description: "DevFactory OS demo web app",
 };
 
 export default function RootLayout({
@@ -92,9 +92,9 @@ export function Hero() {
   return (
     <main className="hero">
       <span className="badge">DevFactory OS</span>
-      <h1>Agent Dashboard Shell</h1>
+      <h1>Agent Dashboard</h1>
       <p>
-        Multi-agent pipeline assembled this shell — CPU orchestration, GPU workers,
+        Multi-agent pipeline assembled this web app — CPU orchestration, GPU workers,
         and live code streaming from the workspace.
       </p>
     </main>
@@ -151,9 +151,12 @@ export default function Page() {
 </head>
 <body>
   <span class="badge">DevFactory OS</span>
-  <h1>Agent Dashboard Shell</h1>
-  <p>Multi-agent pipeline assembled this shell — CPU orchestration, GPU workers, and live code streaming from the workspace.</p>
+  <h1>Agent Dashboard</h1>
+  <p>Multi-agent pipeline assembled this web app — CPU orchestration, GPU workers, and live code streaming from the workspace.</p>
 </body>
 </html>`,
   },
 ];
+
+/** @deprecated Use DEMO_WEB_APP_FILES */
+export const DEMO_WEB_SHELL_FILES = DEMO_WEB_APP_FILES;

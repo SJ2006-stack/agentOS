@@ -350,7 +350,7 @@ function FullscreenHero({ className }: { className?: string }) {
 
   const handleSecondaryCta = () => {
     setMode("workspace");
-    runWorkspaceDemo(WORKSPACE_DEMO_COMMANDS.submitWebShell);
+    runWorkspaceDemo(WORKSPACE_DEMO_COMMANDS.submitWebApp);
   };
 
   const handleCommandSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -489,7 +489,7 @@ function FullscreenHero({ className }: { className?: string }) {
               }
             >
               <span className="text-left" style={{ color: PALETTE.text }}>
-                Build web shell
+                Build web app
               </span>
             </Button>
           </div>

@@ -1,10 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import {
-  BUILD_GEMINI_KEY_FAULT,
+  getBuildGeminiKeyFault,
   isBuildGeminiConfigured,
 } from "@/lib/ai/gemini-build";
-import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
+import {
+  getGeminiKeyFault,
+  getGeminiKeyFaultMessage,
+} from "@/lib/ai/faults";
+import { withBasePath } from "@/lib/api/url";
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
@@ -294,11 +298,9 @@ export async function POST(req: Request) {
 
   if (needsLlm && !isGeminiConfigured()) {
     if (wantsJson) {
-      return jsonCommandFault(
-        GEMINI_KEY_FAULT.replace(/^\[fault\]\s*/, "").trim()
-      );
+      return jsonCommandFault(getGeminiKeyFaultMessage());
     }
-    return new Response(GEMINI_KEY_FAULT, {
+    return new Response(getGeminiKeyFault(), {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }
@@ -316,7 +318,7 @@ export async function POST(req: Request) {
       }
       if (isBuildDemoTask(parsed.task)) {
         if (!isBuildGeminiConfigured()) {
-          return new Response(BUILD_GEMINI_KEY_FAULT, {
+          return new Response(getBuildGeminiKeyFault(), {
             headers: { "Content-Type": "text/plain; charset=utf-8" },
           });
         }
@@ -369,6 +371,7 @@ export async function POST(req: Request) {
           ? await recallPreferences({ query: "status", max_results: 3 })
           : { chunks: [], queryPaths: [] };
         const active = getActiveAgents();
+        const verifyUrl = `${origin}${withBasePath("/api/os/verify")}`;
         const lines = [
           "[kernel] DevFactory OS status",
           `[kernel] Gemini: ${gemini ? "configured" : "missing GEMINI_API_KEY"}`,
@@ -377,6 +380,10 @@ export async function POST(req: Request) {
           `[kernel] active agents: ${active.length ? active.join(", ") : "(none)"}`,
           `[kernel] task: ${getCurrentTaskId() ?? "(none)"}`,
         ];
+        if (!gemini) {
+          lines.push(`[kernel] verify env: ${verifyUrl}`);
+          lines.push(`[kernel] ${getGeminiKeyFaultMessage()}`);
+        }
         write(lines.join("\n") + "\n");
       });
     }

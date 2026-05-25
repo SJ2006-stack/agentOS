@@ -1,6 +1,6 @@
 import "server-only";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
-import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
+import { getGeminiKeyFault } from "@/lib/ai/faults";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
 import { isGeminiConfigured } from "@/lib/ai/model";
 import { createOsTools } from "@/lib/ai/tools";
@@ -119,7 +119,7 @@ export async function spawnAgentTemplate(input: {
 
   const needsLlm = agentNeedsLlm(input.templateId, "spawn");
   if (needsLlm && !isGeminiConfigured()) {
-    input.write?.(GEMINI_KEY_FAULT);
+    input.write?.(getGeminiKeyFault());
     return { ok: false, message: "GEMINI_API_KEY missing", taskId: "" };
   }
 

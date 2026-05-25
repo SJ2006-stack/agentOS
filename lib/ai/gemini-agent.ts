@@ -1,7 +1,11 @@
 import "server-only";
 import { z } from "zod";
 import { emitUsageFeedback } from "@/lib/ai/usage-feedback";
-import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
+import {
+  getGeminiKeyFault,
+  getGeminiKeyFaultMessage,
+  getGeminiKeySetupHint,
+} from "@/lib/ai/faults";
 import type { LlmUsage } from "@/lib/ai/llm-types";
 import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
 import { getGeminiApiKey } from "@/lib/config/env";
@@ -137,9 +141,7 @@ export function geminiFault(err: unknown): string {
           "[fault] Rate limited — retry shortly or check Google AI Studio quotas"
         );
       } else if (code === 401 || code === 403) {
-        lines.push(
-          "[fault] Check GEMINI_API_KEY in .env.local: https://aistudio.google.com/apikey"
-        );
+        lines.push(`[fault] Check GEMINI_API_KEY — ${getGeminiKeySetupHint()}`);
       }
       return lines.join("\n") + "\n";
     }
@@ -280,7 +282,7 @@ export async function* streamChatContent(input: {
   onUsage?: GeminiUsageHandler;
 }): AsyncGenerator<string> {
   if (!isGeminiConfigured()) {
-    yield GEMINI_KEY_FAULT;
+    yield getGeminiKeyFault();
     return;
   }
 
@@ -384,9 +386,7 @@ export async function runChatWithTools(input: {
   onUsage?: GeminiUsageHandler;
 }): Promise<RunChatWithToolsResult> {
   if (!isGeminiConfigured()) {
-    throw new Error(
-      "GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local and restart npm run dev"
-    );
+    throw new Error(getGeminiKeyFaultMessage());
   }
 
   void input.modelId;
@@ -480,7 +480,7 @@ export async function* streamChatWithTools(input: {
   onUsage?: GeminiUsageHandler;
 }): AsyncGenerator<string> {
   if (!isGeminiConfigured()) {
-    yield GEMINI_KEY_FAULT;
+    yield getGeminiKeyFault();
     return;
   }
 

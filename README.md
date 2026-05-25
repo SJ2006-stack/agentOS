@@ -145,32 +145,50 @@ npx vercel
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Realtime panels |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Client subscribe |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server broadcast only |
-| `DEMO_DEPLOY_URL` | Recommended | Production URL for deploy modal (server), e.g. `https://your-app.vercel.app` |
-| `NEXT_PUBLIC_DEMO_DEPLOY_URL` | Recommended | Same as `DEMO_DEPLOY_URL` (client deploy modal) |
-| `NEXT_PUBLIC_APP_URL` | Recommended | Same production URL for callbacks; do not use `localhost` on Vercel |
+| `DEMO_DEPLOY_URL` | Recommended | Stable production origin (server) — **not** `*-projects.vercel.app`; `/demo` appended if no path |
+| `DEMO_DEPLOY_PATH` | No | Demo path when `DEMO_DEPLOY_URL` has no path (default `/demo`) |
+| `NEXT_PUBLIC_DEMO_DEPLOY_URL` | Recommended | Full demo URL for client modal/Open link (e.g. `https://…/demo`; baked in at build) |
+| `NEXT_PUBLIC_SITE_URL` | No | Alias for deploy modal if `DEMO_DEPLOY_URL` unset |
+| `NEXT_PUBLIC_APP_URL` | Recommended | Production origin for callbacks; do not use `localhost` on Vercel |
+| `DEMO_DEPLOY_LEGACY_HOST` | No | Exact old hostname to 308-redirect to stable demo URL (`…/demo`) |
+| `DEMO_DEPLOY_LEGACY_HOSTS` | No | Comma-separated legacy hosts (optional; `*-projects.vercel.app` auto-redirects when `DEMO_DEPLOY_URL` is set) |
 | `GITHUB_PAGES` | No | Must be **unset** or `false` on Vercel (static export is GitHub Pages only) |
 | `TAVILY_API_KEY` | No | Web search for Researcher create-agent flow (preferred) |
 | `SERPER_API_KEY` | No | Web search fallback if Tavily unset |
 | `NEXT_PUBLIC_ENABLE_DOOM_DEMO` | No | `1` / `0` — DOOM hero demo; on in dev when unset |
 
-**Recommended production trio** (replace with your Vercel production domain):
+**Recommended production env** (replace with your Vercel production domain):
 
 ```bash
+# Stable origin — NOT the per-deployment *-projects.vercel.app URL
 DEMO_DEPLOY_URL=https://<your-production-domain>.vercel.app
-NEXT_PUBLIC_DEMO_DEPLOY_URL=https://<your-production-domain>.vercel.app
+DEMO_DEPLOY_PATH=/demo
+# Full URL for Deploy complete modal Open / Copy (include /demo)
+NEXT_PUBLIC_DEMO_DEPLOY_URL=https://<your-production-domain>.vercel.app/demo
 NEXT_PUBLIC_APP_URL=https://<your-production-domain>.vercel.app
+# Optional — old preview hostname (middleware redirects to …/demo)
+DEMO_DEPLOY_LEGACY_HOST=agent-<hash>-<user>-projects.vercel.app
 ```
 
-If unset, Vercel auto-detects `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL` at build and runtime.
+If unset, the app falls back to `VERCEL_PROJECT_PRODUCTION_URL` then branch/deployment hosts, but **skips** unstable `*-projects.vercel.app` URLs and appends `DEMO_DEPLOY_PATH` (`/demo` by default). Set the vars above in Vercel **Production** and redeploy so the deploy modal and Open link use `https://<domain>/demo`.
 
 3. Redeploy after env changes. `vercel.json` sets `GITHUB_PAGES=false`, longer `maxDuration` for agent/HydraDB routes, and `/demo` → `/final-demo`.
+
+**Gemini on Vercel:** Use the exact name `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). Do **not** prefix with `NEXT_PUBLIC_` — the key must stay server-only. After saving env vars, redeploy Production. Confirm with:
+
+```bash
+curl -sS https://<your-production-domain>/api/os/verify
+# → {"geminiConfigured":true,...}
+```
+
+In the OS shell, `status` prints the verify URL when Gemini is missing.
 
 Never commit real API keys — copy from `.env.example` into `.env.local` or Vercel only.
 
 ### Change to a new Vercel project URL
 
 1. Create or select the new Vercel project and note its **production** URL.
-2. In **Project → Settings → Environment Variables** (Production), set `DEMO_DEPLOY_URL`, `NEXT_PUBLIC_DEMO_DEPLOY_URL`, and `NEXT_PUBLIC_APP_URL` to that URL.
+2. In **Project → Settings → Environment Variables** (Production), set `DEMO_DEPLOY_URL`, `DEMO_DEPLOY_PATH=/demo`, `NEXT_PUBLIC_DEMO_DEPLOY_URL` (with `/demo`), and `NEXT_PUBLIC_APP_URL`.
 3. **Redeploy** — `NEXT_PUBLIC_*` values are baked in at build time.
 4. Optional: on the **old** project, set `DEMO_DEPLOY_LEGACY_HOST` (old hostname) and `DEMO_DEPLOY_URL` (new URL); `middleware.ts` redirects visitors.
 5. Do **not** set `GITHUB_PAGES=true` on Vercel (breaks API routes).

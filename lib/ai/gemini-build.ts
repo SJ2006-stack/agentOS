@@ -1,8 +1,9 @@
 import "server-only";
 
+import { getGeminiKeyFault } from "@/lib/config/deploy-hint";
 import { getGeminiApiKey, readTrimmedEnv } from "@/lib/config/env";
 import {
-  DEMO_WEB_SHELL_FILES,
+  DEMO_WEB_APP_FILES,
   type BuildManifestFile,
 } from "@/lib/os/build-manifest";
 
@@ -10,12 +11,13 @@ const GEMINI_API_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
 /** Build-demo-only fault (matches user-facing copy). */
-export const BUILD_GEMINI_KEY_FAULT =
-  "[fault] Set GEMINI_API_KEY in .env.local\n";
+export function getBuildGeminiKeyFault(): string {
+  return getGeminiKeyFault();
+}
 
 const DEFAULT_BUILD_MODEL = "gemini-2.0-flash";
 
-const BUILD_SYSTEM = `You are a senior frontend engineer generating a minimal SaaS dashboard shell for a live demo.
+const BUILD_SYSTEM = `You are a senior frontend engineer generating a minimal SaaS dashboard web app for a live demo hosted at /demo.
 
 Return ONLY valid JSON (no markdown fences) with this shape:
 {
@@ -29,10 +31,10 @@ Return ONLY valid JSON (no markdown fences) with this shape:
 }
 
 Rules:
-- preview.html MUST be a complete standalone HTML document with inline CSS (and optional inline JS). No external CDN links. It must render a polished dark-theme SaaS dashboard preview in an iframe sandbox.
+- preview.html MUST be a complete, interactive standalone web app: inline CSS and optional inline JS only (no CDN). Include sidebar nav, stat cards, a data table or activity feed, and clickable buttons that update UI state. It will be hosted full-page at /demo.
 - Other paths are TypeScript/CSS source shown in a code editor — keep them consistent with preview.html branding.
 - Use DevFactory OS accent #00ffb2 on dark #0a0f14 background.
-- Keep each file concise (preview.html under ~6KB).
+- Keep each file concise (preview.html under ~8KB).
 - No explanations outside JSON.`;
 
 export function getBuildModelId(): string {
@@ -96,7 +98,7 @@ function coerceHtmlBundle(raw: string): BuildManifestFile[] | null {
   return (
     <main className="hero">
       <span className="badge">DevFactory OS</span>
-      <h1>Generated Shell</h1>
+      <h1>Generated Web App</h1>
       <p>See preview.html for the live dashboard.</p>
     </main>
   );
@@ -167,7 +169,7 @@ async function callGeminiBuild(prompt: string): Promise<string> {
 }
 
 /**
- * Generate web app shell files via Gemini Flash (build path only — not OpenRouter).
+ * Generate web app files via Gemini Flash (build path only — not OpenRouter).
  * Falls back to static demo manifest on parse/API errors.
  */
 export async function generateWebAppShell(
@@ -175,10 +177,10 @@ export async function generateWebAppShell(
 ): Promise<{ files: BuildManifestFile[]; source: "gemini" | "fallback" }> {
   const userPrompt =
     prompt.trim() ||
-    "minimal SaaS dashboard shell with sidebar, stats cards, and dark terminal aesthetic";
+    "minimal SaaS dashboard web app with sidebar, stats cards, nav tabs, and dark terminal aesthetic";
 
   if (!isBuildGeminiConfigured()) {
-    return { files: [...DEMO_WEB_SHELL_FILES], source: "fallback" };
+    return { files: [...DEMO_WEB_APP_FILES], source: "fallback" };
   }
 
   try {
@@ -196,6 +198,6 @@ export async function generateWebAppShell(
     }
     throw new Error("Could not parse Gemini build response");
   } catch {
-    return { files: [...DEMO_WEB_SHELL_FILES], source: "fallback" };
+    return { files: [...DEMO_WEB_APP_FILES], source: "fallback" };
   }
 }

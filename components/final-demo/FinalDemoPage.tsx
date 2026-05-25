@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ensureHttpsDeployUrl,
   isDeployUrlUnresolved,
+  isVercelPerDeploymentHost,
   resolveDemoDeployUrlForDisplay,
 } from "@/lib/config/deploy-url";
 import Link from "next/link";
@@ -19,11 +20,11 @@ import { useOsStore } from "@/store/os/osStore";
 import { cn } from "@/lib/utils";
 import "@/components/modes/workspace-ux.css";
 
-const BUILD_COMMAND = WORKSPACE_DEMO_COMMANDS.submitWebShell;
+const BUILD_COMMAND = WORKSPACE_DEMO_COMMANDS.submitWebApp;
 const AUTO_START_MS = 1000;
 
 const TAGLINE =
-  "Multi-agent orchestration assembles a web shell in real time — GPU workers stream code, verify, then deploy.";
+  "Multi-agent orchestration assembles a web app in real time — GPU workers stream code, verify, then deploy.";
 
 export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean }) {
   useOsRealtime(hydraConfigured);
@@ -53,6 +54,27 @@ export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean })
 
   useEffect(() => {
     useOsStore.getState().resetBuild();
+  }, []);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") return;
+    const target =
+      process.env.NEXT_PUBLIC_DEMO_DEPLOY_URL?.trim() ??
+      process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    if (!target) return;
+    try {
+      const dest = new URL(target);
+      const currentHost = window.location.hostname;
+      if (
+        isVercelPerDeploymentHost(currentHost) &&
+        currentHost !== dest.hostname
+      ) {
+        dest.search = window.location.search;
+        window.location.replace(dest.toString());
+      }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const runDemo = useCallback(async () => {
@@ -151,7 +173,7 @@ export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean })
             ) : (
               <RotateCcw className="size-3 shrink-0" aria-hidden />
             )}
-            {phase === "idle" || phase === "starting" ? "Build web shell" : "Replay demo"}
+            {phase === "idle" || phase === "starting" ? "Build web app" : "Replay demo"}
           </Button>
         </div>
       </header>
@@ -175,7 +197,7 @@ export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean })
                 {TAGLINE}
               </h1>
               <p className="text-[11px] text-os-dim">
-                Demo auto-starts in 1s — agents dispatch GPU workers to assemble the shell
+                Demo auto-starts in 1s — agents dispatch GPU workers to assemble the web app
               </p>
               <div className="mt-2 flex items-center gap-2 text-[10px] text-os-dim">
                 <span className="build-stream-caret inline-block" aria-hidden />
@@ -192,7 +214,7 @@ export function FinalDemoPage({ hydraConfigured }: { hydraConfigured: boolean })
             >
               <div className="flex flex-wrap items-end justify-between gap-2">
                 <div>
-                  <h1 className="text-left text-os-green">Build web shell</h1>
+                  <h1 className="text-left text-os-green">Build web app</h1>
                   <p className="mt-1 max-w-xl text-left text-[11px] leading-snug text-os-dim">
                     {TAGLINE}
                   </p>

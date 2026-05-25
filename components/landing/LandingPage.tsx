@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
-  queueBuildWebShellDemo,
+  queueBuildWebAppDemo,
   queueFirstAgentSpawn,
 } from "@/components/landing/OsSpawnBootstrap";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
@@ -45,7 +45,7 @@ export function LandingPage() {
   };
 
   const onBuildDemo = () => {
-    queueBuildWebShellDemo();
+    queueBuildWebAppDemo();
     router.push("/os");
   };
 
@@ -101,7 +101,7 @@ export function LandingPage() {
             onClick={onBuildDemo}
             className="rounded-lg border border-hero-graphite/80 bg-hero-obsidian/60 px-8 py-3.5 text-sm font-medium tracking-wide text-hero-muted transition-colors hover:border-hero-purple/50 hover:bg-hero-purple/10 hover:text-hero-cyan"
           >
-            <span className="text-center text-hero-muted">Build web shell</span>
+            <span className="text-center text-hero-muted">Build web app</span>
           </MotionButton>
         </div>
 

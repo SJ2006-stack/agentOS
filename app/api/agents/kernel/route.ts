@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
 import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
+import { getGeminiKeyFault } from "@/lib/config/deploy-hint";
 import {
   streamChatWithTools,
   textStreamResponse,
@@ -13,10 +14,10 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   if (!isGeminiConfigured()) {
-    return new Response(
-      "[fault] GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local and restart npm run dev\n",
-      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
-    );
+    return new Response(getGeminiKeyFault(), {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 
   const { prompt, taskId, modelId } = (await req.json()) as {

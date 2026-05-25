@@ -1,10 +1,11 @@
 import "server-only";
 import {
-  BUILD_GEMINI_KEY_FAULT,
+  getBuildGeminiKeyFault,
   generateWebAppShell,
   getBuildModelId,
   isBuildGeminiConfigured,
 } from "@/lib/ai/gemini-build";
+import { publishDemoPreview } from "@/lib/demo/preview-publish";
 import { getDemoDeployUrl } from "@/lib/config/env";
 import { broadcastGraphNodeActive } from "@/lib/os/graph-broadcast";
 import { templateIdForCpuStep } from "@/lib/os/agent-graph-data";
@@ -92,7 +93,7 @@ export async function runBuildDemo(
   write?: PipelineWrite
 ): Promise<void> {
   if (!isBuildGeminiConfigured()) {
-    write?.(BUILD_GEMINI_KEY_FAULT);
+    write?.(getBuildGeminiKeyFault());
     return;
   }
 
@@ -100,7 +101,7 @@ export async function runBuildDemo(
   write?.(`[cpu] build demo ${taskId} starting…\n`);
 
   const pitch =
-    task.replace(/^build\s+/i, "").trim() || "minimal SaaS dashboard shell";
+    task.replace(/^build\s+/i, "").trim() || "minimal SaaS dashboard web app";
   let shellFiles: BuildManifestFile[] = [];
 
   const completedSteps: CpuStep[] = [];
@@ -117,13 +118,13 @@ export async function runBuildDemo(
     setPipeline(taskId, { task, currentStep: step, completedSteps });
 
     if (step === "DISPATCH") {
-      write?.(`[gpu] Gemini ${getBuildModelId()} generating web shell…\n`);
+      write?.(`[gpu] Gemini ${getBuildModelId()} generating web app…\n`);
       const { files, source } = await generateWebAppShell(pitch);
       shellFiles = files;
       write?.(
         source === "gemini"
           ? `[build] Gemini generated ${shellFiles.length} files\n`
-          : `[build] fallback shell (${shellFiles.length} files)\n`
+          : `[build] fallback web app (${shellFiles.length} files)\n`
       );
 
       const fileCount = shellFiles.length;
@@ -166,16 +167,21 @@ export async function runBuildDemo(
       await broadcastOsEvent("os:build", "verify", {
         taskId,
         status: "running",
-        message: "Type-checking assembled shell…",
+        message: "Type-checking assembled web app…",
       });
       await sleep(520);
       await broadcastOsEvent("os:build", "verify", {
         taskId,
         status: "pass",
-        message: "Shell verified — ready to deploy",
+        message: "Web app verified — ready to deploy",
       });
       write?.(`[build] verify pass\n`);
     } else if (step === "COMMIT") {
+      const preview = shellFiles.find((f) => f.path === "preview.html");
+      if (preview?.content) {
+        await publishDemoPreview(preview.content);
+        write?.(`[build] published preview → /demo\n`);
+      }
       const deployUrl = getDemoDeployUrl();
       await broadcastOsEvent("os:build", "deploy", { taskId, url: deployUrl });
       write?.(`[build] deployed → ${deployUrl}\n`);

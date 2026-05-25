@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { GEMINI_KEY_FAULT } from "@/lib/ai/faults";
+import { getGeminiKeyFault } from "@/lib/ai/faults";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { isGeminiConfigured, resolveModelId } from "@/lib/ai/model";
 import { streamChatContent } from "@/lib/ai/gemini-agent";
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   } else if (action === "llm_brief") {
     if (!isGeminiConfigured()) {
       return NextResponse.json(
-        { ok: false, error: GEMINI_KEY_FAULT, needsGemini: true },
+        { ok: false, error: getGeminiKeyFault(), needsGemini: true },
         { status: 503 }
       );
     }

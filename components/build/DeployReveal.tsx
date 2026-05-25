@@ -5,6 +5,7 @@ import {
   DEPLOY_URL_UNCONFIGURED,
   ensureHttpsDeployUrl,
   isDeployUrlUnresolved,
+  isUnstableDeployUrl,
   resolveDemoDeployUrlForDisplay,
 } from "@/lib/config/deploy-url";
 import { AnimatePresence, motion } from "motion/react";
@@ -42,18 +43,33 @@ function QrPlaceholder({ url }: { url: string }) {
   );
 }
 
+const DEV_DEPLOY_OVERRIDE_KEY = "demo-deploy-url-override";
+
 export const DeployReveal = memo(function DeployReveal() {
   const storedDeployUrl = useOsStore((s) => s.build.deployUrl);
+  const [devOverride, setDevOverride] = useState<string | undefined>(() => {
+    if (process.env.NODE_ENV === "production") return undefined;
+    if (typeof window === "undefined") return undefined;
+    const saved = window.localStorage.getItem(DEV_DEPLOY_OVERRIDE_KEY)?.trim();
+    return saved || undefined;
+  });
+
   const deployUrl = useMemo(
     () =>
       resolveDemoDeployUrlForDisplay(storedDeployUrl, {
         clientOrigin:
           typeof window !== "undefined" ? window.location.origin : undefined,
+        devOverride,
       }),
-    [storedDeployUrl]
+    [storedDeployUrl, devOverride]
   );
   const openUrl = deployUrl ? ensureHttpsDeployUrl(deployUrl) : null;
+  const storedIsUnstable =
+    storedDeployUrl != null &&
+    !isDeployUrlUnresolved(storedDeployUrl) &&
+    isUnstableDeployUrl(storedDeployUrl);
   const unresolved = storedDeployUrl != null && (deployUrl == null || isDeployUrlUnresolved(deployUrl));
+  const isDev = process.env.NODE_ENV !== "production";
   const showModal = storedDeployUrl != null;
   const dismiss = useOsStore((s) => s.dismissDeployReveal);
   const [copied, setCopied] = useState(false);
@@ -131,7 +147,9 @@ export const DeployReveal = memo(function DeployReveal() {
                 <p className="mt-1 text-left text-[11px] text-os-dim">
                   {unresolved
                     ? "Build finished, but no production URL is configured for this deployment."
-                    : "Demo shell is live at the URL below."}
+                    : storedIsUnstable
+                      ? "Showing your configured production URL (not this preview deployment host)."
+                      : "Demo web app is live at the URL below."}
                 </p>
               </div>
             </div>
@@ -149,6 +167,26 @@ export const DeployReveal = memo(function DeployReveal() {
                 >
                   {unresolved ? DEPLOY_URL_UNCONFIGURED : openUrl}
                 </p>
+                {isDev ? (
+                  <label className="mt-3 block text-left text-[10px] text-os-dim">
+                    Dev override URL
+                    <input
+                      type="url"
+                      value={devOverride ?? ""}
+                      onChange={(e) => {
+                        const next = e.target.value.trim();
+                        setDevOverride(next || undefined);
+                        if (next) {
+                          window.localStorage.setItem(DEV_DEPLOY_OVERRIDE_KEY, next);
+                        } else {
+                          window.localStorage.removeItem(DEV_DEPLOY_OVERRIDE_KEY);
+                        }
+                      }}
+                      placeholder="https://your-app.vercel.app"
+                      className="mt-1 w-full rounded-md border border-white/10 bg-black/30 px-2 py-1.5 font-mono text-[10px] text-os-green/90"
+                    />
+                  </label>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {openUrl ? (
                     <>

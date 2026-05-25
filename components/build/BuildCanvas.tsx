@@ -95,10 +95,10 @@ export const BuildCanvas = memo(function BuildCanvas() {
               : isDeployPending
                 ? "Verified — publishing deploy URL…"
                 : isAssembling
-                  ? `GPU workers assembling shell · ${activeCores.length} cores active`
+                  ? `GPU workers assembling web app · ${activeCores.length} cores active`
                   : verifyStatus === "fail"
                     ? "Build failed verification"
-                    : "GPU workers assembling shell"}
+                    : "GPU workers assembling web app"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { getGeminiKeyFault } from "@/lib/config/deploy-hint";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
 import { isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
 import {
@@ -27,10 +28,10 @@ export async function POST(req: Request) {
   };
 
   if (!isAgentLlmConfigured()) {
-    return new Response(
-      "[fault] GEMINI_API_KEY missing — set GEMINI_API_KEY in .env.local and restart npm run dev\n",
-      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
-    );
+    return new Response(getGeminiKeyFault(), {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 
   const task = body.task ?? "idle task";

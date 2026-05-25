@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import {
-  BUILD_GEMINI_KEY_FAULT,
   generateWebAppShell,
   getBuildModelId,
   isBuildGeminiConfigured,
 } from "@/lib/ai/gemini-build";
+import { getGeminiKeyFaultMessage } from "@/lib/ai/faults";
 
 export const runtime = "nodejs";
 
@@ -12,13 +12,13 @@ type BuildAppBody = {
   prompt?: string;
 };
 
-/** POST /api/os/build-app — Gemini Flash web shell generation (not OpenRouter). */
+/** POST /api/os/build-app — Gemini Flash web app generation (not OpenRouter). */
 export async function POST(req: Request) {
   if (!isBuildGeminiConfigured()) {
     return NextResponse.json(
       {
         ok: false,
-        error: BUILD_GEMINI_KEY_FAULT.replace(/^\[fault\]\s*/, "").trim(),
+        error: getGeminiKeyFaultMessage(),
         needsGemini: true,
       },
       { status: 503 }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const prompt =
     typeof body.prompt === "string" && body.prompt.trim()
       ? body.prompt.trim()
-      : "minimal SaaS dashboard shell";
+      : "minimal SaaS dashboard web app";
 
   const { files, source } = await generateWebAppShell(prompt);
 

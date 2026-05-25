@@ -321,6 +321,14 @@ body {
 }
 
 /* Prevent double scrollbars on full-screen OS shell; marketing pages scroll normally */
+/* Standalone /demo route — hide marketing grid behind opaque demo app */
+.demo-route-host {
+  position: relative;
+  z-index: 20;
+  min-height: 100dvh;
+  background: #0a0f14;
+}
+
 body.os-shell-active {
   overflow: hidden;
 }

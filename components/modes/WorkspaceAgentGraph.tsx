@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { withBasePath } from "@/lib/api/url";
+import { getGeminiKeySetupHint } from "@/lib/config/deploy-hint";
 import { executeOsCommand } from "@/lib/os/execute-command";
 import { AGENT_SPAWNED_EVENT, type AgentSpawnedDetail } from "@/lib/os/shell-events";
 import {
@@ -27,11 +28,12 @@ import { dispatchShellCommand } from "@/lib/os/shell-events";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/os/osStore";
 
-const NODE_W = 40;
-const NODE_H = 20;
+const NODE_W = 32;
+const NODE_H = 16;
 const NODE_ANCHOR_X = NODE_W / 2;
 const NODE_ANCHOR_Y = NODE_H / 2;
 const NODE_LABEL_Y = NODE_ANCHOR_Y + 0.5;
+const NODE_LABEL_MAX = 12;
 
 const PULSE_GRADIENT: Record<AgentSignature, string> = {
   research: "workspace-pulse-research",
@@ -126,9 +128,7 @@ function formatActiveRoute(fromId: string, toId: string, templates: GraphTemplat
   return `${fromLabel} → ${toLabel}`;
 }
 
-const GEMINI_BUILD_COMMAND = WORKSPACE_DEMO_COMMANDS.submitWebShell;
-const GEMINI_KEY_HINT =
-  "Set GEMINI_API_KEY in .env.local and restart npm run dev";
+const GEMINI_BUILD_COMMAND = WORKSPACE_DEMO_COMMANDS.submitWebApp;
 
 function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] }) {
   const activeNodeIds = useOsStore((s) => s.graph.activeNodeIds);
@@ -161,7 +161,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
   const runGeminiBuild = useCallback(async () => {
     if (buildRunningRef.current || buildActive) return;
     if (!geminiOk) {
-      useOsStore.getState().setKernelCommandError(GEMINI_KEY_HINT);
+      useOsStore.getState().setKernelCommandError(getGeminiKeySetupHint());
       return;
     }
     buildRunningRef.current = true;
@@ -242,7 +242,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
         <span className="text-left text-[10px] leading-snug text-os-dim/85">
           {buildBusy
             ? "Building — graph pulses on DISPATCH"
-            : "Gemini Flash assembles a web shell"}
+            : "Gemini Flash assembles a web app"}
         </span>
         <div className="flex flex-wrap items-center gap-2">
           {geminiOk === false && (
@@ -254,8 +254,8 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
             type="button"
             title={
               geminiOk === false
-                ? GEMINI_KEY_HINT
-                : "submit build agent dashboard shell"
+                ? getGeminiKeySetupHint()
+                : "submit build agent dashboard app (shell alias supported)"
             }
             disabled={buildBusy || geminiOk === false || geminiOk === null}
             onClick={() => void runGeminiBuild()}
@@ -283,7 +283,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
         )}
       >
         <svg
-          viewBox="-2 -2 220 84"
+          viewBox="-2 -2 258 76"
           className="workspace-graph-svg h-full min-h-[220px] w-full overflow-visible"
           preserveAspectRatio="xMidYMid meet"
           aria-label="Agent orchestration graph"
@@ -316,7 +316,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
             ))}
           </defs>
 
-          <rect x="-2" y="-2" width="220" height="84" fill="url(#workspace-grid)" className="workspace-graph-grid" />
+          <rect x="-2" y="-2" width="258" height="76" fill="url(#workspace-grid)" className="workspace-graph-grid" />
 
           <g className="workspace-graph-edges-static" aria-hidden>
             {edges.map(({ key, x1, y1, x2, y2, lit, sig, isMemoryHub }) => (
@@ -391,32 +391,32 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     <rect
                       width={NODE_W}
                       height={NODE_H}
-                      rx={1.5}
+                      rx={1.25}
                       className={cn(
                         "workspace-graph-node-halo",
                         spawning && "workspace-graph-node-halo--spawn"
                       )}
                       fill="none"
                       stroke={spawning ? "var(--os-amber)" : stroke}
-                      strokeWidth={spawning ? 2.4 : 2}
+                      strokeWidth={spawning ? 2 : 1.6}
                       strokeOpacity={spawning ? 0.75 : 0.5}
                     />
                   )}
                   <rect
                     width={NODE_W}
                     height={NODE_H}
-                    rx={1.5}
+                    rx={1.25}
                     fill={SIGNATURE_FILL[sig]}
                     stroke={active || spawning ? stroke : "var(--os-border)"}
-                    strokeWidth={active || spawning ? 1.35 : 0.65}
+                    strokeWidth={active || spawning ? 1.15 : 0.55}
                     className={spawning ? "workspace-graph-node-body--spawn" : undefined}
                   />
                   <rect
                     x={0.5}
-                    y={1.5}
-                    width={2}
-                    height={NODE_H - 3}
-                    rx={0.35}
+                    y={1.25}
+                    width={1.75}
+                    height={NODE_H - 2.5}
+                    rx={0.3}
                     fill={stroke}
                     fillOpacity={active ? 0.9 : 0.45}
                   />
@@ -427,12 +427,14 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     dominantBaseline="middle"
                     fill={active ? SIGNATURE_LABEL[sig] : "var(--os-green)"}
                     fillOpacity={active ? 1 : 0.78}
-                    fontSize={5.5}
+                    fontSize={4.75}
                     fontFamily="var(--font-mono)"
                     fontWeight={600}
                     letterSpacing="0.02em"
                   >
-                    {label.length > 11 ? `${label.slice(0, 10)}…` : label}
+                    {label.length > NODE_LABEL_MAX
+                      ? `${label.slice(0, NODE_LABEL_MAX - 1)}…`
+                      : label}
                   </text>
                   <title>{`${label}\n${description}`}</title>
                 </g>
@@ -448,7 +450,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
               return (
                 <g
                   key={t.id}
-                  transform={`translate(${8 + (i % 4) * 44}, ${64})`}
+                  transform={`translate(${8 + (i % 4) * 36}, ${68})`}
                   className={cn(
                     "workspace-graph-node cursor-pointer",
                     active && "workspace-node-active",
@@ -469,14 +471,14 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     <rect
                       width={NODE_W}
                       height={NODE_H}
-                      rx={1.5}
+                      rx={1.25}
                       className={cn(
                         "workspace-graph-node-halo",
                         spawning && "workspace-graph-node-halo--spawn"
                       )}
                       fill="none"
                       stroke={spawning ? "var(--os-amber)" : stroke}
-                      strokeWidth={2}
+                      strokeWidth={1.6}
                       strokeOpacity={spawning ? 0.7 : 0.4}
                       strokeDasharray="2.5 1.2"
                     />
@@ -484,20 +486,20 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                   <rect
                     width={NODE_W}
                     height={NODE_H}
-                    rx={1.5}
+                    rx={1.25}
                     fill="transparent"
                     stroke={stroke}
-                    strokeWidth={active || spawning ? 1.35 : 0.85}
+                    strokeWidth={active || spawning ? 1.15 : 0.7}
                     strokeDasharray="2.5 1.2"
                     strokeOpacity={active || spawning ? 1 : 0.45}
                     className={spawning ? "workspace-graph-node-body--spawn" : undefined}
                   />
                   <rect
                     x={0.5}
-                    y={1.5}
-                    width={2}
-                    height={NODE_H - 3}
-                    rx={0.35}
+                    y={1.25}
+                    width={1.75}
+                    height={NODE_H - 2.5}
+                    rx={0.3}
                     fill="var(--os-amber)"
                     fillOpacity={active ? 0.85 : 0.4}
                   />
@@ -508,12 +510,14 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                     dominantBaseline="middle"
                     fill={active ? "var(--os-amber)" : "var(--os-green)"}
                     fillOpacity={active ? 1 : 0.78}
-                    fontSize={5.5}
+                    fontSize={4.75}
                     fontFamily="var(--font-mono)"
                     fontWeight={600}
                     letterSpacing="0.02em"
                   >
-                    {label.length > 11 ? `${label.slice(0, 10)}…` : label}
+                    {label.length > NODE_LABEL_MAX
+                      ? `${label.slice(0, NODE_LABEL_MAX - 1)}…`
+                      : label}
                   </text>
                   <title>{`${label}\n${description}`}</title>
                 </g>
