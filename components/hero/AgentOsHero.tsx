@@ -332,11 +332,12 @@ function FullscreenHero({ className }: { className?: string }) {
         };
 
   const handlePrimaryCta = () => {
-    dispatchShellCommand("spawn agent kernel.orchestrator");
     setMode("terminal");
+    dispatchShellCommand("spawn agent kernel.orchestrator");
   };
 
   const handleSecondaryCta = () => {
+    setMode("terminal");
     dispatchShellCommand("submit demo workflow");
   };
 
@@ -344,8 +345,8 @@ function FullscreenHero({ className }: { className?: string }) {
     event.preventDefault();
     const value = commandValue.trim();
     if (!value) return;
-    dispatchShellCommand(value);
     setMode("terminal");
+    dispatchShellCommand(value);
     setCommandValue("");
   };
 

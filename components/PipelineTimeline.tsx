@@ -98,7 +98,7 @@ export const PipelineTimeline = memo(function PipelineTimeline() {
     }
 
     prevStepRef.current = currentStep;
-  }, [pipeline.currentStep, pipeline.completedSteps, lastMessage]);
+  }, [pipeline, lastMessage]);
 
   useEffect(() => {
     if (pipeline.currentStep) {

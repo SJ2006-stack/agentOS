@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { Terminal } from "xterm";
+import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import "xterm/css/xterm.css";
+import "@xterm/xterm/css/xterm.css";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
 import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,8 @@ import { useOsStore } from "@/store/osStore";
 import {
   AGENT_SPAWNED_EVENT,
   dispatchAgentSpawned,
-  dispatchShellReady,
+  notifyShellMounted,
+  notifyShellUnmounted,
   SHELL_COMMAND_EVENT,
   type AgentSpawnedDetail,
   type ShellCommandDetail,
@@ -247,7 +248,6 @@ export function XtermShell({
       );
     }
     prompt();
-    dispatchShellReady();
 
     const syncTheme = () => {
       term.options.theme = xtermThemeFromCss();
@@ -442,8 +442,14 @@ export function XtermShell({
     };
     window.addEventListener(SHELL_COMMAND_EVENT, onExternalCommand);
 
+    // Ready-signal must be sent AFTER the SHELL_COMMAND_EVENT listener is
+    // attached so any commands queued during mode-switch are flushed into
+    // a live listener (not into the void).
+    notifyShellMounted();
+
     return () => {
       commandGenRef.current += 1;
+      notifyShellUnmounted();
       window.removeEventListener(SHELL_COMMAND_EVENT, onExternalCommand);
       window.removeEventListener(AGENT_SPAWNED_EVENT, onAgentSpawned);
       window.removeEventListener(MODEL_CHANGE_EVENT, onModelChange);

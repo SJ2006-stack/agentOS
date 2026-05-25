@@ -2,10 +2,19 @@
 
 import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check } from "lucide-react";
+import { MissionPipeline } from "@/components/pipeline/MissionPipeline";
 import { CPU_STEPS, type CpuStep } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/osStore";
+
+const STAGE_ICON: Record<CpuStep, string> = {
+  INTAKE: "📥",
+  PLAN: "🧭",
+  ROUTE: "🛣️",
+  DISPATCH: "🚀",
+  VERIFY: "🔍",
+  COMMIT: "✅",
+};
 
 const STAGE_TITLE: Record<CpuStep, string> = {
   INTAKE: "Intake",
@@ -34,17 +43,10 @@ const STAGE_PLACEHOLDER: Record<CpuStep, string> = {
   COMMIT: "Result committed to memory",
 };
 
-type StageState = "future" | "active" | "done";
-
-function stageStateFor(
-  step: CpuStep,
-  current: CpuStep | null,
-  completed: ReadonlyArray<CpuStep>
-): StageState {
-  if (current === step) return "active";
-  if (completed.includes(step)) return "done";
-  return "future";
-}
+const MISSION_PIPELINE_STAGES = CPU_STEPS.map((step) => ({
+  name: step,
+  icon: STAGE_ICON[step],
+}));
 
 function shortMemoryPreview(text: string | null, maxLen = 140): string | null {
   if (!text) return null;
@@ -116,66 +118,10 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
-        <ol
-          className="workspace-pipeline-track grid w-full"
-          style={{
-            gridTemplateColumns: `repeat(${CPU_STEPS.length}, minmax(0, 1fr))`,
-          }}
-          aria-label="Pipeline stages"
-        >
-          {CPU_STEPS.map((step, idx) => {
-            const state = stageStateFor(step, currentStep, completedSteps);
-            const showConnector = idx < CPU_STEPS.length - 1;
-            const connectorFilled =
-              activeIndex > idx ||
-              (activeIndex === idx && state === "done") ||
-              completedSteps.includes(step);
-            const connectorPulsing =
-              currentStep != null && idx === activeIndex && showConnector;
-
-            return (
-              <li
-                key={step}
-                className={cn(
-                  "workspace-stage relative flex flex-col items-center text-center",
-                  state === "active" && "workspace-stage--active",
-                  state === "done" && "workspace-stage--done",
-                  state === "future" && "workspace-stage--future"
-                )}
-                aria-current={state === "active" ? "step" : undefined}
-              >
-                {showConnector && (
-                  <span
-                    className={cn(
-                      "workspace-connector",
-                      connectorFilled && "workspace-connector--filled",
-                      connectorPulsing && "workspace-connector--pulse"
-                    )}
-                    aria-hidden
-                  />
-                )}
-                <span className="workspace-stage-node">
-                  {state === "active" && (
-                    <span
-                      className="workspace-stage-ring"
-                      aria-hidden
-                    />
-                  )}
-                  {state === "done" ? (
-                    <Check className="size-3.5" aria-hidden />
-                  ) : (
-                    <span className="font-mono text-[10px] font-semibold">
-                      {idx + 1}
-                    </span>
-                  )}
-                </span>
-                <span className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.16em]">
-                  {step}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
+        <MissionPipeline
+          stages={MISSION_PIPELINE_STAGES}
+          activeIndex={activeIndex}
+        />
 
         <div
           className={cn(
