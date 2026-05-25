@@ -1,14 +1,17 @@
-import { streamText, stepCountIs } from "ai";
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
-import { getModel, isAiGatewayConfigured, resolveModelId } from "@/lib/ai/model";
+import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
+import {
+  streamChatWithTools,
+  textStreamResponse,
+} from "@/lib/ai/openrouter-agent";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  if (!isAiGatewayConfigured()) {
+  if (!isOpenRouterConfigured()) {
     return new Response(
-      "[fault] AI_GATEWAY_API_KEY not configured\n",
+      "[fault] OPENROUTER_API_KEY not configured\n",
       { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
@@ -21,13 +24,14 @@ export async function POST(req: Request) {
 
   const model = resolveModelId(modelId);
 
-  const result = streamText({
-    model: getModel(model),
-    system: KERNEL_SYSTEM,
-    prompt,
-    tools: createKernelTools({ taskId }),
-    stopWhen: stepCountIs(6),
-  });
-
-  return result.toTextStreamResponse();
+  return textStreamResponse(
+    "",
+    streamChatWithTools({
+      modelId: model,
+      system: KERNEL_SYSTEM,
+      prompt,
+      tools: createKernelTools({ taskId }),
+      maxSteps: 6,
+    })
+  );
 }

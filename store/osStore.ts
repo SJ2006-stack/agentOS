@@ -2,8 +2,8 @@
 
 import { create } from "zustand";
 import {
-  DEFAULT_GATEWAY_MODEL_ID,
-  isGatewayModelId,
+  DEFAULT_OPENROUTER_MODEL_ID,
+  isOpenRouterModelId,
 } from "@/lib/ai/models-client";
 import {
   CPU_STEPS,
@@ -67,14 +67,14 @@ interface OsState {
 const MODEL_STORAGE_KEY = "devfactory-os-model";
 
 function readStoredModelId(): string {
-  if (typeof window === "undefined") return DEFAULT_GATEWAY_MODEL_ID;
+  if (typeof window === "undefined") return DEFAULT_OPENROUTER_MODEL_ID;
   try {
     const stored = localStorage.getItem(MODEL_STORAGE_KEY);
-    if (stored && isGatewayModelId(stored)) return stored;
+    if (stored && isOpenRouterModelId(stored)) return stored;
   } catch {
     /* ignore */
   }
-  return DEFAULT_GATEWAY_MODEL_ID;
+  return DEFAULT_OPENROUTER_MODEL_ID;
 }
 
 function persistModelId(id: string): void {
@@ -100,7 +100,7 @@ export const useOsStore = create<OsState>((set) => ({
   gpu: { heatmap: emptyHeatmap(), activeWorkers: 0, lastDispatch: null, dispatchSeq: 0 },
   hydraConfigured: false,
   supabaseConfigured: false,
-  selectedModelId: DEFAULT_GATEWAY_MODEL_ID,
+  selectedModelId: DEFAULT_OPENROUTER_MODEL_ID,
 
   setKernelHeartbeat: (h) =>
     set((s) => ({ kernel: { ...s.kernel, heartbeat: h, connected: true } })),
@@ -170,7 +170,7 @@ export const useOsStore = create<OsState>((set) => ({
   setConfigFlags: (hydra, supabase) =>
     set({ hydraConfigured: hydra, supabaseConfigured: supabase }),
   setSelectedModelId: (id) => {
-    const next = isGatewayModelId(id) ? id : DEFAULT_GATEWAY_MODEL_ID;
+    const next = isOpenRouterModelId(id) ? id : DEFAULT_OPENROUTER_MODEL_ID;
     persistModelId(next);
     set({ selectedModelId: next });
   },

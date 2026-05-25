@@ -1,7 +1,7 @@
 import "server-only";
-import { streamText, stepCountIs } from "ai";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
-import { getModel, resolveModelId } from "@/lib/ai/model";
+import { resolveModelId } from "@/lib/ai/model";
+import { runChatWithTools } from "@/lib/ai/openrouter-agent";
 import { createOsTools } from "@/lib/ai/tools";
 import { addMemoryToHydra, cpuStepPrefix } from "@/lib/hydradb/memory";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
@@ -79,14 +79,13 @@ export async function runCpuPipeline(
     });
 
     try {
-      const result = streamText({
-        model: getModel(model),
+      await runChatWithTools({
+        modelId: model,
         system: CPU_SYSTEM,
         prompt: cpuStepPrompt(step, task, taskId),
         tools: createOsTools({ taskId, step, origin, modelId: model }),
-        stopWhen: stepCountIs(5),
+        maxSteps: 5,
       });
-      await result.text;
     } catch (e) {
       await broadcastOsEvent("os:cpu", "step_complete", {
         step,
@@ -113,6 +112,5 @@ export async function runCpuPipeline(
       taskId,
       completedSteps,
     });
-
   }
 }

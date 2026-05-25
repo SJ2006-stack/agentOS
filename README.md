@@ -1,12 +1,12 @@
 # DevFactory OS
 
-Terminal-style OS monitor built with Next.js 15, xterm.js, Vercel AI Gateway, HydraDB, and Supabase Realtime Broadcast.
+Terminal-style OS monitor built with Next.js 15, xterm.js, [@openrouter/sdk](https://www.npmjs.com/package/@openrouter/sdk), HydraDB, and Supabase Realtime Broadcast.
 
 ## Quick start
 
 ```bash
 cp .env.example .env.local
-# Fill AI_GATEWAY_API_KEY, HYDRADB_API_KEY, Supabase keys
+# Fill OPENROUTER_API_KEY, HYDRADB_API_KEY, Supabase keys
 
 npm install
 npm run dev
@@ -43,6 +43,10 @@ Metadata on each write: `agent_id`, `pipeline_step`, `task_id`.
 - `infer: false` — structured operational facts
 - `infer: true` — raw dialogue logs only
 
+## LLM layer
+
+All agents use `@openrouter/sdk` (`getOpenRouter().chat.send`) with `OPENROUTER_API_KEY` only. Default model: `google/gemma-4-26b-a4b-it:free`. Tool loops run via native OpenRouter function calling in `lib/ai/openrouter-agent.ts` (no Vercel AI SDK). Shell streaming: API returns `text/plain` `ReadableStream`; xterm reads `res.body` chunks and writes them live.
+
 ## Architecture
 
 - **Kernel** — `/api/agents/kernel` — routes shell, recall tools
@@ -75,8 +79,7 @@ npx vercel
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `AI_GATEWAY_API_KEY` | Yes | Vercel AI Gateway (all agent routes) |
-| `VERCEL_AI_GATEWAY_API_KEY` | No | Alias for `AI_GATEWAY_API_KEY` |
+| `OPENROUTER_API_KEY` | Yes | OpenRouter API key — powers all LLM routes via `@openrouter/sdk` (default model: `google/gemma-4-26b-a4b-it:free`) |
 | `HYDRADB_API_KEY` | Yes | Live HydraDB; no mock |
 | `HYDRADB_TENANT_ID` | No | Defaults to `devfactory-os` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Realtime panels |

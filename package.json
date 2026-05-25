@@ -9,12 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.120",
-    "@ai-sdk/openai": "^3.0.65",
     "@hydradb/sdk": "^0.0.3",
+    "@openrouter/sdk": "^0.12.35",
     "@supabase/supabase-js": "^2.106.1",
     "@xterm/addon-fit": "^0.11.0",
-    "ai": "^6.0.191",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
     "motion": "^12.40.0",

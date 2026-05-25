@@ -1,8 +1,12 @@
-import { streamText, stepCountIs } from "ai";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
-import { getModel, isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
-import { createOsTools } from "@/lib/ai/tools";
+import { isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
+import {
+  runChatWithTools,
+  streamChatWithTools,
+  textStreamResponse,
+} from "@/lib/ai/openrouter-agent";
 import { runCpuPipeline } from "@/lib/ai/run-cpu";
+import { createOsTools } from "@/lib/ai/tools";
 import type { CpuStep } from "@/lib/os/types";
 import { CPU_STEPS } from "@/lib/os/types";
 
@@ -20,7 +24,7 @@ export async function POST(req: Request) {
 
   if (!isAgentLlmConfigured()) {
     return new Response(
-      "[fault] AI_GATEWAY_API_KEY not configured\n",
+      "[fault] OPENROUTER_API_KEY not configured\n",
       { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
@@ -39,19 +43,29 @@ export async function POST(req: Request) {
   }
 
   const step = body.step ?? CPU_STEPS[0];
-  const result = streamText({
-    model: getModel(model),
-    system: CPU_SYSTEM,
-    prompt: cpuStepPrompt(step, task, taskId),
-    tools: createOsTools({ taskId, step, origin, modelId: model }),
-    stopWhen: stepCountIs(5),
-  });
+  const tools = createOsTools({ taskId, step, origin, modelId: model });
 
   if (body.stream) {
-    return result.toTextStreamResponse();
+    return textStreamResponse(
+      "",
+      streamChatWithTools({
+        modelId: model,
+        system: CPU_SYSTEM,
+        prompt: cpuStepPrompt(step, task, taskId),
+        tools,
+        maxSteps: 5,
+      })
+    );
   }
 
-  const text = await result.text;
+  const text = await runChatWithTools({
+    modelId: model,
+    system: CPU_SYSTEM,
+    prompt: cpuStepPrompt(step, task, taskId),
+    tools,
+    maxSteps: 5,
+  });
+
   return new Response(`[cpu] ${step}: ${text}\n`, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });

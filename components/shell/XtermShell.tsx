@@ -5,10 +5,11 @@ import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import {
-  GATEWAY_MODELS,
-  gatewayModelById,
-  isGatewayModelId,
+  OPENROUTER_MODELS,
+  openRouterModelById,
+  isOpenRouterModelId,
 } from "@/lib/ai/models-client";
+import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
 import { useOsStore } from "@/store/osStore";
 
 type WriteFn = (text: string, prefix?: string) => void;
@@ -96,6 +97,10 @@ export function XtermShell({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // #region agent log
+    fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:useEffect-start',message:'useEffect running, container dimensions',data:{w:containerRef.current?.offsetWidth,h:containerRef.current?.offsetHeight},timestamp:Date.now(),hypothesisId:'H-C H-D'})}).catch(()=>{});
+    // #endregion
+
     const term = new Terminal({
       theme: xtermThemeFromCss(),
       fontFamily: "var(--font-geist-mono), JetBrains Mono, monospace",
@@ -105,12 +110,24 @@ export function XtermShell({
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
-    term.open(containerRef.current);
+    // #region agent log
+    try {
+      term.open(containerRef.current);
+      fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:term.open-success',message:'term.open succeeded',data:{},timestamp:Date.now(),hypothesisId:'H-D'})}).catch(()=>{});
+    } catch(openErr) {
+      fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:term.open-error',message:'term.open threw',data:{err:String(openErr)},timestamp:Date.now(),hypothesisId:'H-D'})}).catch(()=>{}); throw openErr;
+    }
+    // #endregion
     requestAnimationFrame(() => {
       try {
         fit.fit();
-      } catch {
-        /* ignore */
+        // #region agent log
+        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:raf-fit-success',message:'raf fit.fit() succeeded',data:{},timestamp:Date.now(),hypothesisId:'H-C'})}).catch(()=>{});
+        // #endregion
+      } catch(e) {
+        // #region agent log
+        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:raf-fit-error',message:'raf fit.fit() threw',data:{err:String(e)},timestamp:Date.now(),hypothesisId:'H-C'})}).catch(()=>{});
+        // #endregion
       }
     });
 
@@ -131,8 +148,10 @@ export function XtermShell({
     const fitTerminal = () => {
       try {
         fit.fit();
-      } catch {
-        /* ignore */
+      } catch(fitErr) {
+        // #region agent log
+        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:fitTerminal-error',message:'fitTerminal fit.fit() threw',data:{err:String(fitErr)},timestamp:Date.now(),hypothesisId:'H-C H-F'})}).catch(()=>{});
+        // #endregion
       }
     };
 
@@ -149,10 +168,27 @@ export function XtermShell({
     ro.observe(containerRef.current);
     window.addEventListener("resize", fitTerminal);
 
+    // #region agent log
+    const globalErrHandler = (ev: ErrorEvent) => {
+      if (ev.message && ev.message.includes('dimensions')) {
+        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:global-error',message:'Unhandled error with dimensions',data:{msg:ev.message,filename:ev.filename,lineno:ev.lineno,colno:ev.colno},timestamp:Date.now(),hypothesisId:'H-C H-E'})}).catch(()=>{});
+      }
+    };
+    window.addEventListener('error', globalErrHandler);
+    // #endregion
+
     onReady?.((text, prefix = "") => {
       writePrefixed(text, prefix);
       prompt();
     });
+
+    const onModelChange = (ev: Event) => {
+      const { id, label } = (ev as CustomEvent<{ id: string; label: string }>)
+        .detail;
+      writeln(`[kernel] model → ${label} (${id})`, "32");
+      prompt();
+    };
+    window.addEventListener(MODEL_CHANGE_EVENT, onModelChange);
 
     const runCommand = async (line: string) => {
       term.write("\r\n");
@@ -163,19 +199,19 @@ export function XtermShell({
       if (lower.startsWith("config model")) {
         const id = line.trim().slice("config model".length).trim();
         if (!id) {
-          const ids = GATEWAY_MODELS.map((m) => m.id).join(", ");
+          const ids = OPENROUTER_MODELS.map((m) => m.id).join(", ");
           writeln(`[kernel] usage: config model <id> — ${ids}`, "32");
           prompt();
           return;
         }
-        if (!isGatewayModelId(id)) {
+        if (!isOpenRouterModelId(id)) {
           writeln(`[fault] unknown model "${id}"`, "31");
           prompt();
           return;
         }
         useOsStore.getState().setSelectedModelId(id);
-        const label = gatewayModelById(id)?.label ?? id;
-        writeln(`[kernel] gateway model → ${label} (${id})`, "32");
+        const label = openRouterModelById(id)?.label ?? id;
+        writeln(`[kernel] openrouter model → ${label} (${id})`, "32");
         prompt();
         return;
       }
@@ -261,9 +297,13 @@ export function XtermShell({
     });
 
     return () => {
+      window.removeEventListener(MODEL_CHANGE_EVENT, onModelChange);
       themeObserver.disconnect();
       ro.disconnect();
       window.removeEventListener("resize", fitTerminal);
+      // #region agent log
+      window.removeEventListener('error', globalErrHandler);
+      // #endregion
       term.dispose();
       termRef.current = null;
     };

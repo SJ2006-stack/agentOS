@@ -1,5 +1,4 @@
 import "server-only";
-import { tool } from "ai";
 import { z } from "zod";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import {
@@ -9,6 +8,8 @@ import {
   recallPreferences,
 } from "@/lib/hydradb/memory";
 import type { CpuStep } from "@/lib/os/types";
+import { defineTool } from "@/lib/ai/openrouter-agent";
+import type { OpenRouterToolDef } from "@/lib/ai/openrouter-agent";
 
 export function createOsTools(ctx: {
   taskId: string;
@@ -16,7 +17,7 @@ export function createOsTools(ctx: {
   agentId?: string;
   origin?: string;
   modelId?: string;
-}) {
+}): OpenRouterToolDef[] {
   const stepPrefix = ctx.step ? cpuStepPrefix(ctx.step) : MEMORY_PREFIXES.kernel;
 
   async function persistAndBroadcastMemory(input: {
@@ -47,8 +48,9 @@ export function createOsTools(ctx: {
     return result;
   }
 
-  return {
-    plan_task: tool({
+  return [
+    defineTool({
+      name: "plan_task",
       description: "Record a plan for the current CPU task",
       inputSchema: z.object({
         plan: z.string(),
@@ -79,8 +81,8 @@ export function createOsTools(ctx: {
         return { ok: true, plan };
       },
     }),
-
-    route_workers: tool({
+    defineTool({
+      name: "route_workers",
       description: "Route work to worker queues",
       inputSchema: z.object({
         queues: z.array(z.string()),
@@ -107,8 +109,8 @@ export function createOsTools(ctx: {
         return { ok: true, routed: queues.length };
       },
     }),
-
-    gpu_dispatch: tool({
+    defineTool({
+      name: "gpu_dispatch",
       description:
         "DISPATCH: broadcast GPU hot zones and spawn parallel workers",
       inputSchema: z.object({
@@ -164,8 +166,8 @@ export function createOsTools(ctx: {
         return { ok: true, hotZones, workerCount };
       },
     }),
-
-    write_memory: tool({
+    defineTool({
+      name: "write_memory",
       description: "Write task outcome to HydraDB memory (COMMIT step)",
       inputSchema: z.object({
         text: z.string(),
@@ -173,7 +175,7 @@ export function createOsTools(ctx: {
       }),
       execute: async ({ text, infer }) => {
         const sub = cpuStepPrefix("COMMIT");
-        const result = await persistAndBroadcastMemory({
+        return persistAndBroadcastMemory({
           sub_tenant_id: sub,
           text,
           infer: infer ?? false,
@@ -183,15 +185,12 @@ export function createOsTools(ctx: {
             task_id: ctx.taskId,
           },
         });
-        return result;
       },
     }),
-
-    recall_memory: tool({
+    defineTool({
+      name: "recall_memory",
       description: "Recall preferences from HydraDB for current CPU context",
-      inputSchema: z.object({
-        query: z.string(),
-      }),
+      inputSchema: z.object({ query: z.string() }),
       execute: async ({ query }) => {
         const r = await recallPreferences({
           query,
@@ -205,8 +204,8 @@ export function createOsTools(ctx: {
         return r;
       },
     }),
-
-    emit_io: tool({
+    defineTool({
+      name: "emit_io",
       description: "Emit an I/O bus event; optionally persist summary to HydraDB",
       inputSchema: z.object({
         tool: z.string(),
@@ -236,5 +235,5 @@ export function createOsTools(ctx: {
         return { ok: true };
       },
     }),
-  };
+  ];
 }

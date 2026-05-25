@@ -1,26 +1,31 @@
 import "server-only";
-import { createGateway } from "@ai-sdk/gateway";
+import { OpenRouter } from "@openrouter/sdk";
 import { ALLOWED_MODEL_IDS, DEFAULT_MODEL_ID } from "@/lib/ai/models";
 
-function gatewayApiKey(): string | undefined {
-  return (
-    process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_AI_GATEWAY_API_KEY
-  );
+function openRouterApiKey(): string | undefined {
+  return process.env.OPENROUTER_API_KEY;
 }
 
-/** True when a Vercel AI Gateway API key is set (either env name). */
-export function isAiGatewayConfigured(): boolean {
-  return Boolean(gatewayApiKey());
+/** True when OPENROUTER_API_KEY is set. */
+export function isOpenRouterConfigured(): boolean {
+  return Boolean(openRouterApiKey());
 }
 
-/** Migration helper: gateway key preferred; OPENAI_API_KEY still accepted for env checks only. */
 export function isAgentLlmConfigured(): boolean {
-  return isAiGatewayConfigured() || Boolean(process.env.OPENAI_API_KEY);
+  return isOpenRouterConfigured();
 }
 
-const gateway = createGateway({
-  apiKey: gatewayApiKey() ?? "",
-});
+let _openrouter: OpenRouter | null = null;
+
+/** Singleton OpenRouter client (server-only). */
+export function getOpenRouter(): OpenRouter {
+  if (!_openrouter) {
+    _openrouter = new OpenRouter({
+      apiKey: openRouterApiKey() ?? "",
+    });
+  }
+  return _openrouter;
+}
 
 export function resolveModelId(requested?: string): string {
   if (requested && ALLOWED_MODEL_IDS.has(requested)) {
@@ -29,6 +34,7 @@ export function resolveModelId(requested?: string): string {
   return DEFAULT_MODEL_ID;
 }
 
-export function getModel(modelId: string) {
-  return gateway(resolveModelId(modelId));
+/** @deprecated Use getOpenRouter() — kept for transitional imports */
+export function getModel(modelId: string): string {
+  return resolveModelId(modelId);
 }

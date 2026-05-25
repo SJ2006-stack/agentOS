@@ -1,5 +1,4 @@
 import "server-only";
-import { tool } from "ai";
 import { z } from "zod";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import {
@@ -9,15 +8,16 @@ import {
   recallPreferences,
   MEMORY_PREFIXES,
 } from "@/lib/hydradb/memory";
+import { defineTool } from "@/lib/ai/openrouter-agent";
+import type { OpenRouterToolDef } from "@/lib/ai/openrouter-agent";
 
-export function createKernelTools(ctx: { taskId?: string }) {
-  return {
-    recall_all_context: tool({
+export function createKernelTools(ctx: { taskId?: string }): OpenRouterToolDef[] {
+  return [
+    defineTool({
+      name: "recall_all_context",
       description:
         "Recall aggregated context from all agent memory prefixes in HydraDB",
-      inputSchema: z.object({
-        query: z.string(),
-      }),
+      inputSchema: z.object({ query: z.string() }),
       execute: async ({ query }) => {
         const agg = await recallAllContext(query);
         await broadcastOsEvent("os:memory", "recall_result", {
@@ -33,8 +33,8 @@ export function createKernelTools(ctx: { taskId?: string }) {
         };
       },
     }),
-
-    recall_agent_context: tool({
+    defineTool({
+      name: "recall_agent_context",
       description: "Recall HydraDB memory for a specific sub_tenant_id prefix",
       inputSchema: z.object({
         sub_tenant_id: z.string(),
@@ -47,11 +47,16 @@ export function createKernelTools(ctx: { taskId?: string }) {
           chunks: r.chunks,
           queryPaths: r.queryPaths,
         });
-        return { ok: r.ok, chunks: r.chunks, queryPaths: r.queryPaths, error: r.error };
+        return {
+          ok: r.ok,
+          chunks: r.chunks,
+          queryPaths: r.queryPaths,
+          error: r.error,
+        };
       },
     }),
-
-    stream_memory_to_user: tool({
+    defineTool({
+      name: "stream_memory_to_user",
       description:
         "Stream formatted memory chunks for xterm display with [memory] prefix",
       inputSchema: z.object({
@@ -78,8 +83,8 @@ export function createKernelTools(ctx: { taskId?: string }) {
         return { ok: true, streamText: formatted };
       },
     }),
-
-    write_kernel_memory: tool({
+    defineTool({
+      name: "write_kernel_memory",
       description: "Persist orchestrator operational note to HydraDB",
       inputSchema: z.object({
         text: z.string(),
@@ -107,5 +112,5 @@ export function createKernelTools(ctx: { taskId?: string }) {
         return result;
       },
     }),
-  };
+  ];
 }

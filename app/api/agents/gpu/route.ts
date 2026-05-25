@@ -1,6 +1,6 @@
-import { generateText } from "ai";
 import { GPU_SYSTEM } from "@/lib/ai/agents";
-import { getModel, resolveModelId } from "@/lib/ai/model";
+import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
+import { runChatWithTools } from "@/lib/ai/openrouter-agent";
 import { addMemoryToHydra, MEMORY_PREFIXES } from "@/lib/hydradb/memory";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import type { GpuDispatchPayload } from "@/lib/os/types";
@@ -8,6 +8,13 @@ import type { GpuDispatchPayload } from "@/lib/os/types";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  if (!isOpenRouterConfigured()) {
+    return new Response(
+      "[fault] OPENROUTER_API_KEY not configured\n",
+      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
+    );
+  }
+
   const { taskId, workerCount = 8, hotZones, modelId } = (await req.json()) as {
     taskId: string;
     workerCount?: number;
@@ -59,13 +66,15 @@ export async function POST(req: Request) {
       }
 
       try {
-        const r = await generateText({
-          model: getModel(model),
+        const text = await runChatWithTools({
+          modelId: model,
           system: GPU_SYSTEM,
           prompt: summary,
-          maxOutputTokens: 48,
+          tools: [],
+          maxSteps: 1,
+          maxTokens: 48,
         });
-        results[i] = r.text;
+        results[i] = text;
       } catch {
         results[i] = `${id}: ok`;
       }
