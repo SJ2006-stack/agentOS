@@ -29,6 +29,7 @@ export const ALL_SUB_PREFIXES = [
   MEMORY_PREFIXES.user,
   MEMORY_PREFIXES.kernel,
   ...Object.values(MEMORY_PREFIXES.cpu),
+  MEMORY_PREFIXES.gpuTemplate,
   MEMORY_PREFIXES.io,
   MEMORY_PREFIXES.hub,
 ] as const;

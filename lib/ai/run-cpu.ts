@@ -1,4 +1,5 @@
 import "server-only";
+import { absoluteApiUrl } from "@/lib/api-url";
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
 import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
@@ -26,9 +27,8 @@ export async function invokeGpuAgents(input: {
   origin?: string;
   modelId?: string;
 }): Promise<void> {
-  const base = resolveOrigin(input.origin);
   const modelId = resolveModelId(input.modelId);
-  void fetch(`${base}/api/agents/gpu`, {
+  void fetch(absoluteApiUrl("/api/agents/gpu", input.origin ?? resolveOrigin()), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

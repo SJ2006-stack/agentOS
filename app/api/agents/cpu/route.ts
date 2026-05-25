@@ -1,4 +1,4 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
 import { isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
@@ -13,6 +13,7 @@ import type { CpuStep } from "@/lib/os/types";
 import { CPU_STEPS } from "@/lib/os/types";
 
 export const maxDuration = 120;
+
 
 export async function POST(req: Request) {
   const body = (await req.json()) as {

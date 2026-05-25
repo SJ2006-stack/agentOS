@@ -1,4 +1,4 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { OPENROUTER_KEY_FAULT } from "@/lib/ai/faults";
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
@@ -9,7 +9,7 @@ import {
   incrementalStreamResponse,
   streamChatWithTools,
 } from "@/lib/ai/openrouter-agent";
-import { parseShellCommand } from "@/lib/os/types";
+import { parseShellCommand, type ShellCommand } from "@/lib/os/types";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import { isHydraConfigured } from "@/lib/hydradb/client";
 import {
@@ -20,8 +20,15 @@ import {
 } from "@/lib/hydradb/memory";
 import { createTaskId } from "@/lib/os/pipeline";
 import { runCpuPipeline } from "@/lib/ai/run-cpu";
-import { listAllAgentTemplates } from "@/lib/os/agent-graph";
+import {
+  getAgentTemplate,
+  listAllAgentTemplates,
+} from "@/lib/os/agent-graph";
 import { spawnAgentTemplate } from "@/lib/os/agent-spawn";
+import {
+  jsonCommandFault,
+  wantsJsonCommandResponse,
+} from "@/lib/os/command-json";
 import {
   getActiveAgents,
   getCurrentTaskId,
@@ -51,11 +58,185 @@ async function writeKernelStream(
   }
 }
 
+function agentPayload(templateId: string) {
+  const template = getAgentTemplate(templateId);
+  if (!template) return { templateId };
+  return {
+    templateId: template.id,
+    role: template.role,
+    subTenantId: template.subTenantId,
+    displayName: template.displayName,
+    edges: template.edges,
+  };
+}
+
+async function handleJsonCommand(
+  parsed: ShellCommand,
+  ctx: { command: string; model: string; origin: string }
+): Promise<Response> {
+  const { command, model, origin } = ctx;
+
+  switch (parsed.type) {
+    case "spawn_agent": {
+      const output: string[] = [];
+      const result = await spawnAgentTemplate({
+        templateId: parsed.templateId,
+        modelId: model,
+        origin,
+        command,
+        write: (chunk) => {
+          if (chunk) output.push(chunk);
+        },
+      });
+      return Response.json(
+        {
+          ok: result.ok,
+          type: "spawn_agent",
+          agent: {
+            ...agentPayload(parsed.templateId),
+            taskId: result.taskId,
+            message: result.message,
+          },
+          output: output.join(""),
+        },
+        { status: result.ok ? 200 : 502 }
+      );
+    }
+
+    case "create_agent": {
+      try {
+        const record = await createAndPersistCustomAgent({
+          name: parsed.name,
+          role: parsed.role,
+        });
+        void writeUserInteraction(
+          command,
+          `created custom agent ${record.id}`,
+          getCurrentTaskId() ?? undefined
+        );
+        return Response.json({
+          ok: true,
+          type: "create_agent",
+          agent: {
+            id: record.id,
+            name: record.name,
+            role: record.role,
+            subTenantId: record.subTenantId,
+            edges: record.edges,
+          },
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "create agent failed";
+        return Response.json(
+          { ok: false, type: "create_agent", error: msg },
+          { status: 400 }
+        );
+      }
+    }
+
+    case "list_agents": {
+      const templates = listAllAgentTemplates();
+      return Response.json({
+        ok: true,
+        type: "list_agents",
+        agents: templates.map((t) => ({
+          id: t.id,
+          role: t.role,
+          subTenantId: t.subTenantId,
+          custom: isCustomTemplateId(t.id),
+          displayName: t.displayName,
+        })),
+        count: templates.length,
+      });
+    }
+
+    case "agent_status": {
+      return Response.json({
+        ok: true,
+        type: "agent_status",
+        taskId: getCurrentTaskId(),
+        activeAgents: getActiveAgents(),
+      });
+    }
+
+    case "status": {
+      const hydra = isHydraConfigured();
+      const openRouter = isOpenRouterConfigured();
+      const recent = hydra
+        ? await recallPreferences({ query: "status", max_results: 3 })
+        : { chunks: [], queryPaths: [] };
+      return Response.json({
+        ok: true,
+        type: "status",
+        openRouter,
+        hydra,
+        memoryChunks: recent.chunks.length,
+        activeAgents: getActiveAgents(),
+        taskId: getCurrentTaskId(),
+      });
+    }
+
+    case "spawn": {
+      const taskId = createTaskId();
+      const hotZones = Array.from({ length: Math.min(parsed.count, 12) }, (_, i) => ({
+        x: (i * 3) % 16,
+        y: (i * 2) % 16,
+        heat: 0.5 + (i % 5) * 0.1,
+      }));
+      void broadcastOsEvent("os:gpu", "dispatch", {
+        hotZones,
+        activeWorkers: parsed.count,
+        taskId,
+      });
+      const { invokeGpuAgents } = await import("@/lib/ai/run-cpu");
+      void invokeGpuAgents({
+        taskId,
+        workerCount: parsed.count,
+        hotZones,
+        origin,
+        modelId: model,
+      }).catch(console.error);
+      return Response.json({
+        ok: true,
+        type: "spawn",
+        taskId,
+        workerCount: parsed.count,
+        hotZones,
+      });
+    }
+
+    case "unknown":
+      return Response.json(
+        {
+          ok: false,
+          type: "unknown",
+          error: `unknown command: ${parsed.raw}`,
+          hint: "spawn agent <id> | agents | create agent <name> \"<role>\" | status",
+        },
+        { status: 400 }
+      );
+
+    default:
+      return Response.json(
+        {
+          ok: false,
+          type: parsed.type,
+          error: `command "${parsed.type}" requires text streaming — omit format=json or Accept: application/json`,
+        },
+        { status: 501 }
+      );
+  }
+}
+
+
 export async function POST(req: Request) {
-  const { command, modelId: requestedModelId } = (await req.json()) as {
+  const body = (await req.json()) as {
     command: string;
     modelId?: string;
+    format?: string;
   };
+  const { command, modelId: requestedModelId } = body;
+  const wantsJson = wantsJsonCommandResponse(req, body);
   const model = resolveModelId(requestedModelId);
   const parsed = parseShellCommand(command);
   const origin = new URL(req.url).origin;
@@ -90,10 +271,11 @@ export async function POST(req: Request) {
     parsed.type === "create_agent";
 
   if (needsHydra && !isHydraConfigured()) {
-    return new Response(
-      "[fault] HYDRADB_API_KEY missing — copy .env.example to .env.local\n",
-      { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-    );
+    const msg = "HYDRADB_API_KEY missing — copy .env.example to .env.local";
+    if (wantsJson) return jsonCommandFault(msg);
+    return new Response(`[fault] ${msg}\n`, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 
   const needsLlm =
@@ -106,9 +288,18 @@ export async function POST(req: Request) {
       agentNeedsLlm(parsed.templateId, "spawn"));
 
   if (needsLlm && !isOpenRouterConfigured()) {
+    if (wantsJson) {
+      return jsonCommandFault(
+        OPENROUTER_KEY_FAULT.replace(/^\[fault\]\s*/, "").trim()
+      );
+    }
     return new Response(OPENROUTER_KEY_FAULT, {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
+  }
+
+  if (wantsJson) {
+    return handleJsonCommand(parsed, { command, model, origin });
   }
 
   switch (parsed.type) {

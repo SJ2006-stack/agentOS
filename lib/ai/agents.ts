@@ -25,4 +25,4 @@ export function nextCpuStep(current: CpuStep | null): CpuStep {
   return CPU_STEPS[idx + 1];
 }
 
-export { DEFAULT_MODEL_ID as MODEL_ID } from "@/lib/ai/models";
+export { DEFAULT_MODEL_ID } from "@/lib/ai/models";

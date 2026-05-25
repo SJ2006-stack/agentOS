@@ -10,7 +10,4 @@ export const OPENROUTER_MODELS: OpenRouterModelEntry[] = [
 
 export const DEFAULT_MODEL_ID = "openrouter/free";
 
-/** @deprecated Use DEFAULT_MODEL_ID — kept for existing imports */
-export const MODEL_ID = DEFAULT_MODEL_ID;
-
 export const ALLOWED_MODEL_IDS = new Set(OPENROUTER_MODELS.map((m) => m.id));

@@ -1,4 +1,4 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { isOpenRouterConfigured } from "@/lib/ai/model";
 import { isHydraConfigured } from "@/lib/hydradb/client";

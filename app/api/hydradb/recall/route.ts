@@ -1,9 +1,10 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { recallAllContext, recallPreferences } from "@/lib/hydradb/memory";
 import { isHydraConfigured } from "@/lib/hydradb/client";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
+
 
 export async function POST(req: Request) {
   if (!isHydraConfigured()) {

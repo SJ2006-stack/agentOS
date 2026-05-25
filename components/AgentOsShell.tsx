@@ -9,6 +9,7 @@ import { DevFactoryDock } from "@/components/DevFactoryDock";
 import { consumeSkipHeroBoot } from "@/components/landing/OsSpawnBootstrap";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { hydrateThemePreset, ThemePresetPicker } from "@/components/ui/theme-preset-picker";
+import { withBasePath } from "@/lib/api-url";
 import { useKernelHeartbeat } from "@/hooks/useKernelHeartbeat";
 import { useOsRealtime } from "@/hooks/useOsRealtime";
 import { useOsStore } from "@/store/osStore";
@@ -89,7 +90,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   useEffect(() => {
     if (!hydraConfigured) return;
     const boot = () => {
-      void fetch("/api/hydradb/boot", { method: "POST" });
+      void fetch(withBasePath("/api/hydradb/boot"), { method: "POST" });
     };
     if (typeof requestIdleCallback !== "undefined") {
       const id = requestIdleCallback(boot, { timeout: 3000 });

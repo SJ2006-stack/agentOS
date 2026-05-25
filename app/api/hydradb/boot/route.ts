@@ -1,9 +1,10 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { bootHydraMemorySlots } from "@/lib/hydradb/memory";
+import { ALL_SUB_PREFIXES, bootHydraMemorySlots } from "@/lib/hydradb/memory";
 import { ensureTenant, isHydraConfigured } from "@/lib/hydradb/client";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
+
 
 export async function POST() {
   if (!isHydraConfigured()) {
@@ -28,15 +29,6 @@ export async function POST() {
     ok: boot.ok,
     tenant_id: tenantId,
     seeded: boot.seeded,
-    prefixes: [
-      "kernel.orchestrator",
-      "cpu.intake",
-      "cpu.plan",
-      "cpu.route",
-      "cpu.dispatch",
-      "cpu.verify",
-      "cpu.commit",
-      "io.bus",
-    ],
+    prefixes: [...ALL_SUB_PREFIXES],
   });
 }

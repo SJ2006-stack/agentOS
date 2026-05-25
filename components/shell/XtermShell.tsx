@@ -8,6 +8,7 @@ import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
 import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/osStore";
+import { withBasePath } from "@/lib/api-url";
 import {
   AGENT_SPAWNED_EVENT,
   dispatchAgentSpawned,
@@ -320,7 +321,7 @@ export function XtermShell({
       const modelId = useOsStore.getState().selectedModelId;
 
       try {
-        const res = await fetch("/api/os/command", {
+        const res = await fetch(withBasePath("/api/os/command"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ command: line, modelId }),
@@ -333,10 +334,16 @@ export function XtermShell({
 
         if (!res.ok) {
           const errText = await res.text().catch(() => "");
+          const trimmed = errText.trim();
+          const isHtml =
+            trimmed.startsWith("<!") ||
+            trimmed.toLowerCase().includes("<!doctype html");
           writeln(
-            errText.trim()
-              ? errText.trim().split("\n")[0]!
-              : `[fault] HTTP ${res.status}`,
+            isHtml
+              ? `[fault] API not found (${res.status}) — check basePath and dev server`
+              : trimmed
+                ? trimmed.split("\n")[0]!
+                : `[fault] HTTP ${res.status}`,
             "31"
           );
           prompt();

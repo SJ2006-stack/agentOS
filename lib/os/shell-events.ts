@@ -40,12 +40,6 @@ export function notifyShellUnmounted(): void {
   shellMountCount = Math.max(0, shellMountCount - 1);
 }
 
-/** @deprecated kept for backward compatibility — prefer notifyShellMounted */
-export function dispatchShellReady(): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(SHELL_READY_EVENT));
-}
-
 interface DispatchShellCommandOptions {
   /** When true (default), auto-switches to terminal mode if no shell is mounted. */
   ensureMount?: boolean;

@@ -1,4 +1,4 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
@@ -9,6 +9,7 @@ import {
 } from "@/lib/ai/openrouter-agent";
 
 export const maxDuration = 60;
+
 
 export async function POST(req: Request) {
   if (!isOpenRouterConfigured()) {

@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus } from "lucide-react";
+import { withBasePath } from "@/lib/api-url";
 import { BUILTIN_GRAPH_TEMPLATES } from "@/lib/os/builtin-graph-templates";
 import type { GraphTemplate } from "@/lib/os/agent-graph-layout";
 import {
@@ -105,7 +106,7 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
       return;
     }
     try {
-      const listRes = await fetch("/api/agents/registry");
+      const listRes = await fetch(withBasePath("/api/agents/registry"));
       if (!listRes.ok) return;
       const data = (await listRes.json()) as {
         templates: { id: string; role: string; custom: boolean }[];
@@ -150,10 +151,15 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
 
   const activeCount = activeNodeIds.size;
 
-  const onSpawn = useCallback(() => {
-    useOsStore.getState().setKernelCommand("spawn agent cpu.plan");
-    dispatchShellCommand("spawn agent cpu.plan");
+  const spawnTemplate = useCallback((templateId: string) => {
+    const command = `spawn agent ${templateId}`;
+    useOsStore.getState().setKernelCommand(command);
+    dispatchShellCommand(command);
   }, []);
+
+  const onSpawn = useCallback(() => {
+    spawnTemplate("cpu.plan");
+  }, [spawnTemplate]);
 
   return (
     <section
@@ -207,9 +213,19 @@ export const WorkspaceAgentList = memo(function WorkspaceAgentList({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
               className={cn(
-                "workspace-agent-card group flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 transition-colors",
+                "workspace-agent-card group flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 transition-colors hover:border-[color:var(--workspace-accent)]/40 hover:bg-white/[0.07]",
                 agent.active && "workspace-agent-card--active"
               )}
+              role="button"
+              tabIndex={0}
+              title={`Spawn ${agent.label}`}
+              onClick={() => spawnTemplate(agent.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  spawnTemplate(agent.id);
+                }
+              }}
             >
               <span
                 className={cn(

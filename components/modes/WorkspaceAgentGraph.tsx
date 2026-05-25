@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   AGENT_GRAPH,
   getAgentDescription,
@@ -13,6 +13,7 @@ import {
   signatureStroke,
   type AgentSignature,
 } from "@/lib/os/agent-signature";
+import { dispatchShellCommand } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/osStore";
 
 const NODE_W = 40;
@@ -115,6 +116,12 @@ function formatActiveRoute(fromId: string, toId: string, templates: GraphTemplat
 
 function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] }) {
   const activeNodeIds = useOsStore((s) => s.graph.activeNodeIds);
+
+  const spawnTemplate = useCallback((templateId: string) => {
+    const command = `spawn agent ${templateId}`;
+    useOsStore.getState().setKernelCommand(command);
+    dispatchShellCommand(command);
+  }, []);
 
   const builtinTemplates = useMemo(
     () => templates.filter((t) => !t.custom),
@@ -224,7 +231,21 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
               const label = getAgentDisplayName(t.id, t.role);
               const description = getAgentDescription(t.id, t.role);
               return (
-                <g key={t.id} transform={`translate(${pos.x}, ${pos.y})`} className="workspace-graph-node">
+                <g
+                  key={t.id}
+                  transform={`translate(${pos.x}, ${pos.y})`}
+                  className="workspace-graph-node cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Spawn ${label}`}
+                  onClick={() => spawnTemplate(t.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      spawnTemplate(t.id);
+                    }
+                  }}
+                >
                   {active && (
                     <rect
                       width={NODE_W}
@@ -281,7 +302,17 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                 <g
                   key={t.id}
                   transform={`translate(${8 + (i % 4) * 44}, ${58})`}
-                  className="workspace-graph-node"
+                  className="workspace-graph-node cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Spawn ${label}`}
+                  onClick={() => spawnTemplate(t.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      spawnTemplate(t.id);
+                    }
+                  }}
                 >
                   <rect
                     width={NODE_W}

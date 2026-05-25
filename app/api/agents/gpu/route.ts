@@ -1,4 +1,4 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { GPU_SYSTEM } from "@/lib/ai/agents";
@@ -12,6 +12,7 @@ import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import type { GpuDispatchPayload } from "@/lib/os/types";
 
 export const maxDuration = 60;
+
 
 export async function POST(req: Request) {
   if (!isOpenRouterConfigured()) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { withBasePath } from "@/lib/api-url";
 import type { GraphTemplate } from "@/lib/os/agent-graph-layout";
 import { getAgentDisplayName } from "@/lib/os/agent-graph-data";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,7 @@ export function AgentGraphControls({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/agents/registry", {
+      const res = await fetch(withBasePath("/api/agents/registry"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", name: name.trim(), role: role.trim() }),

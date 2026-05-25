@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { withBasePath } from "@/lib/api-url";
 
 const HEARTBEAT_MS = 5000;
 
@@ -11,7 +12,9 @@ export function useKernelHeartbeat() {
 
     const tick = () => {
       if (document.visibilityState === "hidden") return;
-      void fetch("/api/os/heartbeat", { method: "POST" }).catch(() => undefined);
+      void fetch(withBasePath("/api/os/heartbeat"), { method: "POST" }).catch(
+        () => undefined
+      );
     };
 
     const stop = () => {

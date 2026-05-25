@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { withBasePath } from "@/lib/api-url";
 import type { GraphTemplate } from "@/lib/os/agent-graph-layout";
 import { BUILTIN_GRAPH_TEMPLATES } from "@/lib/os/builtin-graph-templates";
 import { AgentGraphControls } from "@/components/AgentGraphControls";
@@ -24,13 +25,13 @@ export function AgentGraphPanel({
   const loadCustomTemplates = useCallback(async () => {
     if (!hydraConfigured) return;
     try {
-      const res = await fetch("/api/agents/registry", {
+      const res = await fetch(withBasePath("/api/agents/registry"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "load" }),
       });
       if (!res.ok) return;
-      const listRes = await fetch("/api/agents/registry");
+      const listRes = await fetch(withBasePath("/api/agents/registry"));
       if (!listRes.ok) return;
       const data = (await listRes.json()) as {
         templates: { id: string; role: string; custom: boolean }[];

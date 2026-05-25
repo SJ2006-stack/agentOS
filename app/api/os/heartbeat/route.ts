@@ -1,9 +1,10 @@
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { broadcastOsEventFireAndForget } from "@/lib/supabase/broadcast";
 
 const bootTime = Date.now();
+
 
 export async function POST() {
   const uptimeMs = Date.now() - bootTime;

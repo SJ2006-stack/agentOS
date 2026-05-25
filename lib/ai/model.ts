@@ -25,11 +25,7 @@ export function getOpenRouter(): OpenRouter {
 }
 
 /** Always resolves to the single allowed model: openrouter/free. */
-export function resolveModelId(_requested?: string): string {
-  return DEFAULT_MODEL_ID;
-}
-
-/** @deprecated Use getOpenRouter() — kept for transitional imports */
-export function getModel(_modelId: string): string {
+export function resolveModelId(requested?: string): string {
+  void requested;
   return DEFAULT_MODEL_ID;
 }
