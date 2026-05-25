@@ -1,6 +1,6 @@
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { GPU_SYSTEM, MODEL_ID } from "@/lib/ai/agents";
+import { GPU_SYSTEM } from "@/lib/ai/agents";
+import { getModel, resolveModelId } from "@/lib/ai/model";
 import { addMemoryToHydra, MEMORY_PREFIXES } from "@/lib/hydradb/memory";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
 import type { GpuDispatchPayload } from "@/lib/os/types";
@@ -8,12 +8,14 @@ import type { GpuDispatchPayload } from "@/lib/os/types";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { taskId, workerCount = 8, hotZones } = (await req.json()) as {
+  const { taskId, workerCount = 8, hotZones, modelId } = (await req.json()) as {
     taskId: string;
     workerCount?: number;
     hotZones?: GpuDispatchPayload["hotZones"];
+    modelId?: string;
   };
 
+  const model = resolveModelId(modelId);
   const count = Math.min(workerCount, 32);
   const zones =
     hotZones?.length
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
 
       try {
         const r = await generateText({
-          model: openai(MODEL_ID),
+          model: getModel(model),
           system: GPU_SYSTEM,
           prompt: summary,
           maxOutputTokens: 48,
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
   });
 
   return new Response(
-    `[gpu] batch complete: ${count} workers\n${results.filter(Boolean).slice(0, 4).join("\n")}\n`,
+    `[gpu] batch complete: ${count} workers (model=${model})\n${results.filter(Boolean).slice(0, 4).join("\n")}\n`,
     { headers: { "Content-Type": "text/plain; charset=utf-8" } }
   );
 }

@@ -1,12 +1,12 @@
 # DevFactory OS
 
-Terminal-style OS monitor built with Next.js 15, xterm.js, Vercel AI SDK, HydraDB, and Supabase Realtime Broadcast.
+Terminal-style OS monitor built with Next.js 15, xterm.js, Vercel AI Gateway, HydraDB, and Supabase Realtime Broadcast.
 
 ## Quick start
 
 ```bash
 cp .env.example .env.local
-# Fill OPENAI_API_KEY, HYDRADB_API_KEY, Supabase keys
+# Fill AI_GATEWAY_API_KEY, HYDRADB_API_KEY, Supabase keys
 
 npm install
 npm run dev
@@ -75,7 +75,8 @@ npx vercel
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `OPENAI_API_KEY` | Yes | Vercel AI SDK |
+| `AI_GATEWAY_API_KEY` | Yes | Vercel AI Gateway (all agent routes) |
+| `VERCEL_AI_GATEWAY_API_KEY` | No | Alias for `AI_GATEWAY_API_KEY` |
 | `HYDRADB_API_KEY` | Yes | Live HydraDB; no mock |
 | `HYDRADB_TENANT_ID` | No | Defaults to `devfactory-os` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Realtime panels |

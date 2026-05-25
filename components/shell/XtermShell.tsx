@@ -4,6 +4,12 @@ import { useEffect, useRef, useCallback } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
+import {
+  GATEWAY_MODELS,
+  gatewayModelById,
+  isGatewayModelId,
+} from "@/lib/ai/models-client";
+import { useOsStore } from "@/store/osStore";
 
 type WriteFn = (text: string, prefix?: string) => void;
 
@@ -113,7 +119,7 @@ export function XtermShell({
 
     term.writeln("\x1b[32mDevFactory OS Shell\x1b[0m");
     term.writeln(
-      "Commands: submit <task> | recall <query> | memory stream [q] | show memory | status | spawn <n> | kill <id>"
+      "Commands: submit <task> | recall <query> | memory stream [q] | show memory | status | spawn <n> | kill <id> | config model <id>"
     );
     if (!hydraConfigured) {
       term.writeln(
@@ -153,11 +159,34 @@ export function XtermShell({
       historyRef.current = [line, ...historyRef.current.filter((h) => h !== line)].slice(0, 50);
       historyIdxRef.current = -1;
 
+      const lower = line.trim().toLowerCase();
+      if (lower.startsWith("config model")) {
+        const id = line.trim().slice("config model".length).trim();
+        if (!id) {
+          const ids = GATEWAY_MODELS.map((m) => m.id).join(", ");
+          writeln(`[kernel] usage: config model <id> — ${ids}`, "32");
+          prompt();
+          return;
+        }
+        if (!isGatewayModelId(id)) {
+          writeln(`[fault] unknown model "${id}"`, "31");
+          prompt();
+          return;
+        }
+        useOsStore.getState().setSelectedModelId(id);
+        const label = gatewayModelById(id)?.label ?? id;
+        writeln(`[kernel] gateway model → ${label} (${id})`, "32");
+        prompt();
+        return;
+      }
+
+      const modelId = useOsStore.getState().selectedModelId;
+
       try {
         const res = await fetch("/api/os/command", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ command: line }),
+          body: JSON.stringify({ command: line, modelId }),
         });
         if (!res.ok) {
           writeln(`[fault] HTTP ${res.status}`, "31");

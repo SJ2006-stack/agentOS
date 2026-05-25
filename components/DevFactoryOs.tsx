@@ -8,8 +8,10 @@ import { CpuScheduler } from "@/components/CpuScheduler";
 import { HydraMemoryPanel } from "@/components/HydraMemoryPanel";
 import { IoBus } from "@/components/IoBus";
 import { GpuHeatmap } from "@/components/GpuHeatmap";
+import { ConfigurePanel } from "@/components/ConfigurePanel";
 import { useKernelHeartbeat } from "@/hooks/useKernelHeartbeat";
 import { useOsRealtime } from "@/hooks/useOsRealtime";
+import { useOsStore } from "@/store/osStore";
 
 const XtermShell = dynamic(
   () => import("@/components/shell/XtermShell").then((m) => m.XtermShell),
@@ -21,6 +23,10 @@ export function DevFactoryOs({ hydraConfigured }: { hydraConfigured: boolean }) 
   useKernelHeartbeat();
 
   useEffect(() => {
+    useOsStore.getState().hydrateModelFromStorage();
+  }, []);
+
+  useEffect(() => {
     if (hydraConfigured) {
       void fetch("/api/hydradb/boot", { method: "POST" });
     }
@@ -30,6 +36,7 @@ export function DevFactoryOs({ hydraConfigured }: { hydraConfigured: boolean }) 
     <OsLayout
       hydraConfigured={hydraConfigured}
       kernel={<KernelBar />}
+      configure={<ConfigurePanel />}
       cpu={<CpuScheduler />}
       memory={<HydraMemoryPanel />}
       io={<IoBus />}

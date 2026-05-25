@@ -15,6 +15,7 @@ export function createOsTools(ctx: {
   step?: CpuStep;
   agentId?: string;
   origin?: string;
+  modelId?: string;
 }) {
   const stepPrefix = ctx.step ? cpuStepPrefix(ctx.step) : MEMORY_PREFIXES.kernel;
 
@@ -148,6 +149,7 @@ export function createOsTools(ctx: {
           workerCount,
           hotZones,
           origin: ctx.origin,
+          modelId: ctx.modelId,
         }).catch(console.error);
         await broadcastOsEvent("os:io", "tool_call", {
           tool: "gpu_dispatch",

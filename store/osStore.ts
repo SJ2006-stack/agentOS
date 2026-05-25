@@ -2,6 +2,10 @@
 
 import { create } from "zustand";
 import {
+  DEFAULT_GATEWAY_MODEL_ID,
+  isGatewayModelId,
+} from "@/lib/ai/models-client";
+import {
   CPU_STEPS,
   type CpuPipelineState,
   type CpuStep,
@@ -40,6 +44,7 @@ interface OsState {
   };
   hydraConfigured: boolean;
   supabaseConfigured: boolean;
+  selectedModelId: string;
 
   setKernelHeartbeat: (h: KernelHeartbeat) => void;
   setKernelCommand: (cmd: string) => void;
@@ -54,7 +59,31 @@ interface OsState {
   updateGpuHeat: (x: number, y: number, heat: number) => void;
   setGpuWorkers: (n: number) => void;
   setConfigFlags: (hydra: boolean, supabase: boolean) => void;
+  setSelectedModelId: (id: string) => void;
+  hydrateModelFromStorage: () => void;
   resetGpuHeat: () => void;
+}
+
+const MODEL_STORAGE_KEY = "devfactory-os-model";
+
+function readStoredModelId(): string {
+  if (typeof window === "undefined") return DEFAULT_GATEWAY_MODEL_ID;
+  try {
+    const stored = localStorage.getItem(MODEL_STORAGE_KEY);
+    if (stored && isGatewayModelId(stored)) return stored;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_GATEWAY_MODEL_ID;
+}
+
+function persistModelId(id: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MODEL_STORAGE_KEY, id);
+  } catch {
+    /* ignore */
+  }
 }
 
 const initialPipeline: CpuPipelineState = {
@@ -71,6 +100,7 @@ export const useOsStore = create<OsState>((set) => ({
   gpu: { heatmap: emptyHeatmap(), activeWorkers: 0, lastDispatch: null, dispatchSeq: 0 },
   hydraConfigured: false,
   supabaseConfigured: false,
+  selectedModelId: DEFAULT_GATEWAY_MODEL_ID,
 
   setKernelHeartbeat: (h) =>
     set((s) => ({ kernel: { ...s.kernel, heartbeat: h, connected: true } })),
@@ -139,6 +169,12 @@ export const useOsStore = create<OsState>((set) => ({
   setGpuWorkers: (n) => set((s) => ({ gpu: { ...s.gpu, activeWorkers: n } })),
   setConfigFlags: (hydra, supabase) =>
     set({ hydraConfigured: hydra, supabaseConfigured: supabase }),
+  setSelectedModelId: (id) => {
+    const next = isGatewayModelId(id) ? id : DEFAULT_GATEWAY_MODEL_ID;
+    persistModelId(next);
+    set({ selectedModelId: next });
+  },
+  hydrateModelFromStorage: () => set({ selectedModelId: readStoredModelId() }),
   resetGpuHeat: () =>
     set((s) => ({
       gpu: { ...s.gpu, heatmap: emptyHeatmap(), activeWorkers: 0 },

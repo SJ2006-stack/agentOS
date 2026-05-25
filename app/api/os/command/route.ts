@@ -1,6 +1,6 @@
 import { streamText, stepCountIs } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { KERNEL_SYSTEM, MODEL_ID } from "@/lib/ai/agents";
+import { KERNEL_SYSTEM } from "@/lib/ai/agents";
+import { getModel, isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
 import { parseShellCommand } from "@/lib/os/types";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
@@ -34,9 +34,9 @@ function plainTextStream(
   });
 }
 
-function kernelStream(prompt: string, taskId?: string) {
+function kernelStream(prompt: string, model: string, taskId?: string) {
   return streamText({
-    model: openai(MODEL_ID),
+    model: getModel(model),
     system: KERNEL_SYSTEM,
     prompt,
     tools: createKernelTools({ taskId }),
@@ -45,7 +45,11 @@ function kernelStream(prompt: string, taskId?: string) {
 }
 
 export async function POST(req: Request) {
-  const { command } = (await req.json()) as { command: string };
+  const { command, modelId: requestedModelId } = (await req.json()) as {
+    command: string;
+    modelId?: string;
+  };
+  const model = resolveModelId(requestedModelId);
   const parsed = parseShellCommand(command);
 
   await broadcastOsEvent("os:kernel", "command_routed", {
@@ -74,9 +78,9 @@ export async function POST(req: Request) {
     );
   }
 
-  if (parsed.type === "submit" && !process.env.OPENAI_API_KEY) {
+  if (parsed.type === "submit" && !isAgentLlmConfigured()) {
     return new Response(
-      "[fault] OPENAI_API_KEY required for CPU pipeline\n",
+      "[fault] AI_GATEWAY_API_KEY required for CPU pipeline\n",
       { headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
@@ -85,9 +89,10 @@ export async function POST(req: Request) {
     case "submit": {
       const taskId = createTaskId();
       const origin = new URL(req.url).origin;
-      void runCpuPipeline(taskId, parsed.task, origin).catch(console.error);
+      void runCpuPipeline(taskId, parsed.task, origin, model).catch(console.error);
       const result = kernelStream(
         `User submitted task: "${parsed.task}". taskId=${taskId}. Acknowledge routing to CPU in 2 lines prefixed [kernel].`,
+        model,
         taskId
       );
       return plainTextStream(
@@ -110,6 +115,7 @@ export async function POST(req: Request) {
       const formatted = formatMemoryStream(agg.chunks, agg.queryPaths);
       const result = kernelStream(
         `User requested memory stream for: "${query}". Call stream_memory_to_user. Preloaded:\n${formatted}`,
+        model,
         undefined
       );
       return plainTextStream(`${formatted}\n`, result.textStream);
@@ -149,6 +155,7 @@ export async function POST(req: Request) {
         workerCount: parsed.count,
         hotZones,
         origin,
+        modelId: model,
       }).catch(console.error);
       return new Response(
         `[gpu] dispatch ${parsed.count} workers (${hotZones.length} zones)\n`,
@@ -159,6 +166,7 @@ export async function POST(req: Request) {
     case "kill": {
       const result = kernelStream(
         `User requested kill agent ${parsed.agentId}. Acknowledge briefly with [kernel] prefix.`,
+        model,
         createTaskId()
       );
       return plainTextStream("", result.textStream);
@@ -167,6 +175,7 @@ export async function POST(req: Request) {
     default: {
       const result = kernelStream(
         `Unknown command: "${parsed.raw}". List valid shell commands briefly with [kernel] prefix.`,
+        model,
         undefined
       );
       return plainTextStream("", result.textStream);

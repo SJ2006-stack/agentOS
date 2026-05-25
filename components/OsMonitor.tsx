@@ -9,6 +9,9 @@ import { CpuScheduler } from "@/components/CpuScheduler";
 import { HydraMemoryPanel } from "@/components/HydraMemoryPanel";
 import { IoBus } from "@/components/IoBus";
 import { GpuHeatmap } from "@/components/GpuHeatmap";
+import { ConfigurePanel } from "@/components/ConfigurePanel";
+import { useOsStore } from "@/store/osStore";
+import { useEffect } from "react";
 
 const XtermShell = dynamic(
   () => import("@/components/shell/XtermShell").then((m) => m.XtermShell),
@@ -19,10 +22,15 @@ export function OsMonitor({ hydraConfigured }: { hydraConfigured: boolean }) {
   useOsRealtime(hydraConfigured);
   useKernelHeartbeat();
 
+  useEffect(() => {
+    useOsStore.getState().hydrateModelFromStorage();
+  }, []);
+
   return (
     <OsLayout
       hydraConfigured={hydraConfigured}
       kernel={<KernelBar />}
+      configure={<ConfigurePanel />}
       cpu={<CpuScheduler />}
       memory={<HydraMemoryPanel />}
       io={<IoBus />}

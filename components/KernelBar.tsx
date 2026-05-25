@@ -3,8 +3,14 @@
 import { motion } from "motion/react";
 import { useOsStore } from "@/store/osStore";
 
+function truncateModelId(id: string, max = 18): string {
+  if (id.length <= max) return id;
+  return `${id.slice(0, max - 1)}…`;
+}
+
 export function KernelBar() {
-  const { kernel, supabaseConfigured, hydraConfigured } = useOsStore();
+  const { kernel, supabaseConfigured, hydraConfigured, selectedModelId } =
+    useOsStore();
   const hb = kernel.heartbeat;
   const uptime = hb ? `${Math.floor(hb.uptimeMs / 1000)}s` : "—";
   const status = kernel.connected ? (hb?.status ?? "online") : "offline";
@@ -34,6 +40,9 @@ export function KernelBar() {
         <span className="text-os-dim">uptime {uptime}</span>
       </div>
       <div className="flex gap-4 text-os-dim">
+        <span title={selectedModelId}>
+          model <span className="text-os-green">{truncateModelId(selectedModelId)}</span>
+        </span>
         <span>RT {supabaseConfigured ? "linked" : "offline"}</span>
         <span>Hydra {hydraConfigured ? "live" : "disconnected"}</span>
         {kernel.lastCommand && (

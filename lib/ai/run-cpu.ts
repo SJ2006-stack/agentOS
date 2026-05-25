@@ -1,7 +1,7 @@
 import "server-only";
 import { streamText, stepCountIs } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { CPU_SYSTEM, cpuStepPrompt, MODEL_ID } from "@/lib/ai/agents";
+import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
+import { getModel, resolveModelId } from "@/lib/ai/model";
 import { createOsTools } from "@/lib/ai/tools";
 import { addMemoryToHydra, cpuStepPrefix } from "@/lib/hydradb/memory";
 import { broadcastOsEvent } from "@/lib/supabase/broadcast";
@@ -19,8 +19,10 @@ export async function invokeGpuAgents(input: {
   workerCount: number;
   hotZones?: GpuDispatchPayload["hotZones"];
   origin?: string;
+  modelId?: string;
 }): Promise<void> {
   const base = resolveOrigin(input.origin);
+  const modelId = resolveModelId(input.modelId);
   await fetch(`${base}/api/agents/gpu`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -28,6 +30,7 @@ export async function invokeGpuAgents(input: {
       taskId: input.taskId,
       workerCount: input.workerCount,
       hotZones: input.hotZones,
+      modelId,
     }),
   }).catch(console.error);
 }
@@ -35,8 +38,10 @@ export async function invokeGpuAgents(input: {
 export async function runCpuPipeline(
   taskId: string,
   task: string,
-  origin?: string
+  origin?: string,
+  modelId?: string
 ): Promise<void> {
+  const model = resolveModelId(modelId);
   startPipeline(taskId, task);
 
   for (const step of CPU_STEPS) {
@@ -75,10 +80,10 @@ export async function runCpuPipeline(
 
     try {
       const result = streamText({
-        model: openai(MODEL_ID),
+        model: getModel(model),
         system: CPU_SYSTEM,
         prompt: cpuStepPrompt(step, task, taskId),
-        tools: createOsTools({ taskId, step, origin }),
+        tools: createOsTools({ taskId, step, origin, modelId: model }),
         stopWhen: stepCountIs(5),
       });
       await result.text;
