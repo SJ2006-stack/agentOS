@@ -6,15 +6,14 @@ import { motion } from "motion/react";
 import { AgentOsHero } from "@/components/hero/AgentOsHero";
 import { HeroBootSequence } from "@/components/hero/BootSequence";
 import { DevFactoryDock } from "@/components/DevFactoryDock";
+import { consumeSkipHeroBoot } from "@/components/landing/OsSpawnBootstrap";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { hydrateThemePreset, ThemePresetPicker } from "@/components/ui/theme-preset-picker";
-import { TerminalMode } from "@/components/modes/TerminalMode";
-import { WorkspaceMode } from "@/components/modes/WorkspaceMode";
 import { useKernelHeartbeat } from "@/hooks/useKernelHeartbeat";
 import { useOsRealtime } from "@/hooks/useOsRealtime";
 import { useOsStore } from "@/store/osStore";
 import { cn } from "@/lib/utils";
-import { UI_MODE_LABELS, useUiModeStore } from "@/store/uiModeStore";
+import { UI_MODE_LABELS, UI_MODE_STRIP_HINTS, type UiMode, useUiModeStore } from "@/store/uiModeStore";
 
 const DesktopMode = dynamic(
   () => import("@/components/modes/DesktopMode").then((m) => m.DesktopMode),
@@ -28,7 +27,37 @@ const DesktopMode = dynamic(
   }
 );
 
+const TerminalMode = dynamic(
+  () => import("@/components/modes/TerminalMode").then((m) => m.TerminalMode),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center font-mono text-[10px] text-os-dim">
+        shell…
+      </div>
+    ),
+  }
+);
+
+const WorkspaceMode = dynamic(
+  () => import("@/components/modes/WorkspaceMode").then((m) => m.WorkspaceMode),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center font-mono text-[10px] text-os-dim">
+        workspace…
+      </div>
+    ),
+  }
+);
+
 const MODE_TRANSITION = { duration: 0.35, ease: "easeInOut" as const };
+
+function shouldShowOrchestrationStrip(mode: UiMode, hasActivity: boolean): boolean {
+  if (mode === "hero" || mode === "workspace") return false;
+  if (mode === "desktop") return hasActivity;
+  return mode === "terminal";
+}
 
 export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) {
   const mode = useUiModeStore((s) => s.mode);
@@ -36,6 +65,9 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   const bootComplete = useOsStore((s) => s.bootComplete);
   const heroBootEnabled = useOsStore((s) => s.heroBootEnabled);
   const setBootComplete = useOsStore((s) => s.setBootComplete);
+  const lastCommand = useOsStore((s) => s.kernel.lastCommand);
+  const taskId = useOsStore((s) => s.graph.taskId);
+  const activeAgentCount = useOsStore((s) => s.graph.activeNodeIds.size);
 
   useOsRealtime(hydraConfigured);
   useKernelHeartbeat();
@@ -45,6 +77,9 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
     useOsStore.getState().hydrateHeroBootFromStorage();
     useUiModeStore.getState().hydrateFromStorage();
     hydrateThemePreset();
+    if (consumeSkipHeroBoot()) {
+      useOsStore.getState().setBootComplete(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -52,9 +87,16 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
   }, [hydraConfigured]);
 
   useEffect(() => {
-    if (hydraConfigured) {
+    if (!hydraConfigured) return;
+    const boot = () => {
       void fetch("/api/hydradb/boot", { method: "POST" });
+    };
+    if (typeof requestIdleCallback !== "undefined") {
+      const id = requestIdleCallback(boot, { timeout: 3000 });
+      return () => cancelIdleCallback(id);
     }
+    const id = window.setTimeout(boot, 800);
+    return () => window.clearTimeout(id);
   }, [hydraConfigured]);
 
   const finishBoot = useCallback(() => {
@@ -73,7 +115,13 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
     return <HeroBootSequence onComplete={finishBoot} onSkip={finishBoot} />;
   }
 
-  const showOrchestrationStrip = mode !== "hero";
+  const hasOrchestrationActivity =
+    Boolean(lastCommand) || Boolean(taskId) || activeAgentCount > 0;
+
+  const showOrchestrationStrip = shouldShowOrchestrationStrip(
+    mode,
+    hasOrchestrationActivity
+  );
   const showActiveWorkspace = mode !== "hero";
 
   return (
@@ -91,17 +139,29 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
           )}
         />
       </div>
-      {showOrchestrationStrip && <AgentOsHero variant="strip" />}
+      {showOrchestrationStrip && <AgentOsHero variant="strip" uiMode={mode} />}
 
       {showActiveWorkspace && (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="shrink-0 border-b border-os-border/50 px-3 py-1">
-            <p className="text-center text-[10px] font-medium uppercase tracking-widest text-os-dim">
-              {UI_MODE_LABELS[mode]}
-            </p>
-          </div>
+          {mode !== "desktop" && (
+            <div className="shrink-0 border-b border-os-border/50 px-3 py-1">
+              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-os-dim">
+                {UI_MODE_LABELS[mode]}
+              </p>
+              {UI_MODE_STRIP_HINTS[mode] && (
+                <p className="mt-0.5 text-center text-[9px] tracking-wide text-os-dim/65">
+                  {UI_MODE_STRIP_HINTS[mode]}
+                </p>
+              )}
+            </div>
+          )}
 
-          <div className="relative min-h-0 flex-1 overflow-hidden pb-28">
+          <div
+            className={cn(
+              "relative min-h-0 flex-1 overflow-hidden",
+              mode === "desktop" ? "pb-20" : "pb-28"
+            )}
+          >
             {mode === "terminal" && (
               <motion.div
                 key="terminal"

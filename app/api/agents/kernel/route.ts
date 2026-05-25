@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
 import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";

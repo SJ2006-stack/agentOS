@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import { NextResponse } from "next/server";
 import {
   createAndPersistCustomAgent,
@@ -13,15 +15,12 @@ export async function GET() {
     templates: templates.map((t) => ({
       id: t.id,
       role: t.role,
-      subTenantId: t.subTenantId,
-      edges: t.edges,
       custom: t.id.startsWith("custom."),
     })),
     custom: listCustomRecords().map((r) => ({
       id: r.id,
       name: r.name,
       role: r.role,
-      slug: r.slug,
     })),
   });
 }

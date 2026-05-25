@@ -34,19 +34,7 @@
 }
 
 .workspace-telemetry-live {
-  animation: workspace-live-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes workspace-live-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--os-green) 40%, transparent);
-  }
-  50% {
-    opacity: 0.75;
-    box-shadow: 0 0 6px 1px color-mix(in srgb, var(--os-green) 35%, transparent);
-  }
+  animation: os-telemetry-live-pulse 2.4s ease-in-out infinite;
 }
 
 .workspace-telemetry-flash {
@@ -60,4 +48,368 @@
   100% {
     color: inherit;
   }
+}
+
+.workspace-panel-highlight {
+  animation: workspace-panel-highlight 1.4s ease-out;
+  z-index: 1;
+}
+
+@keyframes workspace-panel-highlight {
+  0% {
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--os-amber) 0%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--os-amber) 70%, transparent);
+  }
+  35% {
+    box-shadow:
+      0 0 18px 2px color-mix(in srgb, var(--os-amber) 35%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--os-amber) 55%, transparent);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 transparent,
+      inset 0 0 0 1px transparent;
+  }
+}
+
+.workspace-cpu-message-live {
+  animation: workspace-cpu-message-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes workspace-cpu-message-pulse {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--os-amber) 45%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--os-amber) 75%, transparent);
+  }
+}
+
+.workspace-demo-chip-running {
+  animation: workspace-demo-chip-running 0.9s ease-in-out infinite;
+}
+
+@keyframes workspace-demo-chip-running {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.workspace-hero-strip {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--os-green) 8%, transparent);
+}
+
+/* Agent graph — legibility + create-agent prominence */
+.workspace-graph-host {
+  min-height: 220px;
+}
+
+.workspace-graph-node {
+  cursor: help;
+  pointer-events: all;
+}
+
+.workspace-graph-edge-memory {
+  vector-effect: non-scaling-stroke;
+}
+
+.workspace-graph-active-route {
+  line-height: 1.35;
+}
+
+.workspace-graph-create-cta:focus-visible,
+.workspace-graph-create-submit:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--os-amber) 65%, transparent);
+  outline-offset: 2px;
+}
+
+/* ── CPU pipeline hero timeline ── */
+
+.pipeline-hero {
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--os-border) 90%, transparent);
+  background: color-mix(in srgb, var(--os-panel) 62%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--os-green) 10%, transparent),
+    0 0 24px color-mix(in srgb, var(--os-green) 6%, transparent);
+}
+
+.pipeline-timeline {
+  width: 100%;
+}
+
+.pipeline-timeline--idle .pipeline-track {
+  opacity: 0.45;
+}
+
+.pipeline-task-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--os-amber) 85%, transparent);
+}
+
+.pipeline-task-text {
+  margin-top: 0.25rem;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--os-green);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pipeline-track {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.pipeline-track-step {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 4.5rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pipeline-track-step--future {
+  opacity: 0.38;
+}
+
+.pipeline-track-step--done {
+  opacity: 1;
+}
+
+.pipeline-track-step--active {
+  opacity: 1;
+  z-index: 2;
+}
+
+.pipeline-track-step--active .pipeline-node {
+  transform: scale(1.12);
+  border-color: color-mix(in srgb, var(--os-amber) 85%, transparent);
+  background: color-mix(in srgb, var(--os-amber) 18%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--os-amber) 35%, transparent),
+    0 0 18px 4px color-mix(in srgb, var(--os-amber) 28%, transparent),
+    0 0 36px 8px color-mix(in srgb, var(--os-amber) 12%, transparent);
+}
+
+.pipeline-track-step--selected:not(.pipeline-track-step--active) .pipeline-node {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--os-green) 45%, transparent);
+}
+
+.pipeline-node-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.15rem 0.25rem 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+  font-family: inherit;
+  text-align: center;
+}
+
+.pipeline-track-step--done .pipeline-node-btn,
+.pipeline-track-step--active .pipeline-node-btn {
+  cursor: pointer;
+}
+
+.pipeline-track-step--done .pipeline-node-btn:hover .pipeline-node,
+.pipeline-track-step--active .pipeline-node-btn:hover .pipeline-node {
+  border-color: color-mix(in srgb, var(--os-green) 65%, transparent);
+}
+
+.pipeline-node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--os-border) 80%, transparent);
+  background: color-mix(in srgb, var(--os-panel) 80%, transparent);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.pipeline-track-step--done .pipeline-node {
+  border-color: color-mix(in srgb, var(--os-green) 55%, transparent);
+  background: color-mix(in srgb, var(--os-green) 12%, transparent);
+  color: var(--os-green);
+}
+
+.pipeline-node-index {
+  font-size: 10px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--os-dim) 90%, transparent);
+}
+
+.pipeline-check {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pipeline-active-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, var(--os-amber) 70%, transparent);
+  pointer-events: none;
+}
+
+.pipeline-step-code {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--os-dim) 75%, transparent);
+}
+
+.pipeline-track-step--active .pipeline-step-code {
+  color: var(--os-amber);
+}
+
+.pipeline-track-step--done .pipeline-step-code {
+  color: color-mix(in srgb, var(--os-green) 80%, transparent);
+}
+
+.pipeline-step-label {
+  font-size: 9px;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--os-dim) 85%, transparent);
+}
+
+.pipeline-track-step--active .pipeline-step-label {
+  color: color-mix(in srgb, var(--os-amber) 90%, transparent);
+  font-weight: 600;
+}
+
+.pipeline-track-step--done .pipeline-step-label {
+  color: color-mix(in srgb, var(--os-green) 75%, transparent);
+}
+
+.pipeline-connector {
+  position: absolute;
+  top: 1rem;
+  right: calc(50% + 1rem);
+  left: calc(-50% + 1rem);
+  height: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--os-border) 70%, transparent);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.pipeline-connector--filled {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--os-green) 55%, transparent),
+    color-mix(in srgb, var(--os-green) 35%, transparent)
+  );
+}
+
+.pipeline-connector--pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--os-amber) 85%, transparent),
+    transparent
+  );
+  animation: pipeline-connector-flow 1.2s ease-in-out infinite;
+}
+
+@keyframes pipeline-connector-flow {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.pipeline-detail {
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--os-border) 55%, transparent);
+  background: color-mix(in srgb, var(--os-panel) 45%, transparent);
+  padding: 0.65rem 0.75rem;
+}
+
+.pipeline-detail--live {
+  border-color: color-mix(in srgb, var(--os-amber) 45%, transparent);
+  background: color-mix(in srgb, var(--os-amber) 8%, transparent);
+  animation: workspace-cpu-message-pulse 1.6s ease-in-out infinite;
+}
+
+.pipeline-detail-kicker {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--os-dim) 80%, transparent);
+}
+
+.pipeline-detail--live .pipeline-detail-kicker {
+  color: color-mix(in srgb, var(--os-amber) 85%, transparent);
+}
+
+.pipeline-detail-title {
+  margin-top: 0.15rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--os-green);
+}
+
+.pipeline-detail-message {
+  margin-top: 0.35rem;
+  font-size: 11px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--os-green) 88%, white);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Compact workspace shell — wrap output, scroll inside panel */
+.workspace-shell-host {
+  min-height: 120px;
+}
+
+.workspace-shell-compact {
+  min-height: 120px;
+  flex: 1 1 auto;
+}
+
+.workspace-shell-compact .xterm {
+  height: 100% !important;
+}
+
+.workspace-shell-compact .xterm-viewport {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }

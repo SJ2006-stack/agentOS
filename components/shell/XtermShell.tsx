@@ -6,10 +6,12 @@ import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
 import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
+import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/osStore";
 import {
   AGENT_SPAWNED_EVENT,
   dispatchAgentSpawned,
+  dispatchShellReady,
   SHELL_COMMAND_EVENT,
   type AgentSpawnedDetail,
   type ShellCommandDetail,
@@ -34,6 +36,29 @@ function colorForLine(line: string): string | undefined {
     if (line.startsWith(prefix)) return color;
   }
   return undefined;
+}
+
+/** xterm `write()` treats `\n` as LF-only (no CR) → staircase indent on multi-line output. */
+const MEMORY_PLUMBING_RE =
+  /^\[memory\].*\b(indexing|indexed|slot_write|writing|persisted)\b/i;
+
+function filterCompactStreamChunk(chunk: string, compact: boolean): string {
+  if (!compact) return chunk;
+  return chunk
+    .split(/\r?\n/)
+    .filter((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return true;
+      return !MEMORY_PLUMBING_RE.test(trimmed);
+    })
+    .join("\n");
+}
+
+function writeStreamChunk(term: Terminal, chunk: string, compact = false) {
+  if (!chunk) return;
+  const filtered = filterCompactStreamChunk(chunk, compact);
+  if (!filtered) return;
+  term.write(filtered.replace(/\r?\n/g, "\r\n"));
 }
 
 const SPAWN_STREAM_RE = /\[agent\] spawning (\S+)/;
@@ -77,9 +102,12 @@ function xtermThemeFromCss(): {
 export function XtermShell({
   hydraConfigured,
   onReady,
+  compact = false,
 }: {
   hydraConfigured: boolean;
   onReady?: (write: WriteFn) => void;
+  /** Skip welcome banner — for small workspace terminal panels */
+  compact?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
@@ -91,9 +119,11 @@ export function XtermShell({
   const lastSpawnBannerRef = useRef<string | null>(null);
   const onReadyRef = useRef(onReady);
   const hydraConfiguredRef = useRef(hydraConfigured);
+  const compactRef = useRef(compact);
 
   onReadyRef.current = onReady;
   hydraConfiguredRef.current = hydraConfigured;
+  compactRef.current = compact;
 
   const writeln = useCallback((text: string, color?: string) => {
     const term = termRef.current;
@@ -167,7 +197,6 @@ export function XtermShell({
           ev.message.includes("undefined is not an object"))
       ) {
         ev.preventDefault();
-        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',runId:'post-fix',location:'XtermShell.tsx:xtermRaceSuppressor',message:'Suppressed xterm renderer race error',data:{msg:ev.message},timestamp:Date.now(),hypothesisId:'H-C'})}).catch(()=>{});
       }
     };
     window.addEventListener('error', xtermRaceSuppressor);
@@ -181,9 +210,10 @@ export function XtermShell({
     const term = new Terminal({
       theme: xtermThemeFromCss(),
       fontFamily: "var(--font-geist-mono), JetBrains Mono, monospace",
-      fontSize: 12,
+      fontSize: compactRef.current ? 11 : 12,
       cursorBlink: true,
       scrollback: 2000,
+      convertEol: true,
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
@@ -205,16 +235,19 @@ export function XtermShell({
 
     requestAnimationFrame(fitTerminal);
 
-    term.writeln("\x1b[32mDevFactory OS Shell\x1b[0m");
-    term.writeln(
-      "Commands: submit <task> | spawn agent <id> | agents | agent status | create agent <name> \"<role>\" | recall <q> | memory stream | show memory | status | spawn <n> | kill <id>"
-    );
+    if (!compactRef.current) {
+      term.writeln("\x1b[32mDevFactory OS Shell\x1b[0m");
+      term.writeln(
+        "Commands: submit <task> | spawn agent <id> | agents | agent status | create agent <name> \"<role>\" | recall <q> | memory stream | show memory | status | spawn <n> | kill <id>"
+      );
+    }
     if (!hydraConfiguredRef.current) {
       term.writeln(
         "\x1b[31m[fault] HYDRADB_API_KEY missing — copy .env.example to .env.local\x1b[0m"
       );
     }
     prompt();
+    dispatchShellReady();
 
     const syncTheme = () => {
       term.options.theme = xtermThemeFromCss();
@@ -333,10 +366,10 @@ export function XtermShell({
             totalBytes += value.length;
             const chunk = decoder.decode(value, { stream: true });
             maybeEmitSpawnFromChunk(chunk);
-            activeTerm.write(chunk);
+            writeStreamChunk(activeTerm, chunk, compactRef.current);
           }
         }
-        activeTerm.write(decoder.decode());
+        writeStreamChunk(activeTerm, decoder.decode(), compactRef.current);
 
         if (totalBytes === 0) {
           writeln("[fault] empty stream — check OPENROUTER_API_KEY in .env.local", "31");
@@ -437,7 +470,11 @@ export function XtermShell({
   return (
     <div
       ref={containerRef}
-      className="h-full w-full rounded bg-os-bg [&_.xterm]:h-full [&_.xterm-viewport]:!overflow-y-auto"
+      className={cn(
+        "h-full min-h-[120px] w-full rounded bg-os-bg",
+        compact && "workspace-shell-compact",
+        "[&_.xterm]:h-full [&_.xterm-viewport]:!overflow-y-auto [&_.xterm-viewport]:!overflow-x-hidden"
+      )}
     />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { OsLayout } from "@/components/layout/OsLayout";
 import { buildOsPanels } from "@/components/modes/OsPanelSlots";
@@ -9,7 +9,10 @@ import { cn } from "@/lib/utils";
 
 export function TerminalMode({ hydraConfigured }: { hydraConfigured: boolean }) {
   const [spawnFlash, setSpawnFlash] = useState<string | null>(null);
-  const panels = buildOsPanels(hydraConfigured);
+  const panels = useMemo(
+    () => buildOsPanels(hydraConfigured),
+    [hydraConfigured]
+  );
 
   useEffect(() => {
     let hideTimer: ReturnType<typeof setTimeout> | undefined;

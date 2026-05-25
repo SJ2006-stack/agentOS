@@ -2,7 +2,29 @@
 
 import { memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { ExpandableText } from "@/components/ui/expandable-text";
+import { formatIoArgs } from "@/lib/os/format-io-args";
+import type { IoToolCall } from "@/lib/os/types";
 import { useOsStore } from "@/store/osStore";
+
+function IoBusEventRow({ event }: { event: IoToolCall }) {
+  const argsText = formatIoArgs(event.args);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="border-b border-os-border/50 py-1"
+    >
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="shrink-0 text-os-amber">[{event.layer}]</span>
+        <span className="shrink-0 text-os-green">{event.tool}</span>
+      </div>
+      <ExpandableText text={argsText} maxLines={2} className="mt-0.5 pl-0 text-os-dim" />
+    </motion.div>
+  );
+}
 
 export const IoBus = memo(function IoBus({
   showHeader = true,
@@ -12,9 +34,9 @@ export const IoBus = memo(function IoBus({
   const events = useOsStore((s) => s.io.events);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {showHeader && (
-        <h2 className="mb-1 text-xs text-os-amber tracking-wider">I/O BUS</h2>
+        <h2 className="mb-1 shrink-0 text-xs text-os-amber tracking-wider">I/O BUS</h2>
       )}
       <div className="min-h-0 flex-1 overflow-y-auto font-mono text-[10px]">
         <AnimatePresence initial={false}>
@@ -22,19 +44,7 @@ export const IoBus = memo(function IoBus({
             <p className="text-os-dim">awaiting tool calls…</p>
           )}
           {events.map((e, i) => (
-            <motion.div
-              key={`${e.ts}-${i}`}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex gap-2 border-b border-os-border/50 py-0.5"
-            >
-              <span className="text-os-amber w-8 shrink-0">[{e.layer}]</span>
-              <span className="text-os-green shrink-0">{e.tool}</span>
-              <span className="text-os-dim truncate">
-                {JSON.stringify(e.args).slice(0, 80)}
-              </span>
-            </motion.div>
+            <IoBusEventRow key={`${e.ts}-${i}`} event={e} />
           ))}
         </AnimatePresence>
       </div>

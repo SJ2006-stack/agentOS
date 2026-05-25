@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Home, LayoutGrid, Network, Plus, Terminal } from "lucide-react";
+import { DevFactoryCommandBar } from "@/components/DevFactoryCommandBar";
 import { Dock, DockIcon } from "@/components/magicui/dock";
 import {
   Tooltip,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { DockModePreview } from "@/components/modes/DockModePreview";
 import { cn } from "@/lib/utils";
-import { dispatchShellCommand, SHELL_FOCUS_INPUT_EVENT } from "@/lib/os/shell-events";
+import { dispatchShellCommand } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/osStore";
 import {
   UI_MODE_LABELS,
@@ -146,11 +147,12 @@ function UtilityDockItem({
 }
 
 export function DevFactoryDock() {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [value, setValue] = useState("");
   const [spawnOpen, setSpawnOpen] = useState(false);
+  const [createAgentOpen, setCreateAgentOpen] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createRole, setCreateRole] = useState("");
   const spawnRef = useRef<HTMLDivElement>(null);
-  const selectedModelId = useOsStore((s) => s.selectedModelId);
+  const createAgentRef = useRef<HTMLDivElement>(null);
   const mode = useUiModeStore((s) => s.mode);
   const setMode = useUiModeStore((s) => s.setMode);
 
@@ -159,13 +161,7 @@ export function DevFactoryDock() {
     if (!cmd) return;
     useOsStore.getState().setKernelCommand(cmd);
     dispatchShellCommand(cmd);
-    setValue("");
   }, []);
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitCommand(value);
-  };
 
   const enterMode = useCallback(
     (next: UiMode) => {
@@ -178,23 +174,36 @@ export function DevFactoryDock() {
   );
 
   useEffect(() => {
-    const onFocus = () => inputRef.current?.focus();
-    window.addEventListener(SHELL_FOCUS_INPUT_EVENT, onFocus);
-    return () => window.removeEventListener(SHELL_FOCUS_INPUT_EVENT, onFocus);
-  }, []);
-
-  useEffect(() => {
-    if (!spawnOpen) return;
+    if (!spawnOpen && !createAgentOpen) return;
     const onDoc = (e: MouseEvent) => {
-      if (spawnRef.current && !spawnRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (spawnOpen && spawnRef.current && !spawnRef.current.contains(target)) {
         setSpawnOpen(false);
+      }
+      if (
+        createAgentOpen &&
+        createAgentRef.current &&
+        !createAgentRef.current.contains(target)
+      ) {
+        setCreateAgentOpen(false);
       }
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
-  }, [spawnOpen]);
+  }, [spawnOpen, createAgentOpen]);
 
-  const showCommandBar = mode !== "hero";
+  const submitCreateAgent = useCallback(() => {
+    const name = createName.trim();
+    const role = createRole.trim();
+    if (!name || !role) return;
+    setCreateAgentOpen(false);
+    setCreateName("");
+    setCreateRole("");
+    submitCommand(`create agent ${name} "${role.replace(/"/g, "")}"`);
+  }, [createName, createRole, submitCommand]);
+
+  const showCommandBar = mode !== "hero" && mode !== "desktop";
+  const showCreateAgentPanel = createAgentOpen && mode !== "hero";
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -205,40 +214,79 @@ export function DevFactoryDock() {
           "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-32 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_100%,color-mix(in_srgb,var(--os-green)_8%,transparent),transparent)]"
         )}
       >
-        {showCommandBar && (
-          <form
-            onSubmit={onSubmit}
-            className={cn(
-              "pointer-events-auto flex w-full max-w-xl items-center gap-2 rounded-xl px-3 py-2",
-              "border border-os-border/60 bg-os-panel/50 shadow-xl shadow-os-bg/40 backdrop-blur-xl",
-              "ring-1 ring-inset ring-white/[0.05]",
-              "transition-[box-shadow,border-color] duration-300",
-              "focus-within:border-os-green/35 focus-within:shadow-[0_0_20px_color-mix(in_srgb,var(--os-green)_15%,transparent)]"
-            )}
+        {showCreateAgentPanel && (
+          <div
+            ref={createAgentRef}
+            className="pointer-events-auto w-full max-w-xl rounded-xl border border-os-amber/30 bg-os-panel/70 p-3 shadow-xl shadow-os-bg/40 backdrop-blur-xl ring-1 ring-inset ring-white/[0.05]"
           >
-            <Terminal className="size-4 shrink-0 text-os-dim" aria-hidden />
-            <input
-              ref={inputRef}
-              id="devfactory-command-input"
-              type="text"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="submit build api · agents · recall preferences…"
-              className="min-w-0 flex-1 bg-transparent text-sm text-os-green outline-none placeholder:text-os-dim/70"
-              autoComplete="off"
-              spellCheck={false}
-              aria-label="DevFactory shell command"
-            />
-            <span className="hidden text-[10px] text-os-dim sm:inline">
-              {selectedModelId.split("/").pop()}
-            </span>
-            <button
-              type="submit"
-              className="rounded-md border border-os-border/70 bg-os-bg/30 px-2 py-1 text-[10px] uppercase tracking-wide text-os-amber transition-[background-color,box-shadow] hover:border-os-amber/40 hover:bg-os-amber/10 hover:shadow-[0_0_10px_color-mix(in_srgb,var(--os-amber)_25%,transparent)]"
-            >
-              Run
-            </button>
-          </form>
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-os-amber">
+              Create agent
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <label className="min-w-0 flex-1 space-y-1">
+                <span className="text-[10px] text-os-dim">Name</span>
+                <input
+                  type="text"
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder="e.g. security-audit"
+                  className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </label>
+              <label className="min-w-0 flex-[1.4] space-y-1">
+                <span className="text-[10px] text-os-dim">Role</span>
+                <input
+                  type="text"
+                  value={createRole}
+                  onChange={(e) => setCreateRole(e.target.value)}
+                  placeholder="e.g. reviews code for vulnerabilities"
+                  className="w-full rounded-md border border-os-border/70 bg-os-bg/40 px-2 py-1.5 text-sm text-os-green outline-none focus:border-os-amber/40"
+                  autoComplete="off"
+                  spellCheck={false}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      submitCreateAgent();
+                    }
+                  }}
+                />
+              </label>
+              <div className="flex shrink-0 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateAgentOpen(false);
+                    setCreateName("");
+                    setCreateRole("");
+                  }}
+                  className="rounded-md border border-os-border/70 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-dim transition-colors hover:border-os-border hover:text-os-green"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!createName.trim() || !createRole.trim()}
+                  onClick={submitCreateAgent}
+                  className="rounded-md border border-os-amber/40 bg-os-amber/10 px-2.5 py-1.5 text-[10px] uppercase tracking-wide text-os-amber transition-colors hover:bg-os-amber/20 disabled:opacity-40"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] text-os-dim/80">
+              Or type{" "}
+              <code className="text-os-green/90">create agent &lt;name&gt; &quot;&lt;role&gt;&quot;</code>{" "}
+              in the command bar{mode === "desktop" ? "" : " below"}.
+            </p>
+          </div>
+        )}
+
+        {showCommandBar && (
+          <div className="pointer-events-auto w-full max-w-xl">
+            <DevFactoryCommandBar variant="compact" />
+          </div>
         )}
 
         <div className="pointer-events-auto relative">
@@ -248,20 +296,54 @@ export function DevFactoryDock() {
               className="absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 rounded-xl border border-os-border/70 bg-os-panel/80 p-1 shadow-2xl shadow-os-bg/50 ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl"
             >
               {[
-                { label: "Agent status", cmd: "agent status" },
-                { label: "List agents", cmd: "agents" },
-                { label: "Spawn cpu.plan", cmd: "spawn agent cpu.plan" },
-                { label: "System status", cmd: "status" },
-              ].map((item) => (
-                <button
-                  key={item.cmd}
-                  type="button"
-                  className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
-                  onClick={() => {
+                {
+                  label: "Create agent…",
+                  action: () => {
+                    setSpawnOpen(false);
+                    setCreateAgentOpen(true);
+                    requestAnimationFrame(() =>
+                      document.getElementById("devfactory-command-input")?.blur()
+                    );
+                  },
+                },
+                {
+                  label: "Agent status",
+                  action: () => {
                     setSpawnOpen(false);
                     enterMode("terminal");
-                    submitCommand(item.cmd);
-                  }}
+                    submitCommand("agent status");
+                  },
+                },
+                {
+                  label: "List agents",
+                  action: () => {
+                    setSpawnOpen(false);
+                    enterMode("terminal");
+                    submitCommand("agents");
+                  },
+                },
+                {
+                  label: "Spawn cpu.plan",
+                  action: () => {
+                    setSpawnOpen(false);
+                    enterMode("terminal");
+                    submitCommand("spawn agent cpu.plan");
+                  },
+                },
+                {
+                  label: "System status",
+                  action: () => {
+                    setSpawnOpen(false);
+                    enterMode("terminal");
+                    submitCommand("status");
+                  },
+                },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
+                  onClick={item.action}
                 >
                   {item.label}
                 </button>

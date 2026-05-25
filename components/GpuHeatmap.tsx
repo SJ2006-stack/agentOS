@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { GRID_SIZE } from "@/lib/os/types";
 import { useOsStore } from "@/store/osStore";
@@ -14,13 +14,6 @@ export const GpuHeatmap = memo(function GpuHeatmap({
     (s) => s.gpu
   );
   const reduced = useReducedMotion();
-  // #region agent log (post-fix verification)
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-    fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',runId:'post-fix',location:'GpuHeatmap.tsx:mounted',message:'mounted state set - reduced value on client',data:{reduced,typeof_reduced:typeof reduced},timestamp:Date.now(),hypothesisId:'H-A'})}).catch(()=>{});
-  }, []);
-  // #endregion
   const statusLabel = `workers ${activeWorkers}${
     lastDispatch ? ` · ${lastDispatch.hotZones.length} zones` : " · idle"
   }`;
@@ -39,7 +32,7 @@ export const GpuHeatmap = memo(function GpuHeatmap({
       )}
       <motion.div
         key={dispatchSeq}
-        initial={!mounted || reduced ? false : { scale: 0.97, opacity: 0.6 }}
+        initial={reduced ? false : { scale: 0.97, opacity: 0.6 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
         className="grid flex-1 gap-px aspect-square max-h-full w-full max-w-md mx-auto"

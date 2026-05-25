@@ -6,7 +6,7 @@ import { HeroGraphMini } from "@/components/hero/HeroGraphMini";
 import { AGENT_SPAWNED_EVENT, type AgentSpawnedDetail } from "@/lib/os/shell-events";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/osStore";
-import { useUiModeStore } from "@/store/uiModeStore";
+import { type UiMode, useUiModeStore } from "@/store/uiModeStore";
 
 const SUBCOPY = ["Spawn agents", "Deploy workflows", "Observe intelligence"] as const;
 
@@ -47,18 +47,24 @@ function formatLastUsageTokens(
   return String(total);
 }
 
-export type AgentOsHeroVariant = "fullscreen" | "strip";
-
-interface AgentOsHeroProps {
-  variant?: AgentOsHeroVariant;
-  className?: string;
+function truncateStatus(value: string, max = 48): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1)}…`;
 }
 
-export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroProps) {
+function OrchestrationStatusStrip({
+  uiMode,
+  className,
+}: {
+  uiMode: UiMode;
+  className?: string;
+}) {
   const setMode = useUiModeStore((s) => s.setMode);
-  const lastUsage = useOsStore((s) => s.kernel.lastUsage);
-  const hydraConfigured = useOsStore((s) => s.hydraConfigured);
+  const lastCommand = useOsStore((s) => s.kernel.lastCommand);
+  const taskId = useOsStore((s) => s.graph.taskId);
   const activeCount = useOsStore((s) => s.graph.activeNodeIds.size);
+  const cpuStep = useOsStore((s) => s.cpu.pipeline.currentStep);
   const [spawnFlash, setSpawnFlash] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,6 +83,108 @@ export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroPr
     };
   }, []);
 
+  const agentLabel = `${activeCount} agent${activeCount === 1 ? "" : "s"}`;
+  const currentTask =
+    taskId ??
+    (cpuStep ? `cpu.${cpuStep}` : null) ??
+    (lastCommand ? truncateStatus(lastCommand) : null);
+  const isIdle = activeCount === 0 && !taskId && !lastCommand && !cpuStep;
+
+  const openWorkspace = () => {
+    if (uiMode !== "workspace") setMode("workspace");
+  };
+
+  return (
+    <section
+      className={cn(
+        "agentos-orchestration-strip relative shrink-0 border-b border-os-border/70 bg-os-panel/40",
+        className
+      )}
+      aria-label="Agent orchestration status"
+    >
+      <button
+        type="button"
+        onClick={openWorkspace}
+        className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-os-panel/70 sm:px-4"
+        title="Open agents workspace"
+      >
+        <span className="shrink-0 text-[9px] font-medium uppercase tracking-[0.22em] text-os-dim">
+          Orchestration
+        </span>
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-os-green/90">
+          <span className="text-os-green">{agentLabel}</span>
+          {currentTask ? (
+            <>
+              <span className="text-os-dim/70"> · </span>
+              <span className="text-os-green/75">{currentTask}</span>
+            </>
+          ) : isIdle ? (
+            <>
+              <span className="text-os-dim/70"> · </span>
+              <span className="text-os-dim/80">idle</span>
+            </>
+          ) : null}
+        </span>
+        <AnimatePresence mode="wait">
+          {spawnFlash ? (
+            <motion.span
+              key={spawnFlash}
+              initial={{ opacity: 0, x: 6 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-os-amber"
+            >
+              {spawnFlash}
+            </motion.span>
+          ) : (
+            <motion.span
+              key="hint"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="hidden shrink-0 text-[9px] text-os-dim/70 sm:inline"
+            >
+              view graph →
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </button>
+    </section>
+  );
+}
+
+export type AgentOsHeroVariant = "fullscreen" | "strip";
+
+interface AgentOsHeroProps {
+  variant?: AgentOsHeroVariant;
+  uiMode?: UiMode;
+  className?: string;
+}
+
+export function AgentOsHero({ variant = "fullscreen", uiMode = "terminal", className }: AgentOsHeroProps) {
+  const setMode = useUiModeStore((s) => s.setMode);
+  const lastUsage = useOsStore((s) => s.kernel.lastUsage);
+  const hydraConfigured = useOsStore((s) => s.hydraConfigured);
+  const activeCount = useOsStore((s) => s.graph.activeNodeIds.size);
+  const [spawnFlash, setSpawnFlash] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (variant === "strip") return;
+    let clearId: ReturnType<typeof setTimeout> | undefined;
+    const onSpawn = (e: Event) => {
+      const detail = (e as CustomEvent<AgentSpawnedDetail>).detail;
+      const label = detail?.templateId?.split(".").pop() ?? "agent";
+      setSpawnFlash(`spawn · ${label}`);
+      if (clearId) clearTimeout(clearId);
+      clearId = setTimeout(() => setSpawnFlash(null), 2200);
+    };
+    window.addEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+    return () => {
+      window.removeEventListener(AGENT_SPAWNED_EVENT, onSpawn);
+      if (clearId) clearTimeout(clearId);
+    };
+  }, [variant]);
+
   const lastUsageTokens = formatLastUsageTokens(lastUsage);
 
   const telemetryChips = [
@@ -93,62 +201,7 @@ export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroPr
   ];
 
   if (variant === "strip") {
-    return (
-      <section
-        className={cn(
-          "agentos-orchestration-strip relative shrink-0 overflow-hidden border-b border-os-border/70 bg-hero-obsidian",
-          className
-        )}
-        aria-label="Live agent orchestration"
-      >
-        <div className="hero-gradient-bg absolute inset-0 opacity-40" aria-hidden />
-        <div className="relative z-10 flex min-h-[88px] items-stretch gap-3 px-3 py-2 sm:min-h-[96px] sm:px-4">
-          <div className="hidden min-w-0 flex-[1.4] sm:block">
-            <p className="text-[9px] uppercase tracking-[0.28em] text-hero-purple/90">
-              Live agent orchestration
-            </p>
-            <p className="mt-0.5 text-xs text-hero-muted/90">
-              Floating graph · spawning agents
-            </p>
-            <div className="mt-1 h-[52px] w-full max-w-md opacity-90">
-              <HeroGraphMini className="h-full w-full" />
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-1 items-center justify-center sm:hidden">
-            <div className="h-14 w-full max-w-[200px]">
-              <HeroGraphMini className="h-full w-full" />
-            </div>
-          </div>
-          <div className="flex flex-col items-end justify-center gap-1 font-mono text-[10px] text-hero-muted">
-            <span>
-              tokens <span className="text-hero-cyan">{lastUsageTokens}</span>
-            </span>
-            <span>
-              agents <span className="text-hero-cyan">{activeCount}</span>
-            </span>
-            <span>
-              memory{" "}
-              <span className={hydraConfigured ? "text-hero-cyan" : "text-hero-crimson"}>
-                {hydraConfigured ? "live" : "offline"}
-              </span>
-            </span>
-          </div>
-          <AnimatePresence>
-            {spawnFlash && (
-              <motion.p
-                key={spawnFlash}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-x-0 bottom-1 text-center text-[10px] uppercase tracking-[0.25em] text-hero-cyan/90"
-              >
-                {spawnFlash}
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
-      </section>
-    );
+    return <OrchestrationStatusStrip uiMode={uiMode} className={className} />;
   }
 
   return (

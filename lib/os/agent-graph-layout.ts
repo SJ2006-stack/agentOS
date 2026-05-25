@@ -5,15 +5,15 @@ export interface GraphTemplate {
 }
 
 export const AGENT_GRAPH_LAYOUT: Record<string, { x: number; y: number }> = {
-  "user.session": { x: 8, y: 4 },
-  "kernel.orchestrator": { x: 28, y: 18 },
-  "cpu.intake": { x: 52, y: 8 },
-  "cpu.plan": { x: 68, y: 8 },
-  "cpu.route": { x: 84, y: 8 },
-  "cpu.dispatch": { x: 100, y: 8 },
-  "cpu.verify": { x: 116, y: 8 },
-  "cpu.commit": { x: 132, y: 8 },
-  "gpu.worker": { x: 100, y: 36 },
-  "io.bus": { x: 52, y: 36 },
-  "hydradb.memory": { x: 28, y: 48 },
+  "user.session": { x: 6, y: 6 },
+  "kernel.orchestrator": { x: 6, y: 28 },
+  "cpu.intake": { x: 54, y: 6 },
+  "cpu.plan": { x: 78, y: 6 },
+  "cpu.route": { x: 102, y: 6 },
+  "cpu.dispatch": { x: 126, y: 6 },
+  "cpu.verify": { x: 150, y: 6 },
+  "cpu.commit": { x: 174, y: 6 },
+  "gpu.worker": { x: 126, y: 34 },
+  "io.bus": { x: 54, y: 34 },
+  "hydradb.memory": { x: 6, y: 52 },
 };

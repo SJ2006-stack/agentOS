@@ -4,10 +4,10 @@ import type { UiMode } from "@/store/uiModeStore";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_COPY: Record<UiMode, { tag: string; hint: string }> = {
-  hero: { tag: "intro", hint: "Telemetry · graph · enter OS" },
-  terminal: { tag: "monitor", hint: "Full shell · collapsed panels" },
-  desktop: { tag: "aurora", hint: "Glass windows · desktop icons" },
-  workspace: { tag: "mission", hint: "Graph · task · memory · GPU" },
+  hero: { tag: "boot", hint: "DevFactory OS · enter the stack" },
+  terminal: { tag: "shell", hint: "Kernel commands · agent control" },
+  desktop: { tag: "launcher", hint: "Six apps · opens workspace & shell" },
+  workspace: { tag: "agents", hint: "Same desktop icons · graph & memory" },
 };
 
 function MiniPanels({ mode }: { mode: UiMode }) {
@@ -36,10 +36,11 @@ function MiniPanels({ mode }: { mode: UiMode }) {
 
   if (mode === "desktop") {
     return (
-      <div className="relative h-full overflow-hidden rounded-sm bg-gradient-to-br from-sky-900/40 via-violet-900/30 to-emerald-900/30 p-1">
-        <div className="absolute left-1 top-1 h-3 w-4 rounded-sm border border-white/20 bg-white/10 backdrop-blur-sm" />
-        <div className="absolute right-1 top-2 h-2.5 w-3 rounded-sm border border-white/15 bg-white/10" />
-        <div className="absolute bottom-1 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-black/30" />
+      <div className="relative h-full overflow-hidden rounded-sm bg-gradient-to-br from-os-bg via-os-panel/80 to-os-surface/90 p-1">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--os-green)_18%,transparent),transparent_55%)]" />
+        <div className="absolute left-1 top-1 flex size-3 items-center justify-center rounded-sm border border-os-green/25 bg-os-green/10" />
+        <div className="absolute right-1 top-2 flex size-2.5 items-center justify-center rounded-sm border border-os-border/50 bg-os-panel/60" />
+        <div className="absolute bottom-1 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full border border-os-border/40 bg-os-panel/70" />
       </div>
     );
   }

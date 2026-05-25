@@ -1,8 +1,5 @@
-import { DevFactoryOs } from "@/components/DevFactoryOs";
-import { isHydraConfigured } from "@/lib/hydradb/client";
+import { LandingPage } from "@/components/landing/LandingPage";
 
 export default function Home() {
-  const hydraConfigured = isHydraConfigured();
-
-  return <DevFactoryOs hydraConfigured={hydraConfigured} />;
+  return <LandingPage />;
 }

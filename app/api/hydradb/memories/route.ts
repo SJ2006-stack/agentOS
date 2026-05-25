@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import { NextResponse } from "next/server";
 import { writeMemoryWithBroadcast } from "@/lib/hydradb/memory";
 import { isHydraConfigured } from "@/lib/hydradb/client";

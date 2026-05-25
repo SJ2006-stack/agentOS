@@ -351,18 +351,32 @@ body {
   }
 }
 
-/* Desktop Mode — aurora wallpaper + glass windows */
+/* Desktop Mode — aurora wallpaper + glass windows (os token bridge) */
 .desktop-aurora {
   background: linear-gradient(
     135deg,
-    #0c1929 0%,
-    #1a3a5c 22%,
-    #2d1b4e 45%,
-    #0d3328 68%,
-    #1e3a5f 100%
+    var(--os-bg) 0%,
+    color-mix(in srgb, var(--os-panel) 85%, var(--hero-graphite)) 24%,
+    color-mix(in srgb, var(--os-dim) 45%, var(--os-panel)) 48%,
+    color-mix(in srgb, var(--os-green) 8%, var(--os-bg)) 72%,
+    color-mix(in srgb, var(--os-border) 55%, var(--os-panel)) 100%
   );
   background-size: 400% 400%;
   animation: desktop-aurora-shift 18s ease infinite;
+}
+
+.desktop-aurora-glow {
+  background:
+    radial-gradient(
+      ellipse 70% 45% at 18% 12%,
+      color-mix(in srgb, var(--os-green) 14%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 82% 78%,
+      color-mix(in srgb, var(--os-cyan) 8%, transparent),
+      transparent 50%
+    );
 }
 
 @keyframes desktop-aurora-shift {
@@ -378,10 +392,13 @@ body {
 .desktop-glass-window {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.04) 100%
+    color-mix(in srgb, var(--os-panel) 35%, rgba(255, 255, 255, 0.12)) 0%,
+    color-mix(in srgb, var(--os-bg) 25%, rgba(255, 255, 255, 0.04)) 100%
   );
   backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 color-mix(in srgb, var(--os-green) 10%, transparent);
 }
 
 .desktop-glossy-icon {
@@ -389,7 +406,28 @@ body {
 }
 
 .desktop-taskbar {
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
+  border-top: 1px solid color-mix(in srgb, var(--os-border) 75%, transparent);
+  background: color-mix(in srgb, var(--os-panel) 50%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--os-green) 6%, transparent),
+    0 -4px 24px rgba(0, 0, 0, 0.35);
+  font-family: var(--font-jetbrains-mono), var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.os-telemetry-live {
+  animation: os-telemetry-live-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes os-telemetry-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--os-green) 40%, transparent);
+  }
+  50% {
+    opacity: 0.75;
+    box-shadow: 0 0 6px 1px color-mix(in srgb, var(--os-green) 35%, transparent);
+  }
 }
 
 /* Workspace — traveling pulses on graph edges (os:graph activity) */

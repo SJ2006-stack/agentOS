@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import { CPU_SYSTEM, cpuStepPrompt } from "@/lib/ai/agents";
 import { isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
 import {

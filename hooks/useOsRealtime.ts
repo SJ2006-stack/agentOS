@@ -13,7 +13,7 @@ import type {
 } from "@/lib/os/types";
 import { useOsStore, type RealtimeBatch } from "@/store/osStore";
 
-const REALTIME_FLUSH_MS = 64;
+const REALTIME_FLUSH_MS = 100;
 
 function mergeBatch(target: RealtimeBatch, patch: RealtimeBatch): void {
   if (patch.kernelHeartbeat !== undefined) target.kernelHeartbeat = patch.kernelHeartbeat;

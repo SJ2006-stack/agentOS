@@ -1,7 +1,12 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { AGENT_GRAPH } from "@/lib/os/agent-graph-data";
+import {
+  AGENT_GRAPH,
+  getAgentDescription,
+  getAgentDisplayName,
+  HYDRA_MEMORY_HUB_ID,
+} from "@/lib/os/agent-graph-data";
 import { AGENT_GRAPH_LAYOUT, type GraphTemplate } from "@/lib/os/agent-graph-layout";
 import {
   resolveAgentSignature,
@@ -10,10 +15,10 @@ import {
 } from "@/lib/os/agent-signature";
 import { useOsStore } from "@/store/osStore";
 
-const NODE_W = 22;
-const NODE_H = 10;
-const NODE_ANCHOR_X = 11;
-const NODE_ANCHOR_Y = 5;
+const NODE_W = 40;
+const NODE_H = 18;
+const NODE_ANCHOR_X = NODE_W / 2;
+const NODE_ANCHOR_Y = NODE_H / 2;
 
 const PULSE_GRADIENT: Record<AgentSignature, string> = {
   research: "workspace-pulse-research",
@@ -44,6 +49,8 @@ const LEGEND_ITEMS: { label: string; sig: AgentSignature }[] = [
 
 type GraphEdge = {
   key: string;
+  fromId: string;
+  toId: string;
   x1: number;
   y1: number;
   x2: number;
@@ -51,13 +58,8 @@ type GraphEdge = {
   lit: boolean;
   sig: AgentSignature;
   delay: number;
+  isMemoryHub: boolean;
 };
-
-function nodeLabel(id: string): string {
-  const leaf = id.split(".").pop() ?? id;
-  const stripped = id.startsWith("custom.") ? id.replace("custom.", "") : leaf;
-  return stripped.length > 7 ? `${stripped.slice(0, 6)}…` : stripped;
-}
 
 function edgeStagger(fromId: string, toId: string): number {
   const key = fromId < toId ? `${fromId}|${toId}` : `${toId}|${fromId}`;
@@ -78,11 +80,17 @@ function buildEdges(
     if (!from || !node) continue;
     const sig = resolveAgentSignature(t.id, t.role);
     for (const toId of node.edges) {
+      if (t.id === toId) continue;
       const to = AGENT_GRAPH_LAYOUT[toId];
       if (!to) continue;
-      const lit = activeNodeIds.has(t.id) || activeNodeIds.has(toId);
+      const isMemoryHub = toId === HYDRA_MEMORY_HUB_ID;
+      const lit =
+        !isMemoryHub &&
+        (activeNodeIds.has(t.id) || activeNodeIds.has(toId));
       edges.push({
         key: `${t.id}-${toId}`,
+        fromId: t.id,
+        toId,
         x1: from.x + NODE_ANCHOR_X,
         y1: from.y + NODE_ANCHOR_Y,
         x2: to.x + NODE_ANCHOR_X,
@@ -90,10 +98,19 @@ function buildEdges(
         lit,
         sig,
         delay: edgeStagger(t.id, toId),
+        isMemoryHub,
       });
     }
   }
   return edges;
+}
+
+function formatActiveRoute(fromId: string, toId: string, templates: GraphTemplate[]): string {
+  const fromTemplate = templates.find((t) => t.id === fromId);
+  const toTemplate = templates.find((t) => t.id === toId);
+  const fromLabel = getAgentDisplayName(fromId, fromTemplate?.role);
+  const toLabel = getAgentDisplayName(toId, toTemplate?.role);
+  return `${fromLabel} → ${toLabel}`;
 }
 
 function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] }) {
@@ -111,13 +128,20 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
     () => buildEdges(builtinTemplates, activeNodeIds),
     [builtinTemplates, activeNodeIds]
   );
+  const activeRoutes = useMemo(
+    () =>
+      edges
+        .filter((e) => e.lit && !e.isMemoryHub)
+        .map((e) => formatActiveRoute(e.fromId, e.toId, templates)),
+    [edges, templates]
+  );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1.5">
-      <div className="workspace-graph-host relative min-h-0 flex-1 overflow-auto rounded-lg border border-os-border/60 bg-os-bg/40 p-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <div className="workspace-graph-host relative min-h-[220px] flex-1 overflow-auto rounded-lg border border-os-border/60 bg-os-bg/40 p-3">
         <svg
-          viewBox="0 0 160 56"
-          className="workspace-graph-svg h-full min-h-[100px] w-full"
+          viewBox="-2 -2 220 78"
+          className="workspace-graph-svg h-full min-h-[220px] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-label="Agent orchestration graph"
         >
@@ -149,20 +173,25 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
             ))}
           </defs>
 
-          <rect width="160" height="56" fill="url(#workspace-grid)" className="workspace-graph-grid" />
+          <rect x="-2" y="-2" width="220" height="78" fill="url(#workspace-grid)" className="workspace-graph-grid" />
 
           <g className="workspace-graph-edges-static" aria-hidden>
-            {edges.map(({ key, x1, y1, x2, y2, lit, sig }) => (
+            {edges.map(({ key, x1, y1, x2, y2, lit, sig, isMemoryHub }) => (
               <line
                 key={key}
                 x1={x1}
                 y1={y1}
                 x2={x2}
                 y2={y2}
-                className="workspace-graph-edge-base"
+                className={
+                  isMemoryHub
+                    ? "workspace-graph-edge-memory"
+                    : "workspace-graph-edge-base"
+                }
                 stroke={lit ? signatureStroke(sig) : "var(--os-border)"}
-                strokeWidth={lit ? 0.45 : 0.25}
-                strokeOpacity={lit ? 0.28 : 0.45}
+                strokeWidth={lit ? 0.7 : isMemoryHub ? 0.25 : 0.4}
+                strokeOpacity={lit ? 0.35 : isMemoryHub ? 0.2 : 0.45}
+                strokeDasharray={isMemoryHub ? "1.5 2.5" : undefined}
               />
             ))}
           </g>
@@ -179,7 +208,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                   y2={y2}
                   className={`workspace-graph-edge-pulse workspace-graph-edge-pulse--${sig}`}
                   stroke={`url(#${PULSE_GRADIENT[sig]})`}
-                  strokeWidth={1.1}
+                  strokeWidth={1.6}
                   strokeLinecap="round"
                   style={{ animationDelay: `${delay}s` }}
                 />
@@ -192,14 +221,15 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
               const active = activeNodeIds.has(t.id);
               const sig = resolveAgentSignature(t.id, t.role);
               const stroke = signatureStroke(sig);
-              const label = nodeLabel(t.id);
+              const label = getAgentDisplayName(t.id, t.role);
+              const description = getAgentDescription(t.id, t.role);
               return (
-                <g key={t.id} transform={`translate(${pos.x}, ${pos.y})`}>
+                <g key={t.id} transform={`translate(${pos.x}, ${pos.y})`} className="workspace-graph-node">
                   {active && (
                     <rect
                       width={NODE_W}
                       height={NODE_H}
-                      rx={1}
+                      rx={1.5}
                       className="workspace-graph-node-halo"
                       fill="none"
                       stroke={stroke}
@@ -210,32 +240,34 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                   <rect
                     width={NODE_W}
                     height={NODE_H}
-                    rx={1}
+                    rx={1.5}
                     fill={SIGNATURE_FILL[sig]}
                     stroke={active ? stroke : "var(--os-border)"}
-                    strokeWidth={active ? 1.1 : 0.55}
+                    strokeWidth={active ? 1.2 : 0.65}
                   />
                   <rect
                     x={0.5}
-                    y={1}
-                    width={1.5}
-                    height={NODE_H - 2}
-                    rx={0.25}
+                    y={1.5}
+                    width={2}
+                    height={NODE_H - 3}
+                    rx={0.35}
                     fill={stroke}
                     fillOpacity={active ? 0.9 : 0.45}
                   />
                   <text
                     x={NODE_ANCHOR_X + 1}
-                    y={6.2}
+                    y={11.5}
                     textAnchor="middle"
-                    fill={active ? SIGNATURE_LABEL[sig] : "var(--os-dim)"}
-                    fontSize={3.2}
+                    fill={active ? SIGNATURE_LABEL[sig] : "var(--os-green)"}
+                    fillOpacity={active ? 1 : 0.78}
+                    fontSize={6}
                     fontFamily="var(--font-mono)"
+                    fontWeight={600}
                     letterSpacing="0.02em"
                   >
-                    {label}
+                    {label.length > 11 ? `${label.slice(0, 10)}…` : label}
                   </text>
-                  <title>{t.id}</title>
+                  <title>{`${label}\n${description}`}</title>
                 </g>
               );
             })}
@@ -243,13 +275,18 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
               const active = activeNodeIds.has(t.id);
               const sig = resolveAgentSignature(t.id, t.role);
               const stroke = signatureStroke(sig);
-              const label = nodeLabel(t.id);
+              const label = getAgentDisplayName(t.id, t.role);
+              const description = getAgentDescription(t.id, t.role);
               return (
-                <g key={t.id} transform={`translate(${8 + (i % 6) * 24}, ${44})`}>
+                <g
+                  key={t.id}
+                  transform={`translate(${8 + (i % 4) * 44}, ${58})`}
+                  className="workspace-graph-node"
+                >
                   <rect
                     width={NODE_W}
                     height={NODE_H}
-                    rx={1}
+                    rx={1.5}
                     fill="transparent"
                     stroke={stroke}
                     strokeWidth={active ? 1.2 : 0.85}
@@ -258,39 +295,53 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
                   />
                   <rect
                     x={0.5}
-                    y={1}
-                    width={1.5}
-                    height={NODE_H - 2}
-                    rx={0.25}
+                    y={1.5}
+                    width={2}
+                    height={NODE_H - 3}
+                    rx={0.35}
                     fill="var(--os-amber)"
                     fillOpacity={active ? 0.85 : 0.4}
                   />
                   <text
                     x={NODE_ANCHOR_X + 1}
-                    y={6.2}
+                    y={11.5}
                     textAnchor="middle"
-                    fill={active ? "var(--os-amber)" : "var(--os-dim)"}
-                    fontSize={3.2}
+                    fill={active ? "var(--os-amber)" : "var(--os-green)"}
+                    fillOpacity={active ? 1 : 0.78}
+                    fontSize={6}
                     fontFamily="var(--font-mono)"
+                    fontWeight={600}
                     letterSpacing="0.02em"
                   >
-                    {label}
+                    {label.length > 11 ? `${label.slice(0, 10)}…` : label}
                   </text>
-                  <title>{t.id}</title>
+                  <title>{`${label}\n${description}`}</title>
                 </g>
               );
             })}
           </g>
         </svg>
       </div>
-      <div className="workspace-graph-legend flex flex-wrap gap-2 text-[10px] text-os-dim">
+
+      {activeRoutes.length > 0 && (
+        <div
+          className="workspace-graph-active-route shrink-0 rounded border border-os-cyan/30 bg-os-cyan/5 px-2.5 py-1.5 text-[11px] text-os-cyan"
+          aria-live="polite"
+        >
+          <span className="font-semibold uppercase tracking-wider">Active route</span>
+          <span className="mx-1.5 text-os-dim">·</span>
+          <span className="font-mono">{activeRoutes.join(" · ")}</span>
+        </div>
+      )}
+
+      <div className="workspace-graph-legend flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-os-dim">
         {LEGEND_ITEMS.map(({ label, sig }) => (
-          <span key={label} className="inline-flex items-center gap-1.5">
+          <span key={label} className="inline-flex items-center gap-2">
             <span
-              className="workspace-graph-legend-swatch size-1.5 rounded-full"
+              className="workspace-graph-legend-swatch size-2 rounded-full"
               style={{ backgroundColor: signatureStroke(sig) }}
             />
-            <span className="font-mono uppercase tracking-wide">{label}</span>
+            <span className="font-mono uppercase tracking-wider">{label}</span>
           </span>
         ))}
       </div>

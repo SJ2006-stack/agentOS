@@ -146,8 +146,8 @@ const initialPipeline: CpuPipelineState = {
 };
 
 export const useOsStore = create<OsState>((set) => ({
-  bootComplete: false,
-  heroBootEnabled: true,
+  bootComplete: typeof window !== "undefined" ? !readHeroBootEnabled() : false,
+  heroBootEnabled: typeof window !== "undefined" ? readHeroBootEnabled() : true,
   kernel: { heartbeat: null, lastCommand: null, lastUsage: null, connected: false },
   cpu: { pipeline: initialPipeline, lastMessage: null },
   memory: { slots: [], lastRecall: null, connected: false },

@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import { OPENROUTER_KEY_FAULT } from "@/lib/ai/faults";
 import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";

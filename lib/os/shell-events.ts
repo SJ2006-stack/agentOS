@@ -1,6 +1,12 @@
 export const SHELL_COMMAND_EVENT = "devfactory:shell-command";
+export const SHELL_READY_EVENT = "devfactory:shell-ready";
 
 export type ShellCommandDetail = { command: string };
+
+export function dispatchShellReady(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(SHELL_READY_EVENT));
+}
 
 export function dispatchShellCommand(command: string): void {
   if (typeof window === "undefined") return;

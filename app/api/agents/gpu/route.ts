@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import { agentNeedsLlm } from "@/lib/ai/agent-llm-policy";
 import { GPU_SYSTEM } from "@/lib/ai/agents";
 import { isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";

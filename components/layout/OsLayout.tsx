@@ -69,7 +69,7 @@ export function OsLayout({
           codeClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <BootSequence hydraConfigured={hydraConfigured} />
+            {isTerminal && <BootSequence hydraConfigured={hydraConfigured} />}
             <header className="shrink-0 border-b border-os-border px-3 py-1.5">
               {kernel}
             </header>

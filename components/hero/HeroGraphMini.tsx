@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AGENT_GRAPH } from "@/lib/os/agent-graph-data";
+import { memo, useEffect, useMemo, useState } from "react";
+import { BUILTIN_GRAPH_EDGES } from "@/lib/os/builtin-graph-templates";
 import { cn } from "@/lib/utils";
-import { useOsStore } from "@/store/osStore";
 
 const LAYOUT: Record<string, { x: number; y: number }> = {
   "user.session": { x: 8, y: 4 },
@@ -21,8 +20,7 @@ const LAYOUT: Record<string, { x: number; y: number }> = {
 
 const BUILTIN_IDS = Object.keys(LAYOUT);
 
-export function HeroGraphMini({ className }: { className?: string }) {
-  const activeNodeIds = useOsStore((s) => s.graph.activeNodeIds);
+function HeroGraphMiniInner({ className }: { className?: string }) {
   const [pulseIds, setPulseIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -35,7 +33,33 @@ export function HeroGraphMini({ className }: { className?: string }) {
     return () => window.clearInterval(id);
   }, []);
 
-  const lit = (id: string) => activeNodeIds.has(id) || pulseIds.includes(id);
+  const edges = useMemo(() => {
+    const litSet = new Set(pulseIds);
+    const isLit = (id: string) => litSet.has(id);
+    return BUILTIN_IDS.flatMap((fromId) => {
+      const from = LAYOUT[fromId];
+      const node = BUILTIN_GRAPH_EDGES[fromId];
+      if (!from || !node) return [];
+      return node
+        .filter((toId) => LAYOUT[toId])
+        .map((toId) => {
+          const to = LAYOUT[toId]!;
+          const edgeLit = isLit(fromId) || isLit(toId);
+          return (
+            <line
+              key={`${fromId}-${toId}`}
+              x1={from.x + 11}
+              y1={from.y + 5}
+              x2={to.x + 11}
+              y2={to.y + 5}
+              stroke={edgeLit ? "url(#hero-edge-glow)" : "var(--hero-graphite)"}
+              strokeWidth={edgeLit ? 0.6 : 0.3}
+              strokeOpacity={edgeLit ? 0.7 : 0.25}
+            />
+          );
+        });
+    });
+  }, [pulseIds]);
 
   return (
     <svg
@@ -51,32 +75,10 @@ export function HeroGraphMini({ className }: { className?: string }) {
           <stop offset="100%" stopColor="var(--hero-purple)" stopOpacity="0" />
         </linearGradient>
       </defs>
-      {BUILTIN_IDS.flatMap((fromId) => {
-        const from = LAYOUT[fromId];
-        const node = AGENT_GRAPH[fromId];
-        if (!from || !node) return [];
-        return node.edges
-          .filter((toId) => LAYOUT[toId])
-          .map((toId) => {
-            const to = LAYOUT[toId]!;
-            const edgeLit = lit(fromId) || lit(toId);
-            return (
-              <line
-                key={`${fromId}-${toId}`}
-                x1={from.x + 11}
-                y1={from.y + 5}
-                x2={to.x + 11}
-                y2={to.y + 5}
-                stroke={edgeLit ? "url(#hero-edge-glow)" : "var(--hero-graphite)"}
-                strokeWidth={edgeLit ? 0.6 : 0.3}
-                strokeOpacity={edgeLit ? 0.7 : 0.25}
-              />
-            );
-          });
-      })}
+      {edges}
       {BUILTIN_IDS.map((id) => {
         const pos = LAYOUT[id] ?? { x: 10, y: 10 };
-        const active = lit(id);
+        const active = pulseIds.includes(id);
         return (
           <g key={id} transform={`translate(${pos.x}, ${pos.y})`}>
             <rect
@@ -105,3 +107,5 @@ export function HeroGraphMini({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export const HeroGraphMini = memo(HeroGraphMiniInner);

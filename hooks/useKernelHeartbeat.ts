@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const HEARTBEAT_MS = 2000;
+const HEARTBEAT_MS = 5000;
 
 /** Poll kernel heartbeat when tab is visible (skips hidden tabs). */
 export function useKernelHeartbeat() {
