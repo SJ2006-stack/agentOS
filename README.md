@@ -12,7 +12,9 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — full-viewport OS with shell at the bottom.
+Open [http://localhost:3000](http://localhost:3000) for the hero landing page, then **Spawn your first agent** to enter the OS at `/os`.
+
+> **GitHub Pages:** builds use `GITHUB_PAGES=true`, which sets `basePath` to `/agentOS` (site URL: `https://<user>.github.io/agentOS/`). Local dev and Vercel deploy serve the app at `/` with no base path.
 
 ## Shell commands
 

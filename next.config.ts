@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 /** GitHub Pages project site: https://<user>.github.io/<repo>/ */
 const repoName = "agentOS";
-const basePath = `/${repoName}`;
+const isGitHubPages = process.env.GITHUB_PAGES === "true";
+const basePath = isGitHubPages ? `/${repoName}` : "";
 
 const nextConfig: NextConfig = {
   output: "export",
-  basePath,
-  assetPrefix: `${basePath}/`,
+  ...(basePath ? { basePath, assetPrefix: `${basePath}/` } : {}),
   images: {
     unoptimized: true,
   },
