@@ -1,6 +1,6 @@
 import "server-only";
 import { OpenRouter } from "@openrouter/sdk";
-import { ALLOWED_MODEL_IDS, DEFAULT_MODEL_ID } from "@/lib/ai/models";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 
 function openRouterApiKey(): string | undefined {
   return process.env.OPENROUTER_API_KEY;
@@ -27,14 +27,12 @@ export function getOpenRouter(): OpenRouter {
   return _openrouter;
 }
 
-export function resolveModelId(requested?: string): string {
-  if (requested && ALLOWED_MODEL_IDS.has(requested)) {
-    return requested;
-  }
+/** Always resolves to the single allowed model: openrouter/free. */
+export function resolveModelId(_requested?: string): string {
   return DEFAULT_MODEL_ID;
 }
 
 /** @deprecated Use getOpenRouter() — kept for transitional imports */
-export function getModel(modelId: string): string {
-  return resolveModelId(modelId);
+export function getModel(_modelId: string): string {
+  return DEFAULT_MODEL_ID;
 }

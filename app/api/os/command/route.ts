@@ -2,6 +2,7 @@ import { KERNEL_SYSTEM } from "@/lib/ai/agents";
 import { createKernelTools } from "@/lib/ai/kernel-tools";
 import { isAgentLlmConfigured, resolveModelId } from "@/lib/ai/model";
 import {
+  incrementalStreamResponse,
   streamChatWithTools,
   textStreamResponse,
 } from "@/lib/ai/openrouter-agent";
@@ -24,7 +25,7 @@ function kernelStream(prompt: string, model: string, taskId?: string) {
     system: KERNEL_SYSTEM,
     prompt,
     tools: createKernelTools({ taskId }),
-    maxSteps: 6,
+    maxSteps: 3,
   });
 }
 
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
   const model = resolveModelId(requestedModelId);
   const parsed = parseShellCommand(command);
 
-  await broadcastOsEvent("os:kernel", "command_routed", {
+  void broadcastOsEvent("os:kernel", "command_routed", {
     command,
     route:
       parsed.type === "submit"
@@ -78,14 +79,11 @@ export async function POST(req: Request) {
     case "submit": {
       const taskId = createTaskId();
       const origin = new URL(req.url).origin;
-      void runCpuPipeline(taskId, parsed.task, origin, model).catch(console.error);
-      return textStreamResponse(
-        `[kernel] task queued: ${taskId}\n[cpu] pipeline starting…\n`,
-        kernelStream(
-          `User submitted task: "${parsed.task}". taskId=${taskId}. Acknowledge routing to CPU in 2 lines prefixed [kernel].`,
-          model,
-          taskId
-        )
+      return incrementalStreamResponse(
+        `[kernel] task queued: ${taskId}\n`,
+        async (write) => {
+          await runCpuPipeline(taskId, parsed.task, origin, model, write);
+        }
       );
     }
 
@@ -133,7 +131,7 @@ export async function POST(req: Request) {
         y: (i * 2) % 16,
         heat: 0.5 + (i % 5) * 0.1,
       }));
-      await broadcastOsEvent("os:gpu", "dispatch", {
+      void broadcastOsEvent("os:gpu", "dispatch", {
         hotZones,
         activeWorkers: parsed.count,
         taskId,

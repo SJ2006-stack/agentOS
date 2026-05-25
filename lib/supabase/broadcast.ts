@@ -2,6 +2,7 @@ import "server-only";
 import type { OsChannel } from "@/lib/os/types";
 import { getSupabaseAdmin } from "./server";
 
+/** Server-side broadcast via REST (no subscribe / 800ms wait). */
 export async function broadcastOsEvent<T extends Record<string, unknown>>(
   channel: OsChannel,
   event: string,
@@ -11,19 +12,12 @@ export async function broadcastOsEvent<T extends Record<string, unknown>>(
   if (!supabase) return false;
 
   const ch = supabase.channel(channel);
-  await new Promise<void>((resolve) => {
-    ch.subscribe((status) => {
-      if (status === "SUBSCRIBED") resolve();
-    });
-    setTimeout(resolve, 800);
-  });
-
-  const result = await ch.send({
-    type: "broadcast",
-    event,
-    payload,
-  });
-
-  await supabase.removeChannel(ch);
-  return result === "ok";
+  try {
+    await ch.httpSend(event, payload);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await supabase.removeChannel(ch);
+  }
 }

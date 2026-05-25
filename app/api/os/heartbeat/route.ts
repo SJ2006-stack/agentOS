@@ -10,10 +10,5 @@ export async function POST() {
     uptimeMs,
     status: "online",
   });
-  await broadcastOsEvent("os:kernel", "uptime", {
-    ts: Date.now(),
-    uptimeMs,
-    status: ok ? "online" : "degraded",
-  });
   return NextResponse.json({ ok, uptimeMs });
 }

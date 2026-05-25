@@ -4,11 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
-import {
-  OPENROUTER_MODELS,
-  openRouterModelById,
-  isOpenRouterModelId,
-} from "@/lib/ai/models-client";
+import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
 import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
 import { useOsStore } from "@/store/osStore";
 
@@ -177,20 +173,19 @@ export function XtermShell({
       const lower = line.trim().toLowerCase();
       if (lower.startsWith("config model")) {
         const id = line.trim().slice("config model".length).trim();
-        if (!id) {
-          const ids = OPENROUTER_MODELS.map((m) => m.id).join(", ");
-          writeln(`[kernel] usage: config model <id> — ${ids}`, "32");
+        if (!id || id === DEFAULT_OPENROUTER_MODEL_ID) {
+          writeln(
+            `[kernel] model fixed: ${DEFAULT_OPENROUTER_MODEL_ID} (OpenRouter Free auto-routing)`,
+            "32"
+          );
+          useOsStore.getState().setSelectedModelId(DEFAULT_OPENROUTER_MODEL_ID);
           prompt();
           return;
         }
-        if (!isOpenRouterModelId(id)) {
-          writeln(`[fault] unknown model "${id}"`, "31");
-          prompt();
-          return;
-        }
-        useOsStore.getState().setSelectedModelId(id);
-        const label = openRouterModelById(id)?.label ?? id;
-        writeln(`[kernel] openrouter model → ${label} (${id})`, "32");
+        writeln(
+          `[kernel] only ${DEFAULT_OPENROUTER_MODEL_ID} is available — model selection is fixed`,
+          "32"
+        );
         prompt();
         return;
       }

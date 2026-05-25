@@ -45,7 +45,7 @@ Metadata on each write: `agent_id`, `pipeline_step`, `task_id`.
 
 ## LLM layer
 
-All agents use `@openrouter/sdk` (`getOpenRouter().chat.send`) with `OPENROUTER_API_KEY` only. Default model: `google/gemma-4-26b-a4b-it:free`. Tool loops run via native OpenRouter function calling in `lib/ai/openrouter-agent.ts` (no Vercel AI SDK). Shell streaming: API returns `text/plain` `ReadableStream`; xterm reads `res.body` chunks and writes them live.
+All agents use `@openrouter/sdk` (`getOpenRouter().chat.send`) with `OPENROUTER_API_KEY` only. Model: `openrouter/free` (OpenRouter free auto-routing). Tool loops run via native OpenRouter function calling in `lib/ai/openrouter-agent.ts` (no Vercel AI SDK). Shell streaming: API returns `text/plain` `ReadableStream`; xterm reads `res.body` chunks and writes them live.
 
 ## Architecture
 
@@ -79,7 +79,7 @@ npx vercel
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `OPENROUTER_API_KEY` | Yes | OpenRouter API key — powers all LLM routes via `@openrouter/sdk` (default model: `google/gemma-4-26b-a4b-it:free`) |
+| `OPENROUTER_API_KEY` | Yes | OpenRouter API key — powers all LLM routes via `@openrouter/sdk` (model: `openrouter/free`) |
 | `HYDRADB_API_KEY` | Yes | Live HydraDB; no mock |
 | `HYDRADB_TENANT_ID` | No | Defaults to `devfactory-os` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Realtime panels |

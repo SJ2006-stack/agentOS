@@ -99,6 +99,34 @@ function chunkText(chunk: ChatStreamChunk): string {
   return "";
 }
 
+/** Stream preamble then incremental chunks (e.g. CPU pipeline progress). */
+export function incrementalStreamResponse(
+  preamble: string,
+  run: (write: (chunk: string) => void) => Promise<void>
+): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        if (preamble) controller.enqueue(encoder.encode(preamble));
+        await run((chunk) => {
+          if (chunk) controller.enqueue(encoder.encode(chunk));
+        });
+      } catch (err) {
+        controller.enqueue(encoder.encode(openRouterFault(err)));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+    },
+  });
+}
+
 /** Wrap SDK token stream as plain-text HTTP response for xterm. */
 export function textStreamResponse(
   preamble: string,
@@ -146,12 +174,13 @@ export async function* streamChatContent(input: {
       { role: "user", content: input.prompt },
     ];
 
-    const sdkStream = await openrouter.chat.send({
+    // SDK v0.12.x requires chatRequest wrapper; model is always openrouter/free.
+    const stream = await openrouter.chat.send({
       chatRequest: { model, messages, stream: true },
     });
 
     let yielded = false;
-    for await (const chunk of sdkStream) {
+    for await (const chunk of stream) {
       const text = chunkText(chunk);
       if (text) {
         yielded = true;

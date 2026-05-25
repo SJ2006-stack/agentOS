@@ -77,3 +77,5 @@
 {"sessionId":"464b73","location":"XtermShell.tsx:raf-fit-success","message":"raf fit.fit() succeeded","data":{},"timestamp":1779690164699,"hypothesisId":"H-C"}
 {"sessionId":"464b73","location":"XtermShell.tsx:raf-fit-success","message":"raf fit.fit() succeeded","data":{},"timestamp":1779690164747,"hypothesisId":"H-C"}
 {"sessionId":"464b73","location":"XtermShell.tsx:global-error","message":"Unhandled error with dimensions","data":{"msg":"TypeError: undefined is not an object (evaluating 'this._renderer.value.dimensions')","filename":"http://localhost:3000/_next/static/chunks/node_modules_e30bc580._.js","lineno":2136,"colno":52},"timestamp":1779690164749,"hypothesisId":"H-C H-E"}
+{"sessionId":"464b73","location":"GpuHeatmap.tsx:mount","message":"GpuHeatmap mounted - reduced value","data":{"reduced":true,"typeof_reduced":"boolean","dispatchSeq":0},"timestamp":1779690747437,"hypothesisId":"H-A"}
+{"sessionId":"464b73","location":"GpuHeatmap.tsx:setMounted","message":"GpuHeatmap setMounted called","data":{"reduced":true,"dispatchSeq":0},"timestamp":1779690747444,"hypothesisId":"H-A"}
