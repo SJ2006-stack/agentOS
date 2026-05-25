@@ -150,6 +150,163 @@ function OrchestrationStatusStrip({
 }
 
 /* ——————————————————————————————————————— */
+/*  Terminal preview card (typewriter)       */
+/* ——————————————————————————————————————— */
+
+type TerminalLineKind = "cmd" | "ok" | "prompt";
+
+const TERMINAL_LINES: ReadonlyArray<{ text: string; kind: TerminalLineKind }> = [
+  { text: "$ boot agentOS --init", kind: "cmd" },
+  { text: "✓ KERNEL online", kind: "ok" },
+  { text: "✓ Memory fabric linked", kind: "ok" },
+  { text: "✓ 3 agents ready", kind: "ok" },
+  { text: "> awaiting task...", kind: "prompt" },
+];
+
+const TERMINAL_CHAR_MS = 26;
+const TERMINAL_LINE_GAP_MS = 400;
+const TERMINAL_START_DELAY_MS = 350;
+
+function TerminalPreviewCard({ reduce }: { reduce: boolean | null }) {
+  const fullCounts = TERMINAL_LINES.map((l) => l.text.length);
+  const [revealed, setRevealed] = useState<number[]>(() =>
+    reduce ? fullCounts : TERMINAL_LINES.map(() => 0)
+  );
+
+  useEffect(() => {
+    if (reduce) {
+      setRevealed(TERMINAL_LINES.map((l) => l.text.length));
+      return;
+    }
+
+    let raf = 0;
+    const start = performance.now() + TERMINAL_START_DELAY_MS;
+
+    const tick = () => {
+      const elapsed = performance.now() - start;
+      const next: number[] = [];
+      let remaining = elapsed;
+      let done = true;
+      for (const line of TERMINAL_LINES) {
+        const lineDur = line.text.length * TERMINAL_CHAR_MS;
+        if (remaining <= 0) {
+          next.push(0);
+          done = false;
+        } else if (remaining < lineDur) {
+          next.push(Math.min(line.text.length, Math.floor(remaining / TERMINAL_CHAR_MS)));
+          done = false;
+        } else {
+          next.push(line.text.length);
+        }
+        remaining -= lineDur + TERMINAL_LINE_GAP_MS;
+      }
+      setRevealed(next);
+      if (!done) {
+        raf = requestAnimationFrame(tick);
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduce]);
+
+  const allDone = revealed.every(
+    (n, i) => n >= TERMINAL_LINES[i].text.length
+  );
+
+  return (
+    <div
+      className="agentos-hero-terminal font-mono"
+      role="presentation"
+      aria-hidden
+    >
+      <div className="agentos-hero-terminal-bar">
+        <span
+          className="agentos-hero-terminal-dot"
+          style={{ backgroundColor: "#FF5F57" }}
+        />
+        <span
+          className="agentos-hero-terminal-dot"
+          style={{ backgroundColor: "#FEBC2E" }}
+        />
+        <span
+          className="agentos-hero-terminal-dot"
+          style={{ backgroundColor: "#28C840" }}
+        />
+        <span className="agentos-hero-terminal-title">agentos · tty</span>
+      </div>
+      <div className="agentos-hero-terminal-body">
+        {TERMINAL_LINES.map((line, i) => {
+          const chars = revealed[i] ?? 0;
+          const visible = line.text.slice(0, chars);
+          const isLast = i === TERMINAL_LINES.length - 1;
+          const colorClass =
+            line.kind === "ok"
+              ? "agentos-hero-terminal-line-ok"
+              : "agentos-hero-terminal-line-muted";
+          return (
+            <div
+              key={i}
+              className={cn("agentos-hero-terminal-line", colorClass)}
+              style={{ opacity: chars === 0 ? 0 : 1 }}
+            >
+              {visible || "\u00A0"}
+              {isLast && allDone ? (
+                <span className="agentos-hero-terminal-caret" aria-hidden />
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ——————————————————————————————————————— */
+/*  Stats bar (animated count-up)            */
+/* ——————————————————————————————————————— */
+
+const formatAgents = (v: number) =>
+  `${Math.round(v).toLocaleString("en-US")} agents spawned`;
+const formatUptime = (v: number) => `${v.toFixed(1)}% uptime`;
+const formatLatency = (v: number) => `~${Math.round(v)}ms avg latency`;
+
+function StatNumber({
+  to,
+  format,
+  reduce,
+  delay = 0.5,
+}: {
+  to: number;
+  format: (v: number) => string;
+  reduce: boolean | null;
+  delay?: number;
+}) {
+  const mv = useMotionValue(reduce ? to : 0);
+  const [display, setDisplay] = useState(() => format(reduce ? to : 0));
+  const formatRef = useRef(format);
+  formatRef.current = format;
+
+  useEffect(() => {
+    if (reduce) {
+      setDisplay(formatRef.current(to));
+      return;
+    }
+    mv.set(0);
+    setDisplay(formatRef.current(0));
+    const controls = animate(mv, to, {
+      duration: 1.2,
+      ease: "easeOut",
+      delay,
+      onUpdate: (v) => setDisplay(formatRef.current(v)),
+    });
+    return () => controls.stop();
+  }, [to, reduce, delay, mv]);
+
+  return <span className="agentos-hero-stats-num">{display}</span>;
+}
+
+/* ——————————————————————————————————————— */
 /*  Fullscreen hero (revamp)                 */
 /* ——————————————————————————————————————— */
 
@@ -201,6 +358,8 @@ function FullscreenHero({ className }: { className?: string }) {
       style={{ backgroundColor: PALETTE.bg, color: PALETTE.text }}
       aria-label="AgentOS landing"
     >
+      {/* slow shifting radial aurora — behind grid/dots, subtle */}
+      <div className="agentos-hero-aurora" aria-hidden />
       {/* animated background grid + dots */}
       <div className="agentos-hero-grid" aria-hidden />
       <div className="agentos-hero-dots" aria-hidden />
@@ -273,54 +432,76 @@ function FullscreenHero({ className }: { className?: string }) {
 
         <motion.div
           {...fadeUp(4)}
-          className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
+          className="mt-10 grid w-full max-w-3xl grid-cols-1 items-center gap-8 lg:max-w-5xl lg:grid-cols-2 lg:gap-12"
         >
-          <button
-            type="button"
-            onClick={handlePrimaryCta}
-            className={cn(
-              "agentos-cta-glow group relative inline-flex items-center justify-center gap-2 rounded-lg border px-7 py-3 font-mono text-sm font-medium tracking-wide transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-              reduce ? "agentos-cta-glow-static" : undefined
-            )}
-            style={
-              {
-                borderColor: PALETTE.accent,
-                backgroundColor: PALETTE.surface,
-                color: PALETTE.accent,
-                "--tw-ring-color": PALETTE.accent,
-                "--tw-ring-offset-color": PALETTE.bg,
-              } as CSSProperties
-            }
-          >
-            <span>Spawn your first agent</span>
-            <span
-              aria-hidden
-              className="transition-transform duration-200 group-hover:translate-x-0.5"
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-end">
+            <button
+              type="button"
+              onClick={handlePrimaryCta}
+              className={cn(
+                "agentos-cta-glow group relative inline-flex items-center justify-center gap-2 rounded-lg border px-7 py-3 font-mono text-sm font-medium tracking-wide transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+                reduce ? "agentos-cta-glow-static" : undefined
+              )}
+              style={
+                {
+                  borderColor: PALETTE.accent,
+                  backgroundColor: PALETTE.surface,
+                  color: PALETTE.accent,
+                  "--tw-ring-color": PALETTE.accent,
+                  "--tw-ring-offset-color": PALETTE.bg,
+                } as CSSProperties
+              }
             >
-              →
-            </span>
-          </button>
+              <span>Spawn your first agent</span>
+              <span
+                aria-hidden
+                className="transition-transform duration-200 group-hover:translate-x-0.5"
+              >
+                →
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSecondaryCta}
-            className="inline-flex items-center justify-center rounded-lg border bg-transparent px-6 py-3 font-mono text-sm tracking-wide transition-colors duration-200 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2"
-            style={
-              {
-                borderColor: PALETTE.muted,
-                color: PALETTE.text,
-                "--tw-ring-color": PALETTE.muted,
-              } as CSSProperties
-            }
-          >
-            Watch demo
-          </button>
+            <button
+              type="button"
+              onClick={handleSecondaryCta}
+              className="inline-flex items-center justify-center rounded-lg border bg-transparent px-6 py-3 font-mono text-sm tracking-wide transition-colors duration-200 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2"
+              style={
+                {
+                  borderColor: PALETTE.muted,
+                  color: PALETTE.text,
+                  "--tw-ring-color": PALETTE.muted,
+                } as CSSProperties
+              }
+            >
+              Watch demo
+            </button>
+          </div>
+
+          <div className="hidden w-full justify-start lg:flex">
+            <TerminalPreviewCard reduce={reduce} />
+          </div>
+        </motion.div>
+
+        <motion.div
+          {...fadeUp(5)}
+          className="agentos-hero-stats mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-[11px] sm:gap-x-6 sm:text-xs"
+          aria-label="Platform stats"
+        >
+          <StatNumber to={2847} format={formatAgents} reduce={reduce} />
+          <span aria-hidden className="agentos-hero-stats-sep">
+            ·
+          </span>
+          <StatNumber to={99.2} format={formatUptime} reduce={reduce} />
+          <span aria-hidden className="agentos-hero-stats-sep">
+            ·
+          </span>
+          <StatNumber to={340} format={formatLatency} reduce={reduce} />
         </motion.div>
       </div>
 
       {/* persistent command bar — positioned above dock */}
       <motion.form
-        {...fadeUp(5)}
+        {...fadeUp(6)}
         onSubmit={handleCommandSubmit}
         className="pointer-events-auto absolute bottom-32 left-1/2 z-10 w-[min(92vw,640px)] -translate-x-1/2 sm:bottom-36"
         role="search"

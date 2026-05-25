@@ -607,6 +607,179 @@ body {
   }
 }
 
+/* —— AgentOS hero v2 — animated radial aurora (behind grid+dots) —— */
+.agentos-hero-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.agentos-hero-aurora::before,
+.agentos-hero-aurora::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  filter: blur(60px);
+  will-change: transform, opacity;
+}
+
+.agentos-hero-aurora::before {
+  background: radial-gradient(
+    ellipse 55% 50% at 30% 40%,
+    rgba(42, 22, 64, 0.85),
+    transparent 70%
+  );
+  animation: agentos-hero-aurora-a 8s ease-in-out infinite alternate;
+}
+
+.agentos-hero-aurora::after {
+  background: radial-gradient(
+    ellipse 60% 50% at 70% 60%,
+    rgba(26, 15, 46, 0.85),
+    transparent 70%
+  );
+  animation: agentos-hero-aurora-b 8s ease-in-out infinite alternate;
+  animation-delay: -4s;
+}
+
+@keyframes agentos-hero-aurora-a {
+  0% {
+    transform: translate3d(-5%, -3%, 0);
+    opacity: 0.04;
+  }
+  100% {
+    transform: translate3d(5%, 3%, 0);
+    opacity: 0.09;
+  }
+}
+
+@keyframes agentos-hero-aurora-b {
+  0% {
+    transform: translate3d(5%, 3%, 0);
+    opacity: 0.04;
+  }
+  100% {
+    transform: translate3d(-5%, -3%, 0);
+    opacity: 0.09;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agentos-hero-aurora::before,
+  .agentos-hero-aurora::after {
+    animation: none;
+    opacity: 0.06;
+    transform: none;
+  }
+}
+
+/* —— AgentOS hero v2 — stats bar —— */
+.agentos-hero-stats {
+  color: rgba(148, 163, 184, 0.65);
+  letter-spacing: 0.02em;
+}
+
+.agentos-hero-stats-num {
+  color: rgba(203, 213, 225, 0.92);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.agentos-hero-stats-sep {
+  color: rgba(148, 163, 184, 0.35);
+  user-select: none;
+}
+
+/* —— AgentOS hero v2 — terminal preview card —— */
+.agentos-hero-terminal {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: #0d1520;
+  box-shadow:
+    0 20px 45px -22px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.agentos-hero-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.agentos-hero-terminal-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.agentos-hero-terminal-title {
+  margin-left: 0.4rem;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.55);
+}
+
+.agentos-hero-terminal-body {
+  padding: 0.85rem 0.95rem 1rem;
+  font-size: 11.5px;
+  line-height: 1.6;
+  min-height: 9.5rem;
+}
+
+.agentos-hero-terminal-line {
+  white-space: pre;
+  transition: opacity 160ms ease-out;
+}
+
+.agentos-hero-terminal-line-ok {
+  color: #00ffb2;
+}
+
+.agentos-hero-terminal-line-muted {
+  color: rgba(148, 163, 184, 0.82);
+}
+
+.agentos-hero-terminal-caret {
+  display: inline-block;
+  width: 0.55ch;
+  height: 0.95em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: rgba(148, 163, 184, 0.75);
+  animation: agentos-hero-terminal-caret 1.05s steps(1) infinite;
+}
+
+@keyframes agentos-hero-terminal-caret {
+  0%,
+  49.99% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agentos-hero-terminal-caret {
+    animation: none;
+    opacity: 0.6;
+  }
+  .agentos-hero-terminal-line {
+    transition: none;
+  }
+}
+
 /* Terminal Mode — cinematic matte */
 .terminal-mode {
   box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.06);
