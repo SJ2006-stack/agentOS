@@ -5,7 +5,7 @@ import type {
   ChatStreamChunk,
 } from "@openrouter/sdk/models";
 import { z } from "zod";
-import { getOpenRouter, resolveModelId } from "@/lib/ai/model";
+import { getOpenRouter, isOpenRouterConfigured, resolveModelId } from "@/lib/ai/model";
 
 export type OpenRouterToolDef<T extends z.ZodTypeAny = z.ZodTypeAny> = {
   name: string;
@@ -18,6 +18,58 @@ export function defineTool<T extends z.ZodTypeAny>(
   def: OpenRouterToolDef<T>
 ): OpenRouterToolDef<T> {
   return def;
+}
+
+/** Turn SDK / network errors into xterm-visible [fault] lines. */
+export function openRouterFault(err: unknown): string {
+  if (err == null) return "[fault] OpenRouter request failed\n";
+  if (typeof err === "object" && err !== null) {
+    const e = err as {
+      message?: string;
+      statusCode?: number;
+      body?: string;
+      error?: { message?: string; code?: number };
+      data$?: { error?: { message?: string } };
+    };
+    const nested =
+      e.error?.message ??
+      e.data$?.error?.message ??
+      (typeof e.body === "string"
+        ? (() => {
+            try {
+              const j = JSON.parse(e.body) as { error?: { message?: string } };
+              return j.error?.message;
+            } catch {
+              return undefined;
+            }
+          })()
+        : undefined);
+    const msg = nested ?? e.message;
+    if (msg) {
+      const code = e.statusCode ?? e.error?.code;
+      return code
+        ? `[fault] OpenRouter ${code}: ${msg}\n`
+        : `[fault] ${msg}\n`;
+    }
+  }
+  return `[fault] ${err instanceof Error ? err.message : String(err)}\n`;
+}
+
+function formatMessageContent(
+  content: string | Array<{ type?: string; text?: string }> | null | undefined
+): string {
+  if (content == null) return "";
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) =>
+        part && typeof part === "object" && "text" in part && part.text
+          ? String(part.text)
+          : ""
+      )
+      .join("");
+  }
+  return String(content);
 }
 
 function toolToChatFunction(tool: OpenRouterToolDef): ChatFunctionTool {
@@ -38,6 +90,12 @@ function chunkText(chunk: ChatStreamChunk): string {
   const delta = chunk.choices[0]?.delta;
   if (!delta) return "";
   if (typeof delta.content === "string") return delta.content;
+  if (Array.isArray(delta.content)) {
+    return formatMessageContent(delta.content);
+  }
+  if (typeof delta.reasoning === "string" && delta.reasoning) {
+    return delta.reasoning;
+  }
   return "";
 }
 
@@ -49,15 +107,23 @@ export function textStreamResponse(
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      if (preamble) controller.enqueue(encoder.encode(preamble));
-      for await (const chunk of textSource) {
-        controller.enqueue(encoder.encode(chunk));
+      try {
+        if (preamble) controller.enqueue(encoder.encode(preamble));
+        for await (const chunk of textSource) {
+          if (chunk) controller.enqueue(encoder.encode(chunk));
+        }
+      } catch (err) {
+        controller.enqueue(encoder.encode(openRouterFault(err)));
+      } finally {
+        controller.close();
       }
-      controller.close();
     },
   });
   return new Response(stream, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+    },
   });
 }
 
@@ -68,20 +134,35 @@ export async function* streamChatContent(input: {
   prompt: string;
   messages?: ChatMessages[];
 }): AsyncGenerator<string> {
-  const openrouter = getOpenRouter();
-  const model = resolveModelId(input.modelId);
-  const messages: ChatMessages[] = input.messages ?? [
-    { role: "system", content: input.system },
-    { role: "user", content: input.prompt },
-  ];
+  if (!isOpenRouterConfigured()) {
+    yield "[fault] OPENROUTER_API_KEY missing — copy .env.example to .env.local\n";
+    return;
+  }
+  try {
+    const openrouter = getOpenRouter();
+    const model = resolveModelId(input.modelId);
+    const messages: ChatMessages[] = input.messages ?? [
+      { role: "system", content: input.system },
+      { role: "user", content: input.prompt },
+    ];
 
-  const sdkStream = await openrouter.chat.send({
-    chatRequest: { model, messages, stream: true },
-  });
+    const sdkStream = await openrouter.chat.send({
+      chatRequest: { model, messages, stream: true },
+    });
 
-  for await (const chunk of sdkStream) {
-    const text = chunkText(chunk);
-    if (text) yield text;
+    let yielded = false;
+    for await (const chunk of sdkStream) {
+      const text = chunkText(chunk);
+      if (text) {
+        yielded = true;
+        yield text;
+      }
+    }
+    if (!yielded) {
+      yield "[fault] OpenRouter returned an empty stream\n";
+    }
+  } catch (err) {
+    yield openRouterFault(err);
   }
 }
 
@@ -97,6 +178,10 @@ export async function runChatWithTools(input: {
   maxSteps?: number;
   maxTokens?: number;
 }): Promise<string> {
+  if (!isOpenRouterConfigured()) {
+    throw new Error("OPENROUTER_API_KEY missing — copy .env.example to .env.local");
+  }
+
   const openrouter = getOpenRouter();
   const model = resolveModelId(input.modelId);
   const toolDefs = input.tools;
@@ -125,12 +210,9 @@ export async function runChatWithTools(input: {
     const msg = choice?.message;
     if (!msg) break;
 
-    const content =
-      typeof msg.content === "string"
-        ? msg.content
-        : msg.content == null
-          ? ""
-          : JSON.stringify(msg.content);
+    const content = formatMessageContent(
+      msg.content as string | Array<{ type?: string; text?: string }> | null
+    );
     finalText = content;
 
     messages.push({
@@ -156,7 +238,14 @@ export async function runChatWithTools(input: {
       if (def) {
         const parsed = def.inputSchema.safeParse(args);
         if (parsed.success) {
-          output = await def.execute(parsed.data);
+          try {
+            output = await def.execute(parsed.data);
+          } catch (toolErr) {
+            output = {
+              error:
+                toolErr instanceof Error ? toolErr.message : "tool execution failed",
+            };
+          }
         } else {
           output = { error: parsed.error.message };
         }
@@ -181,6 +270,18 @@ export async function* streamChatWithTools(input: {
   tools: OpenRouterToolDef[];
   maxSteps?: number;
 }): AsyncGenerator<string> {
-  const text = await runChatWithTools(input);
-  if (text) yield text;
+  if (!isOpenRouterConfigured()) {
+    yield "[fault] OPENROUTER_API_KEY missing — copy .env.example to .env.local\n";
+    return;
+  }
+  try {
+    const text = await runChatWithTools(input);
+    if (text) {
+      yield text.endsWith("\n") ? text : `${text}\n`;
+    } else {
+      yield "[fault] OpenRouter returned empty assistant text\n";
+    }
+  } catch (err) {
+    yield openRouterFault(err);
+  }
 }

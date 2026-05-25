@@ -60,6 +60,12 @@ export function XtermShell({
   const bufferRef = useRef("");
   const historyRef = useRef<string[]>([]);
   const historyIdxRef = useRef(-1);
+  const commandGenRef = useRef(0);
+  const onReadyRef = useRef(onReady);
+  const hydraConfiguredRef = useRef(hydraConfigured);
+
+  onReadyRef.current = onReady;
+  hydraConfiguredRef.current = hydraConfigured;
 
   const writeln = useCallback((text: string, color?: string) => {
     const term = termRef.current;
@@ -97,10 +103,6 @@ export function XtermShell({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // #region agent log
-    fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:useEffect-start',message:'useEffect running, container dimensions',data:{w:containerRef.current?.offsetWidth,h:containerRef.current?.offsetHeight},timestamp:Date.now(),hypothesisId:'H-C H-D'})}).catch(()=>{});
-    // #endregion
-
     const term = new Terminal({
       theme: xtermThemeFromCss(),
       fontFamily: "var(--font-geist-mono), JetBrains Mono, monospace",
@@ -110,50 +112,34 @@ export function XtermShell({
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
-    // #region agent log
-    try {
-      term.open(containerRef.current);
-      fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:term.open-success',message:'term.open succeeded',data:{},timestamp:Date.now(),hypothesisId:'H-D'})}).catch(()=>{});
-    } catch(openErr) {
-      fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:term.open-error',message:'term.open threw',data:{err:String(openErr)},timestamp:Date.now(),hypothesisId:'H-D'})}).catch(()=>{}); throw openErr;
-    }
-    // #endregion
-    requestAnimationFrame(() => {
-      try {
-        fit.fit();
-        // #region agent log
-        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:raf-fit-success',message:'raf fit.fit() succeeded',data:{},timestamp:Date.now(),hypothesisId:'H-C'})}).catch(()=>{});
-        // #endregion
-      } catch(e) {
-        // #region agent log
-        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:raf-fit-error',message:'raf fit.fit() threw',data:{err:String(e)},timestamp:Date.now(),hypothesisId:'H-C'})}).catch(()=>{});
-        // #endregion
-      }
-    });
+    term.open(containerRef.current);
 
     termRef.current = term;
     fitRef.current = fit;
+
+    const fitTerminal = () => {
+      const el = containerRef.current;
+      if (!el || !fitRef.current || !termRef.current) return;
+      if (el.offsetWidth < 2 || el.offsetHeight < 2) return;
+      try {
+        fitRef.current.fit();
+      } catch {
+        /* xterm renderer not ready yet */
+      }
+    };
+
+    requestAnimationFrame(fitTerminal);
 
     term.writeln("\x1b[32mDevFactory OS Shell\x1b[0m");
     term.writeln(
       "Commands: submit <task> | recall <query> | memory stream [q] | show memory | status | spawn <n> | kill <id> | config model <id>"
     );
-    if (!hydraConfigured) {
+    if (!hydraConfiguredRef.current) {
       term.writeln(
         "\x1b[31m[fault] HYDRADB_API_KEY missing — copy .env.example to .env.local\x1b[0m"
       );
     }
     prompt();
-
-    const fitTerminal = () => {
-      try {
-        fit.fit();
-      } catch(fitErr) {
-        // #region agent log
-        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:fitTerminal-error',message:'fitTerminal fit.fit() threw',data:{err:String(fitErr)},timestamp:Date.now(),hypothesisId:'H-C H-F'})}).catch(()=>{});
-        // #endregion
-      }
-    };
 
     const syncTheme = () => {
       term.options.theme = xtermThemeFromCss();
@@ -168,16 +154,7 @@ export function XtermShell({
     ro.observe(containerRef.current);
     window.addEventListener("resize", fitTerminal);
 
-    // #region agent log
-    const globalErrHandler = (ev: ErrorEvent) => {
-      if (ev.message && ev.message.includes('dimensions')) {
-        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'XtermShell.tsx:global-error',message:'Unhandled error with dimensions',data:{msg:ev.message,filename:ev.filename,lineno:ev.lineno,colno:ev.colno},timestamp:Date.now(),hypothesisId:'H-C H-E'})}).catch(()=>{});
-      }
-    };
-    window.addEventListener('error', globalErrHandler);
-    // #endregion
-
-    onReady?.((text, prefix = "") => {
+    onReadyRef.current?.((text, prefix = "") => {
       writePrefixed(text, prefix);
       prompt();
     });
@@ -191,6 +168,8 @@ export function XtermShell({
     window.addEventListener(MODEL_CHANGE_EVENT, onModelChange);
 
     const runCommand = async (line: string) => {
+      const gen = ++commandGenRef.current;
+      const activeTerm = term;
       term.write("\r\n");
       historyRef.current = [line, ...historyRef.current.filter((h) => h !== line)].slice(0, 50);
       historyIdxRef.current = -1;
@@ -224,28 +203,63 @@ export function XtermShell({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ command: line, modelId }),
         });
+
+        if (gen !== commandGenRef.current || termRef.current !== activeTerm) {
+          return;
+        }
+
         if (!res.ok) {
-          writeln(`[fault] HTTP ${res.status}`, "31");
+          const errText = await res.text().catch(() => "");
+          writeln(
+            errText.trim()
+              ? errText.trim().split("\n")[0]!
+              : `[fault] HTTP ${res.status}`,
+            "31"
+          );
           prompt();
           return;
         }
+
         const reader = res.body?.getReader();
         if (!reader) {
           const text = await res.text();
-          writePrefixed(text, "");
+          if (text.trim()) writePrefixed(text, "");
+          else writeln("[fault] empty response from server", "31");
           prompt();
           return;
         }
+
         const decoder = new TextDecoder();
+        let totalBytes = 0;
+
         while (true) {
           const { done, value } = await reader.read();
+          if (gen !== commandGenRef.current || termRef.current !== activeTerm) {
+            await reader.cancel().catch(() => undefined);
+            return;
+          }
           if (done) break;
-          term.write(decoder.decode(value, { stream: true }));
+          if (value?.length) {
+            totalBytes += value.length;
+            activeTerm.write(decoder.decode(value, { stream: true }));
+          }
+        }
+        activeTerm.write(decoder.decode());
+
+        if (totalBytes === 0) {
+          writeln("[fault] empty stream — check OPENROUTER_API_KEY in .env.local", "31");
         }
       } catch (e) {
-        writeln(`[fault] ${e instanceof Error ? e.message : "command failed"}`, "31");
+        if (gen === commandGenRef.current && termRef.current === activeTerm) {
+          writeln(
+            `[fault] ${e instanceof Error ? e.message : "command failed"}`,
+            "31"
+          );
+        }
       }
-      prompt();
+      if (gen === commandGenRef.current && termRef.current === activeTerm) {
+        prompt();
+      }
     };
 
     term.onData((data) => {
@@ -297,17 +311,24 @@ export function XtermShell({
     });
 
     return () => {
+      commandGenRef.current += 1;
       window.removeEventListener(MODEL_CHANGE_EVENT, onModelChange);
       themeObserver.disconnect();
       ro.disconnect();
       window.removeEventListener("resize", fitTerminal);
-      // #region agent log
-      window.removeEventListener('error', globalErrHandler);
-      // #endregion
       term.dispose();
       termRef.current = null;
+      fitRef.current = null;
     };
-  }, [hydraConfigured, onReady, writeln, writePrefixed, prompt]);
+  }, [writeln, writePrefixed, prompt]);
+
+  useEffect(() => {
+    if (!termRef.current || hydraConfigured) return;
+    termRef.current.writeln(
+      "\x1b[31m[fault] HYDRADB_API_KEY missing — copy .env.example to .env.local\x1b[0m"
+    );
+    prompt();
+  }, [hydraConfigured, prompt]);
 
   return (
     <div

@@ -62,9 +62,14 @@ export async function POST(req: Request) {
     );
   }
 
-  if (parsed.type === "submit" && !isAgentLlmConfigured()) {
+  const needsLlm =
+    parsed.type === "submit" ||
+    parsed.type === "kill" ||
+    parsed.type === "unknown";
+
+  if (needsLlm && !isAgentLlmConfigured()) {
     return new Response(
-      "[fault] OPENROUTER_API_KEY required for CPU pipeline\n",
+      "[fault] OPENROUTER_API_KEY missing — copy .env.example to .env.local\n",
       { headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
