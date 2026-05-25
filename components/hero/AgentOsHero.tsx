@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { HeroGraphMini } from "@/components/hero/HeroGraphMini";
 import { AGENT_SPAWNED_EVENT, type AgentSpawnedDetail } from "@/lib/os/shell-events";
 import { cn } from "@/lib/utils";
@@ -38,10 +37,10 @@ function TelemetryChip({
   );
 }
 
-function formatTokensPerSec(
+function formatLastUsageTokens(
   usage: { promptTokens: number; completionTokens: number } | null
 ): string {
-  if (!usage) return "1.24k";
+  if (!usage) return "—";
   const total = usage.promptTokens + usage.completionTokens;
   if (total <= 0) return "—";
   if (total >= 1000) return `${(total / 1000).toFixed(2)}k`;
@@ -61,12 +60,6 @@ export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroPr
   const hydraConfigured = useOsStore((s) => s.hydraConfigured);
   const activeCount = useOsStore((s) => s.graph.activeNodeIds.size);
   const [spawnFlash, setSpawnFlash] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = window.setInterval(() => setTick((t) => t + 1), 3200);
-    return () => window.clearInterval(id);
-  }, []);
 
   useEffect(() => {
     let clearId: ReturnType<typeof setTimeout> | undefined;
@@ -84,26 +77,20 @@ export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroPr
     };
   }, []);
 
-  const tokensPerSec = useMemo(() => {
-    void tick;
-    return formatTokensPerSec(lastUsage);
-  }, [lastUsage, tick]);
+  const lastUsageTokens = formatLastUsageTokens(lastUsage);
 
-  const telemetryChips = useMemo(
-    () => [
-      { label: "tokens/sec", value: tokensPerSec, top: "12%", left: "8%", alert: false },
-      { label: "agents", value: String(activeCount || 11), top: "22%", right: "10%", alert: false },
-      { label: "latency", value: "42ms", bottom: "28%", left: "6%", alert: false },
-      {
-        label: "memory",
-        value: hydraConfigured ? "live" : "offline",
-        bottom: "18%",
-        right: "8%",
-        alert: !hydraConfigured,
-      },
-    ],
-    [tokensPerSec, activeCount, hydraConfigured]
-  );
+  const telemetryChips = [
+    { label: "tokens", value: lastUsageTokens, top: "12%", left: "8%", alert: false },
+    { label: "agents", value: String(activeCount), top: "22%", right: "10%", alert: false },
+    { label: "latency", value: "—", bottom: "28%", left: "6%", alert: false },
+    {
+      label: "memory",
+      value: hydraConfigured ? "live" : "offline",
+      bottom: "18%",
+      right: "8%",
+      alert: !hydraConfigured,
+    },
+  ];
 
   if (variant === "strip") {
     return (
@@ -134,10 +121,10 @@ export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroPr
           </div>
           <div className="flex flex-col items-end justify-center gap-1 font-mono text-[10px] text-hero-muted">
             <span>
-              tokens/sec <span className="text-hero-cyan">{tokensPerSec}</span>
+              tokens <span className="text-hero-cyan">{lastUsageTokens}</span>
             </span>
             <span>
-              agents <span className="text-hero-cyan">{activeCount || 11}</span>
+              agents <span className="text-hero-cyan">{activeCount}</span>
             </span>
             <span>
               memory{" "}
@@ -172,7 +159,7 @@ export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroPr
       )}
     >
       <div className="hero-gradient-bg" aria-hidden />
-      <div className="hero-particles" aria-hidden />
+      <div className="hero-particles hero-particles-lite" aria-hidden />
       <div className="hero-network-lines" aria-hidden />
 
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.22]">
@@ -195,12 +182,6 @@ export function AgentOsHero({ variant = "fullscreen", className }: AgentOsHeroPr
           }}
         />
       ))}
-
-      <AnimatedThemeToggler
-        variant="star"
-        fromCenter
-        className="fixed top-3 right-3 z-[60] flex size-8 items-center justify-center rounded border border-hero-graphite bg-hero-obsidian/90 text-hero-cyan shadow-sm transition-colors hover:border-hero-cyan/50 hover:text-hero-purple [&_svg]:size-4"
-      />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}

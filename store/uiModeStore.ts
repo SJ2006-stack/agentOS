@@ -12,7 +12,6 @@ export const UI_MODE_LABELS: Record<UiMode, string> = {
 };
 
 const UI_MODE_STORAGE_KEY = "devfactory-ui-mode";
-const VISITED_STORAGE_KEY = "devfactory-ui-mode-visited";
 
 const VALID_MODES: UiMode[] = ["hero", "terminal", "desktop", "workspace"];
 
@@ -31,22 +30,10 @@ function readStoredMode(): UiMode | null {
   return null;
 }
 
-function readHasVisited(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return localStorage.getItem(VISITED_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 function persistMode(mode: UiMode): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(UI_MODE_STORAGE_KEY, mode);
-    if (mode !== "hero") {
-      localStorage.setItem(VISITED_STORAGE_KEY, "1");
-    }
   } catch {
     /* ignore */
   }
@@ -55,32 +42,22 @@ function persistMode(mode: UiMode): void {
 interface UiModeState {
   mode: UiMode;
   hydrated: boolean;
-  workspaceLocked: boolean;
   setMode: (mode: UiMode) => void;
-  setWorkspaceLocked: (locked: boolean) => void;
   hydrateFromStorage: () => void;
 }
 
 export const useUiModeStore = create<UiModeState>((set) => ({
   mode: "hero",
   hydrated: false,
-  workspaceLocked: true,
   setMode: (mode) => {
     persistMode(mode);
-    set((s) => ({
-      mode,
-      workspaceLocked: mode === "workspace" ? true : s.workspaceLocked,
-    }));
+    set({ mode });
   },
-  setWorkspaceLocked: (workspaceLocked) => set({ workspaceLocked }),
   hydrateFromStorage: () => {
-    const visited = readHasVisited();
-    const stored = readStoredMode();
-    const mode: UiMode = visited && stored ? stored : "hero";
+    const mode = readStoredMode() ?? "hero";
     set({
       mode,
       hydrated: true,
-      workspaceLocked: mode === "workspace",
     });
   },
 }));

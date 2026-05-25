@@ -2,15 +2,47 @@
 
 import { useEffect } from "react";
 
-/** Poll kernel heartbeat broadcaster (validates Supabase wiring). */
+const HEARTBEAT_MS = 2000;
+
+/** Poll kernel heartbeat when tab is visible (skips hidden tabs). */
 export function useKernelHeartbeat() {
   useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
     const tick = () => {
+      if (document.visibilityState === "hidden") return;
       void fetch("/api/os/heartbeat", { method: "POST" }).catch(() => undefined);
     };
-    tick();
-    // 1s: httpSend broadcasts are fast (~50ms); no need to throttle to 3s
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+
+    const stop = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const start = () => {
+      stop();
+      tick();
+      intervalId = setInterval(tick, HEARTBEAT_MS);
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        stop();
+      } else {
+        start();
+      }
+    };
+
+    if (document.visibilityState !== "hidden") {
+      start();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 }

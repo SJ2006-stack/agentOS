@@ -1,14 +1,21 @@
 "use client";
 
+import { memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useOsStore } from "@/store/osStore";
 
-export function IoBus() {
+export const IoBus = memo(function IoBus({
+  showHeader = true,
+}: {
+  showHeader?: boolean;
+}) {
   const events = useOsStore((s) => s.io.events);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <h2 className="mb-1 text-xs text-os-amber tracking-wider">I/O BUS</h2>
+      {showHeader && (
+        <h2 className="mb-1 text-xs text-os-amber tracking-wider">I/O BUS</h2>
+      )}
       <div className="min-h-0 flex-1 overflow-y-auto font-mono text-[10px]">
         <AnimatePresence initial={false}>
           {events.length === 0 && (
@@ -33,4 +40,4 @@ export function IoBus() {
       </div>
     </div>
   );
-}
+});

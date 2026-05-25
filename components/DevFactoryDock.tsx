@@ -1,33 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  CircleHelp,
-  Cpu,
-  Database,
-  LayoutGrid,
-  Lock,
-  Monitor,
-  Network,
-  Plus,
-  Send,
-  Sparkles,
-  Terminal,
-} from "lucide-react";
+import { Home, LayoutGrid, Network, Plus, Terminal } from "lucide-react";
 import { Dock, DockIcon } from "@/components/magicui/dock";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DockModePreview } from "@/components/modes/DockModePreview";
 import { cn } from "@/lib/utils";
-import {
-  dispatchShellCommand,
-  focusCommandInput,
-  SHELL_FOCUS_INPUT_EVENT,
-} from "@/lib/os/shell-events";
+import { dispatchShellCommand, SHELL_FOCUS_INPUT_EVENT } from "@/lib/os/shell-events";
 import { useOsStore } from "@/store/osStore";
 import {
   UI_MODE_LABELS,
@@ -51,15 +35,8 @@ function focusPanel(id: string) {
   }, 1200);
 }
 
-const MODE_PREVIEW: Record<UiMode, string> = {
-  hero: "AgentOS intro · telemetry · enter OS",
-  terminal: "Full monitor · xterm shell · panels collapsed",
-  desktop: "Aurora desktop · glass windows · icons",
-  workspace: "Bento · configure · graph · CPU · memory grid",
-};
-
-const MODE_ICONS: Record<UiMode, typeof Monitor> = {
-  hero: Sparkles,
+const MODE_ICONS: Record<UiMode, typeof Terminal> = {
+  hero: Home,
   terminal: Terminal,
   desktop: LayoutGrid,
   workspace: Network,
@@ -93,30 +70,44 @@ function ModeDockItem({
             }
           }}
           className={cn(
-            "relative transition-shadow duration-300",
-            active &&
-              "bg-os-green/10 shadow-[0_0_14px_color-mix(in_srgb,var(--os-amber)_55%,transparent)] ring-2 ring-os-amber/70"
+            "relative overflow-visible transition-[background-color,box-shadow,border-color] duration-300",
+            active
+              ? [
+                  "border-os-amber/50 bg-gradient-to-b from-os-amber/15 to-os-green/10",
+                  "shadow-[0_0_20px_color-mix(in_srgb,var(--os-amber)_45%,transparent),inset_0_1px_0_color-mix(in_srgb,white_12%,transparent)]",
+                  "ring-2 ring-os-amber/80 ring-offset-1 ring-offset-os-panel/80",
+                ].join(" ")
+              : "hover:border-os-green/20"
           )}
         >
-          <Icon className={cn("transition-colors", active && "text-os-amber")} />
           {active && (
             <span
-              className="absolute -bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-os-amber shadow-[0_0_6px_var(--os-amber)]"
+              className="pointer-events-none absolute inset-x-1 top-0 h-0.5 rounded-full bg-gradient-to-r from-transparent via-os-amber to-transparent opacity-90"
+              aria-hidden
+            />
+          )}
+          <Icon
+            className={cn(
+              "relative z-[1] transition-[color,transform,filter] duration-300",
+              active
+                ? "scale-110 text-os-amber drop-shadow-[0_0_6px_color-mix(in_srgb,var(--os-amber)_70%,transparent)]"
+                : "text-os-green/85 group-hover/dock:text-os-green"
+            )}
+          />
+          {active && (
+            <span
+              className="absolute -bottom-1 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-os-amber shadow-[0_0_8px_var(--os-amber),0_0_14px_color-mix(in_srgb,var(--os-amber)_50%,transparent)]"
               aria-hidden
             />
           )}
         </DockIcon>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[200px] p-0">
-        <div className="border-b border-os-border/60 px-2 py-1 font-medium">{label}</div>
-        <div
-          className="mx-2 my-1.5 h-10 rounded border border-os-border/40 bg-os-bg/80"
-          aria-hidden
-        >
-          <div className="flex h-full items-center justify-center px-2 text-[9px] leading-tight text-os-dim">
-            {MODE_PREVIEW[mode]}
-          </div>
-        </div>
+      <TooltipContent side="top" className="border-0 bg-transparent p-0 shadow-none">
+        <DockModePreview mode={mode} />
+        <span className="sr-only">
+          {label}
+          {active ? " (active)" : ""}
+        </span>
       </TooltipContent>
     </Tooltip>
   );
@@ -162,8 +153,6 @@ export function DevFactoryDock() {
   const selectedModelId = useOsStore((s) => s.selectedModelId);
   const mode = useUiModeStore((s) => s.mode);
   const setMode = useUiModeStore((s) => s.setMode);
-  const workspaceLocked = useUiModeStore((s) => s.workspaceLocked);
-  const setWorkspaceLocked = useUiModeStore((s) => s.setWorkspaceLocked);
 
   const submitCommand = useCallback((line: string) => {
     const cmd = line.trim();
@@ -181,14 +170,11 @@ export function DevFactoryDock() {
   const enterMode = useCallback(
     (next: UiMode) => {
       setMode(next);
-      if (next === "workspace") {
-        setWorkspaceLocked(true);
-      }
       if (next === "terminal") {
         requestAnimationFrame(() => scrollToId("devfactory-shell"));
       }
     },
-    [setMode, setWorkspaceLocked]
+    [setMode]
   );
 
   useEffect(() => {
@@ -215,13 +201,20 @@ export function DevFactoryDock() {
       <div
         className={cn(
           "pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 px-3 pb-4 pt-2",
-          "bg-gradient-to-t from-os-bg via-os-bg/95 to-transparent"
+          "bg-gradient-to-t from-os-bg via-os-bg/90 to-transparent",
+          "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-32 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_100%,color-mix(in_srgb,var(--os-green)_8%,transparent),transparent)]"
         )}
       >
         {showCommandBar && (
           <form
             onSubmit={onSubmit}
-            className="pointer-events-auto flex w-full max-w-xl items-center gap-2 rounded-xl border border-os-border/80 bg-os-panel/75 px-3 py-2 shadow-lg shadow-os-bg/50 backdrop-blur-xl"
+            className={cn(
+              "pointer-events-auto flex w-full max-w-xl items-center gap-2 rounded-xl px-3 py-2",
+              "border border-os-border/60 bg-os-panel/50 shadow-xl shadow-os-bg/40 backdrop-blur-xl",
+              "ring-1 ring-inset ring-white/[0.05]",
+              "transition-[box-shadow,border-color] duration-300",
+              "focus-within:border-os-green/35 focus-within:shadow-[0_0_20px_color-mix(in_srgb,var(--os-green)_15%,transparent)]"
+            )}
           >
             <Terminal className="size-4 shrink-0 text-os-dim" aria-hidden />
             <input
@@ -241,7 +234,7 @@ export function DevFactoryDock() {
             </span>
             <button
               type="submit"
-              className="rounded-md border border-os-border px-2 py-1 text-[10px] uppercase tracking-wide text-os-amber transition-colors hover:bg-os-border/30"
+              className="rounded-md border border-os-border/70 bg-os-bg/30 px-2 py-1 text-[10px] uppercase tracking-wide text-os-amber transition-[background-color,box-shadow] hover:border-os-amber/40 hover:bg-os-amber/10 hover:shadow-[0_0_10px_color-mix(in_srgb,var(--os-amber)_25%,transparent)]"
             >
               Run
             </button>
@@ -252,7 +245,7 @@ export function DevFactoryDock() {
           {spawnOpen && (
             <div
               ref={spawnRef}
-              className="absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 rounded-lg border border-os-border bg-os-panel/95 p-1 shadow-xl backdrop-blur-xl"
+              className="absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 rounded-xl border border-os-border/70 bg-os-panel/80 p-1 shadow-2xl shadow-os-bg/50 ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl"
             >
               {[
                 { label: "Agent status", cmd: "agent status" },
@@ -263,7 +256,7 @@ export function DevFactoryDock() {
                 <button
                   key={item.cmd}
                   type="button"
-                  className="block w-full rounded px-2 py-1.5 text-left text-xs text-os-green hover:bg-os-border/40"
+                  className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
                   onClick={() => {
                     setSpawnOpen(false);
                     enterMode("terminal");
@@ -280,14 +273,13 @@ export function DevFactoryDock() {
             direction="bottom"
             iconSize={36}
             iconMagnification={52}
-            className="border-os-border/70 bg-os-panel/70 shadow-xl shadow-os-bg/40 backdrop-blur-xl supports-backdrop-blur:bg-os-panel/50"
+            className="group/dock gap-1.5 px-2.5"
           >
             <ModeDockItem
               mode="hero"
               active={mode === "hero"}
               onClick={() => enterMode("hero")}
             />
-            <Separator orientation="vertical" className="mx-0.5 h-8 bg-os-border/50" />
             <ModeDockItem
               mode="terminal"
               active={mode === "terminal"}
@@ -301,72 +293,16 @@ export function DevFactoryDock() {
             <ModeDockItem
               mode="workspace"
               active={mode === "workspace"}
-              onClick={() => enterMode("workspace")}
+              onClick={() => {
+                enterMode("workspace");
+                focusPanel("devfactory-agent-graph");
+              }}
             />
-            <Separator orientation="vertical" className="mx-0.5 h-8 bg-os-border/50" />
             <UtilityDockItem
               label="Spawn — quick menu"
               onClick={() => setSpawnOpen((o) => !o)}
             >
               <Plus />
-            </UtilityDockItem>
-            {mode === "workspace" && workspaceLocked && (
-              <UtilityDockItem
-                label="Unlock workspace"
-                onClick={() => setWorkspaceLocked(false)}
-              >
-                <Lock />
-              </UtilityDockItem>
-            )}
-            <UtilityDockItem
-              label="Submit — focus command input"
-              onClick={() => {
-                if (mode === "hero") enterMode("terminal");
-                focusCommandInput();
-              }}
-            >
-              <Send />
-            </UtilityDockItem>
-            <UtilityDockItem
-              label="Memory — recall"
-              onClick={() => {
-                enterMode("workspace");
-                setWorkspaceLocked(false);
-                focusPanel("devfactory-memory");
-                submitCommand("recall preferences");
-              }}
-            >
-              <Database />
-            </UtilityDockItem>
-            <UtilityDockItem
-              label="Monitor — focus shell"
-              onClick={() => {
-                enterMode("terminal");
-                scrollToId("devfactory-shell");
-              }}
-            >
-              <Monitor />
-            </UtilityDockItem>
-            <UtilityDockItem
-              label="Agents — list agents"
-              onClick={() => {
-                enterMode("workspace");
-                setWorkspaceLocked(false);
-                focusPanel("devfactory-agent-graph");
-                submitCommand("agents");
-              }}
-            >
-              <Cpu />
-            </UtilityDockItem>
-            <Separator orientation="vertical" className="mx-1 h-8" />
-            <UtilityDockItem
-              label="Help — shell commands"
-              onClick={() => {
-                enterMode("terminal");
-                submitCommand("help");
-              }}
-            >
-              <CircleHelp />
             </UtilityDockItem>
           </Dock>
         </div>

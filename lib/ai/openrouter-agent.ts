@@ -319,23 +319,113 @@ export async function runChatWithTools(input: {
   return { text: finalText, usage: lastUsage };
 }
 
-/** Run tool loop, then yield final assistant text for streaming routes. */
+/** Stream tool-loop progress and final assistant text (first yield before round-trip). */
 export async function* streamChatWithTools(input: {
   modelId: string;
   system: string;
   prompt: string;
   tools: OpenRouterToolDef[];
   maxSteps?: number;
+  maxTokens?: number;
   onUsage?: OpenRouterUsageHandler;
 }): AsyncGenerator<string> {
   if (!isOpenRouterConfigured()) {
     yield OPENROUTER_KEY_FAULT;
     return;
   }
+
   try {
-    const { text } = await runChatWithTools(input);
-    if (text) {
-      yield text.endsWith("\n") ? text : `${text}\n`;
+    const openrouter = getOpenRouter();
+    const model = resolveModelId(input.modelId);
+    const toolDefs = input.tools;
+    const toolList = toolDefs.map(toolToChatFunction);
+    const byName = Object.fromEntries(toolDefs.map((t) => [t.name, t]));
+    const maxSteps = input.maxSteps ?? 6;
+
+    const messages: ChatMessages[] = [
+      { role: "system", content: input.system },
+      { role: "user", content: input.prompt },
+    ];
+
+    let finalText = "";
+    let lastUsage: ChatUsage | undefined;
+
+    for (let step = 0; step < maxSteps; step++) {
+      const result = await openrouter.chat.send({
+        chatRequest: {
+          model,
+          messages,
+          tools: toolList.length ? toolList : undefined,
+          stream: false,
+          maxTokens: input.maxTokens,
+        },
+      });
+
+      if (result.usage) lastUsage = result.usage;
+
+      const choice = result.choices[0];
+      const msg = choice?.message;
+      if (!msg) break;
+
+      const content = formatMessageContent(
+        msg.content as string | Array<{ type?: string; text?: string }> | null
+      );
+      finalText = content;
+
+      messages.push({
+        role: "assistant",
+        content: msg.content ?? null,
+        toolCalls: msg.toolCalls,
+      });
+
+      const toolCalls = msg.toolCalls;
+      if (!toolCalls?.length) break;
+
+      const names = toolCalls.map((tc) => tc.function.name).join(", ");
+      yield `[kernel] tools: ${names}…\n`;
+
+      for (const tc of toolCalls) {
+        const name = tc.function.name;
+        const def = byName[name];
+        let args: unknown = {};
+        try {
+          args = JSON.parse(tc.function.arguments || "{}");
+        } catch {
+          args = {};
+        }
+
+        let output: unknown = { error: `unknown tool: ${name}` };
+        if (def) {
+          const parsed = def.inputSchema.safeParse(args);
+          if (parsed.success) {
+            try {
+              output = await def.execute(parsed.data);
+            } catch (toolErr) {
+              output = {
+                error:
+                  toolErr instanceof Error ? toolErr.message : "tool execution failed",
+              };
+            }
+          } else {
+            output = { error: parsed.error.message };
+          }
+        }
+
+        messages.push({
+          role: "tool",
+          toolCallId: tc.id,
+          content: JSON.stringify(output),
+        });
+      }
+    }
+
+    if (lastUsage) {
+      if (input.onUsage) await input.onUsage(lastUsage);
+      else await emitUsageFeedback(lastUsage);
+    }
+
+    if (finalText) {
+      yield finalText.endsWith("\n") ? finalText : `${finalText}\n`;
     } else {
       yield "[fault] OpenRouter returned empty assistant text\n";
     }

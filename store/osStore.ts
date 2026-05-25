@@ -19,6 +19,23 @@ import {
   emptyHeatmap,
 } from "@/lib/os/types";
 
+/** Coalesced realtime deltas — flushed in one zustand set(). */
+export type RealtimeBatch = {
+  kernelHeartbeat?: KernelHeartbeat;
+  kernelCommand?: string;
+  kernelUsage?: KernelUsageTick;
+  kernelConnected?: boolean;
+  cpuStep?: { step: CpuStep; status: "start" | "complete" | "running"; message?: string };
+  cpuPipeline?: Partial<CpuPipelineState>;
+  memorySlots?: MemorySlotWrite[];
+  memoryRecall?: MemoryRecallResult;
+  ioEvents?: IoToolCall[];
+  gpuDispatch?: GpuDispatchPayload;
+  gpuHeatUpdates?: { x: number; y: number; heat: number }[];
+  gpuWorkers?: number;
+  graphNodeActive?: GraphNodeActiveEvent[];
+};
+
 interface OsState {
   bootComplete: boolean;
   heroBootEnabled: boolean;
@@ -55,6 +72,7 @@ interface OsState {
   supabaseConfigured: boolean;
   selectedModelId: string;
 
+  applyRealtimeBatch: (batch: RealtimeBatch) => void;
   setKernelHeartbeat: (h: KernelHeartbeat) => void;
   setKernelCommand: (cmd: string) => void;
   setKernelUsage: (u: KernelUsageTick) => void;
@@ -140,6 +158,133 @@ export const useOsStore = create<OsState>((set) => ({
   supabaseConfigured: false,
   selectedModelId: DEFAULT_OPENROUTER_MODEL_ID,
 
+  applyRealtimeBatch: (batch) =>
+    set((s) => {
+      let state = s;
+      if (batch.kernelHeartbeat !== undefined || batch.kernelConnected !== undefined) {
+        state = {
+          ...state,
+          kernel: {
+            ...state.kernel,
+            ...(batch.kernelHeartbeat !== undefined
+              ? { heartbeat: batch.kernelHeartbeat, connected: true }
+              : {}),
+            ...(batch.kernelConnected !== undefined
+              ? { connected: batch.kernelConnected }
+              : {}),
+          },
+        };
+      }
+      if (batch.kernelCommand !== undefined) {
+        state = {
+          ...state,
+          kernel: { ...state.kernel, lastCommand: batch.kernelCommand },
+        };
+      }
+      if (batch.kernelUsage !== undefined) {
+        state = {
+          ...state,
+          kernel: { ...state.kernel, lastUsage: batch.kernelUsage },
+        };
+      }
+      if (batch.cpuStep) {
+        const { step, status, message } = batch.cpuStep;
+        const completed = [...state.cpu.pipeline.completedSteps];
+        if (status === "complete" && !completed.includes(step)) {
+          completed.push(step);
+        }
+        state = {
+          ...state,
+          cpu: {
+            pipeline: {
+              ...state.cpu.pipeline,
+              currentStep: status === "complete" ? null : step,
+              completedSteps: completed,
+            },
+            lastMessage: message ?? state.cpu.lastMessage,
+          },
+        };
+      }
+      if (batch.cpuPipeline) {
+        state = {
+          ...state,
+          cpu: {
+            ...state.cpu,
+            pipeline: { ...state.cpu.pipeline, ...batch.cpuPipeline },
+          },
+        };
+      }
+      if (batch.memorySlots?.length) {
+        state = {
+          ...state,
+          memory: {
+            ...state.memory,
+            slots: [...batch.memorySlots, ...state.memory.slots].slice(0, 12),
+          },
+        };
+      }
+      if (batch.memoryRecall !== undefined) {
+        state = {
+          ...state,
+          memory: { ...state.memory, lastRecall: batch.memoryRecall },
+        };
+      }
+      if (batch.ioEvents?.length) {
+        state = {
+          ...state,
+          io: {
+            events: [...batch.ioEvents, ...state.io.events].slice(0, 20),
+          },
+        };
+      }
+      if (batch.gpuDispatch) {
+        const d = batch.gpuDispatch;
+        const heatmap = emptyHeatmap();
+        for (const z of d.hotZones) {
+          if (z.x >= 0 && z.x < 16 && z.y >= 0 && z.y < 16) {
+            heatmap[z.y][z.x] = Math.min(1, z.heat);
+          }
+        }
+        state = {
+          ...state,
+          gpu: {
+            heatmap,
+            activeWorkers: d.activeWorkers,
+            lastDispatch: d,
+            dispatchSeq: state.gpu.dispatchSeq + 1,
+          },
+        };
+      }
+      if (batch.gpuHeatUpdates?.length) {
+        const heatmap = state.gpu.heatmap.map((row) => [...row]);
+        for (const { x, y, heat } of batch.gpuHeatUpdates) {
+          if (x >= 0 && x < 16 && y >= 0 && y < 16) {
+            heatmap[y][x] = Math.min(1, heat);
+          }
+        }
+        state = { ...state, gpu: { ...state.gpu, heatmap } };
+      }
+      if (batch.gpuWorkers !== undefined) {
+        state = {
+          ...state,
+          gpu: { ...state.gpu, activeWorkers: batch.gpuWorkers },
+        };
+      }
+      if (batch.graphNodeActive?.length) {
+        const next = new Set(state.graph.activeNodeIds);
+        let taskId = state.graph.taskId;
+        for (const event of batch.graphNodeActive) {
+          if (event.active) next.add(event.nodeId);
+          else next.delete(event.nodeId);
+          if (event.taskId) taskId = event.taskId;
+        }
+        state = {
+          ...state,
+          graph: { activeNodeIds: next, taskId },
+        };
+      }
+      return state;
+    }),
   setKernelHeartbeat: (h) =>
     set((s) => ({ kernel: { ...s.kernel, heartbeat: h, connected: true } })),
   setKernelCommand: (cmd) =>

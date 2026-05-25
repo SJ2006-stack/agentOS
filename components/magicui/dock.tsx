@@ -29,7 +29,14 @@ const DEFAULT_DISTANCE = 140;
 const DEFAULT_DISABLEMAGNIFICATION = false;
 
 const dockVariants = cva(
-  "mx-auto flex h-[58px] w-max items-center justify-center gap-2 rounded-2xl border border-os-border bg-os-panel/80 p-2 shadow-lg backdrop-blur-md supports-backdrop-blur:bg-os-panel/60"
+  [
+    "mx-auto flex h-[58px] w-max items-center justify-center gap-2 rounded-2xl p-2",
+    "border border-os-border/70 bg-os-panel/55 shadow-xl shadow-os-bg/50",
+    "backdrop-blur-xl supports-backdrop-blur:bg-os-panel/40",
+    "ring-1 ring-inset ring-white/[0.06]",
+    "before:pointer-events-none before:absolute before:inset-x-3 before:top-0 before:h-px before:rounded-full before:bg-gradient-to-r before:from-transparent before:via-os-green/25 before:to-transparent",
+    "relative overflow-hidden",
+  ].join(" ")
 );
 
 const Dock = React.forwardRef<HTMLDivElement, DockProps>(
@@ -137,8 +144,12 @@ const DockIcon = ({
       ref={ref}
       style={{ width: scaleSize, height: scaleSize, padding }}
       className={cn(
-        "flex aspect-square cursor-pointer items-center justify-center rounded-full text-os-green transition-colors hover:bg-os-border/40",
-        disableMagnification && "hover:bg-os-border/50",
+        "flex aspect-square cursor-pointer items-center justify-center rounded-full text-os-green",
+        "border border-transparent bg-os-bg/20 transition-[background-color,box-shadow,border-color,transform] duration-300",
+        "hover:border-os-green/25 hover:bg-os-panel/60",
+        "hover:shadow-[0_0_16px_color-mix(in_srgb,var(--os-green)_22%,transparent)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-os-green/40",
+        disableMagnification && "hover:bg-os-panel/70",
         className
       )}
       {...props}

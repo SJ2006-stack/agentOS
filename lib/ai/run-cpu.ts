@@ -145,6 +145,7 @@ export async function runCpuPipeline(
 ): Promise<void> {
   const model = resolveModelId(modelId);
   startPipeline(taskId, task);
+  write?.(`[cpu] pipeline ${taskId} starting…\n`);
 
   for (const step of CPU_STEPS) {
     const pipe = getPipeline(taskId);

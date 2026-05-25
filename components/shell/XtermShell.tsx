@@ -8,7 +8,10 @@ import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
 import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
 import { useOsStore } from "@/store/osStore";
 import {
+  AGENT_SPAWNED_EVENT,
+  dispatchAgentSpawned,
   SHELL_COMMAND_EVENT,
+  type AgentSpawnedDetail,
   type ShellCommandDetail,
 } from "@/lib/os/shell-events";
 
@@ -31,6 +34,26 @@ function colorForLine(line: string): string | undefined {
     if (line.startsWith(prefix)) return color;
   }
   return undefined;
+}
+
+const SPAWN_STREAM_RE = /\[agent\] spawning (\S+)/;
+const SPAWN_KERNEL_RE = /\[kernel\] spawn (\S+)/;
+
+function parseSpawnTemplateId(chunk: string): string | null {
+  for (const line of chunk.split("\n")) {
+    const trimmed = line.trim();
+    const agent = trimmed.match(SPAWN_STREAM_RE);
+    if (agent) return agent[1]!;
+    const kernel = trimmed.match(SPAWN_KERNEL_RE);
+    if (kernel) return kernel[1]!.replace(/…$/, "");
+  }
+  return null;
+}
+
+function spawnSplitLine(templateId: string, cols: number): string {
+  const core = ` spawn · ${templateId} `;
+  const dashes = Math.max(4, Math.floor((cols - core.length) / 2));
+  return `${"─".repeat(dashes)}${core}${"─".repeat(dashes)}`;
 }
 
 function xtermThemeFromCss(): {
@@ -65,6 +88,7 @@ export function XtermShell({
   const historyRef = useRef<string[]>([]);
   const historyIdxRef = useRef(-1);
   const commandGenRef = useRef(0);
+  const lastSpawnBannerRef = useRef<string | null>(null);
   const onReadyRef = useRef(onReady);
   const hydraConfiguredRef = useRef(hydraConfigured);
 
@@ -105,8 +129,54 @@ export function XtermShell({
     termRef.current?.write("\x1b[32m$ \x1b[0m");
   }, []);
 
+  const writeSpawnBanner = useCallback(
+    (templateId: string) => {
+      const term = termRef.current;
+      if (!term) return;
+      if (lastSpawnBannerRef.current === templateId) return;
+      lastSpawnBannerRef.current = templateId;
+      window.setTimeout(() => {
+        if (lastSpawnBannerRef.current === templateId) {
+          lastSpawnBannerRef.current = null;
+        }
+      }, 3000);
+      const cols = term.cols || 72;
+      term.writeln(`\x1b[33m${spawnSplitLine(templateId, cols)}\x1b[0m`);
+    },
+    []
+  );
+
+  const maybeEmitSpawnFromChunk = useCallback(
+    (chunk: string) => {
+      const templateId = parseSpawnTemplateId(chunk);
+      if (!templateId) return;
+      dispatchAgentSpawned({ templateId });
+      writeSpawnBanner(templateId);
+    },
+    [writeSpawnBanner]
+  );
+
   useEffect(() => {
-    if (!containerRef.current) return;
+    // #region agent log (post-fix verification)
+    // Suppress xterm v5 internal ResizeObserver race: _renderer.value is briefly null
+    // during terminal disposal, causing an unhandled throw in xterm's own observer.
+    const xtermRaceSuppressor = (ev: ErrorEvent) => {
+      if (
+        ev.message?.includes("dimensions") &&
+        (ev.message.includes("Cannot read properties of undefined") ||
+          ev.message.includes("undefined is not an object"))
+      ) {
+        ev.preventDefault();
+        fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',runId:'post-fix',location:'XtermShell.tsx:xtermRaceSuppressor',message:'Suppressed xterm renderer race error',data:{msg:ev.message},timestamp:Date.now(),hypothesisId:'H-C'})}).catch(()=>{});
+      }
+    };
+    window.addEventListener('error', xtermRaceSuppressor);
+    // #endregion
+
+    if (!containerRef.current) {
+      window.removeEventListener('error', xtermRaceSuppressor);
+      return;
+    }
 
     const term = new Terminal({
       theme: xtermThemeFromCss(),
@@ -171,6 +241,12 @@ export function XtermShell({
       prompt();
     };
     window.addEventListener(MODEL_CHANGE_EVENT, onModelChange);
+
+    const onAgentSpawned = (ev: Event) => {
+      const { templateId } = (ev as CustomEvent<AgentSpawnedDetail>).detail;
+      if (templateId) writeSpawnBanner(templateId);
+    };
+    window.addEventListener(AGENT_SPAWNED_EVENT, onAgentSpawned);
 
     const runCommand = async (line: string, echoInTerminal = false) => {
       const gen = ++commandGenRef.current;
@@ -255,7 +331,9 @@ export function XtermShell({
           if (done) break;
           if (value?.length) {
             totalBytes += value.length;
-            activeTerm.write(decoder.decode(value, { stream: true }));
+            const chunk = decoder.decode(value, { stream: true });
+            maybeEmitSpawnFromChunk(chunk);
+            activeTerm.write(chunk);
           }
         }
         activeTerm.write(decoder.decode());
@@ -334,15 +412,19 @@ export function XtermShell({
     return () => {
       commandGenRef.current += 1;
       window.removeEventListener(SHELL_COMMAND_EVENT, onExternalCommand);
+      window.removeEventListener(AGENT_SPAWNED_EVENT, onAgentSpawned);
       window.removeEventListener(MODEL_CHANGE_EVENT, onModelChange);
       themeObserver.disconnect();
       ro.disconnect();
       window.removeEventListener("resize", fitTerminal);
+      // #region agent log
+      window.removeEventListener('error', xtermRaceSuppressor);
+      // #endregion
       term.dispose();
       termRef.current = null;
       fitRef.current = null;
     };
-  }, [writeln, writePrefixed, prompt]);
+  }, [writeln, writePrefixed, prompt, writeSpawnBanner, maybeEmitSpawnFromChunk]);
 
   useEffect(() => {
     if (!termRef.current || hydraConfigured) return;

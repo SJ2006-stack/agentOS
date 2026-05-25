@@ -1,38 +1,42 @@
 "use client";
 
+import { memo, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
 import { GRID_SIZE } from "@/lib/os/types";
 import { useOsStore } from "@/store/osStore";
 
-export function GpuHeatmap() {
+export const GpuHeatmap = memo(function GpuHeatmap({
+  showHeader = true,
+}: {
+  showHeader?: boolean;
+}) {
   const { heatmap, activeWorkers, lastDispatch, dispatchSeq } = useOsStore(
     (s) => s.gpu
   );
   const reduced = useReducedMotion();
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'GpuHeatmap.tsx:mount',message:'GpuHeatmap mounted - reduced value',data:{reduced,typeof_reduced:typeof reduced,dispatchSeq},timestamp:Date.now(),hypothesisId:'H-A'})}).catch(()=>{});
-  }, []);
-  // #endregion
-
-  // #region agent log
+  // #region agent log (post-fix verification)
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',location:'GpuHeatmap.tsx:setMounted',message:'GpuHeatmap setMounted called',data:{reduced,dispatchSeq},timestamp:Date.now(),hypothesisId:'H-A'})}).catch(()=>{});
     setMounted(true);
+    fetch('http://127.0.0.1:7901/ingest/bc0fcfc2-fcb7-4e10-bd54-a83f8bf9234b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'464b73'},body:JSON.stringify({sessionId:'464b73',runId:'post-fix',location:'GpuHeatmap.tsx:mounted',message:'mounted state set - reduced value on client',data:{reduced,typeof_reduced:typeof reduced},timestamp:Date.now(),hypothesisId:'H-A'})}).catch(()=>{});
   }, []);
   // #endregion
+  const statusLabel = `workers ${activeWorkers}${
+    lastDispatch ? ` · ${lastDispatch.hotZones.length} zones` : " · idle"
+  }`;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-1 flex items-center justify-between">
-        <h2 className="text-xs text-os-amber tracking-wider">GPU HEATMAP 16×16</h2>
-        <span className="text-[10px] text-os-dim">
-          workers {activeWorkers}
-          {lastDispatch ? ` · ${lastDispatch.hotZones.length} zones` : " · idle"}
-        </span>
-      </div>
+      {showHeader ? (
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="text-xs text-os-amber tracking-wider">GPU HEATMAP 16×16</h2>
+          <span className="text-[10px] text-os-dim">{statusLabel}</span>
+        </div>
+      ) : (
+        <div className="mb-1 flex justify-end">
+          <span className="text-[10px] text-os-dim">{statusLabel}</span>
+        </div>
+      )}
       <motion.div
         key={dispatchSeq}
         initial={!mounted || reduced ? false : { scale: 0.97, opacity: 0.6 }}
@@ -70,4 +74,4 @@ export function GpuHeatmap() {
       </motion.div>
     </div>
   );
-}
+});

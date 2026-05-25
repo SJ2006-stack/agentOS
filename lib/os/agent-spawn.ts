@@ -126,21 +126,19 @@ export async function spawnAgentTemplate(input: {
   const taskId = input.taskId ?? getCurrentTaskId() ?? createTaskId();
   if (!getCurrentTaskId()) setCurrentTaskId(taskId);
 
-  await writeUserInteraction(
+  input.write?.(`[agent] spawning ${input.templateId} (${template.role})…\n`);
+  activateAgent(input.templateId, taskId);
+  void writeUserInteraction(
     input.command ?? `spawn agent ${input.templateId}`,
     `spawn ${input.templateId}`,
     taskId
   );
-
-  await writeAgentMemory(
+  void writeAgentMemory(
     input.templateId,
     `[spawn] ${input.templateId} activated for task ${taskId}`,
     { spawn: true, task_id: taskId, role: template.role }
   );
-
-  activateAgent(input.templateId, taskId);
-  await broadcastNodeActive(input.templateId, taskId, true);
-  input.write?.(`[agent] spawning ${input.templateId} (${template.role})…\n`);
+  void broadcastNodeActive(input.templateId, taskId, true);
 
   const usageOpts = {
     write: input.write,
@@ -215,6 +213,6 @@ export async function spawnAgentTemplate(input: {
     return { ok: true, message: `${input.templateId} spawned`, taskId };
   } finally {
     deactivateAgent(input.templateId, taskId);
-    await broadcastNodeActive(input.templateId, taskId, false);
+    void broadcastNodeActive(input.templateId, taskId, false);
   }
 }

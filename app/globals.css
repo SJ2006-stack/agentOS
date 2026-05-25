@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
-:root {
-  --os-bg: #e8f0e8;
-  --os-panel: #f4faf4;
-  --os-border: #a8c8a8;
-  --os-green: #166534;
-  --os-amber: #b45309;
-  --os-fault: #b91c1c;
-  --os-dim: #4d7c0f;
+/* —— Theme presets (terminal vibe — never bright white) —— */
+
+/* 1. terminal-forest — green/teal default */
+:root,
+html[data-theme="terminal-forest"] {
+  --os-bg: #0d1f1a;
+  --os-panel: #0f2a24;
+  --os-surface: #122820;
+  --os-border: #1e4a3d;
+  --os-green: #39ff14;
+  --os-cyan: #5eead4;
+  --os-amber: #fbbf24;
+  --os-fault: #f87171;
+  --os-dim: #2d6a4f;
   --hero-obsidian: #080a0f;
   --hero-graphite: #1a1f2e;
   --hero-cyan: #22d3ee;
@@ -18,14 +24,148 @@
   --foreground: var(--os-green);
 }
 
-html.dark {
-  --os-bg: #0a0f0a;
-  --os-panel: #0f1810;
-  --os-border: #1a2e1a;
-  --os-green: #4ade80;
+/* 2. terminal-ocean — blue/cyan graphite */
+html[data-theme="terminal-ocean"] {
+  --os-bg: #0a1420;
+  --os-panel: #0f1c2e;
+  --os-surface: #122436;
+  --os-border: #1e3a5f;
+  --os-green: #38bdf8;
+  --os-cyan: #22d3ee;
   --os-amber: #fbbf24;
   --os-fault: #f87171;
-  --os-dim: #3f6212;
+  --os-dim: #3b5f8a;
+  --hero-obsidian: #060a12;
+  --hero-graphite: #152238;
+  --hero-cyan: #22d3ee;
+  --hero-purple: #60a5fa;
+  --hero-crimson: #ef4444;
+  --hero-muted: #5b7a9a;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+/* 3. terminal-phosphor — classic green on black */
+html[data-theme="terminal-phosphor"] {
+  --os-bg: #000000;
+  --os-panel: #0a0f0a;
+  --os-surface: #0d120d;
+  --os-border: #1a3d1a;
+  --os-green: #33ff33;
+  --os-cyan: #00ff41;
+  --os-amber: #ccff00;
+  --os-fault: #ff4444;
+  --os-dim: #1a5c1a;
+  --hero-obsidian: #000000;
+  --hero-graphite: #0a140a;
+  --hero-cyan: #00ff41;
+  --hero-purple: #39ff14;
+  --hero-crimson: #ff3333;
+  --hero-muted: #2d5c2d;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+/* 4. terminal-dusk — purple + cyan accents */
+html[data-theme="terminal-dusk"] {
+  --os-bg: #140f1f;
+  --os-panel: #1e1530;
+  --os-surface: #241a38;
+  --os-border: #3d2a5c;
+  --os-green: #a78bfa;
+  --os-cyan: #22d3ee;
+  --os-amber: #fbbf24;
+  --os-fault: #f87171;
+  --os-dim: #5b4a7a;
+  --hero-obsidian: #0c0814;
+  --hero-graphite: #2a1f42;
+  --hero-cyan: #22d3ee;
+  --hero-purple: #c4b5fd;
+  --hero-crimson: #f472b6;
+  --hero-muted: #7c6b9a;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+/* 5. dark-obsidian — deep obsidian (light-class palette = muted graphite) */
+html[data-theme="dark-obsidian"] {
+  --os-bg: #0c1018;
+  --os-panel: #121820;
+  --os-surface: #151b26;
+  --os-border: #252d3d;
+  --os-green: #94a3b8;
+  --os-cyan: #22d3ee;
+  --os-amber: #fbbf24;
+  --os-fault: #f87171;
+  --os-dim: #475569;
+  --hero-obsidian: #080a0f;
+  --hero-graphite: #1a1f2e;
+  --hero-cyan: #22d3ee;
+  --hero-purple: #a78bfa;
+  --hero-crimson: #ef4444;
+  --hero-muted: #64748b;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+/* Dark mode overrides per preset */
+html.dark,
+html.dark[data-theme="terminal-forest"] {
+  --os-bg: #0a0f0a;
+  --os-panel: #0f1810;
+  --os-surface: #0f1810;
+  --os-border: #1a2e1a;
+  --os-green: #4ade80;
+  --os-cyan: #22d3ee;
+  --os-dim: #6b9a72;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+html.dark[data-theme="terminal-ocean"] {
+  --os-bg: #060c14;
+  --os-panel: #0a1520;
+  --os-surface: #0c1824;
+  --os-border: #152a45;
+  --os-green: #7dd3fc;
+  --os-cyan: #22d3ee;
+  --os-dim: #4a6a8a;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+html.dark[data-theme="terminal-phosphor"] {
+  --os-bg: #000000;
+  --os-panel: #050805;
+  --os-surface: #080a08;
+  --os-border: #143314;
+  --os-green: #39ff14;
+  --os-cyan: #00ff41;
+  --os-dim: #2d6a2d;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+html.dark[data-theme="terminal-dusk"] {
+  --os-bg: #0a0812;
+  --os-panel: #120e1c;
+  --os-surface: #161222;
+  --os-border: #2d2240;
+  --os-green: #c4b5fd;
+  --os-cyan: #22d3ee;
+  --os-dim: #6b5a8a;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+html.dark[data-theme="dark-obsidian"] {
+  --os-bg: #0a0f0a;
+  --os-panel: #0f1810;
+  --os-surface: #0f1810;
+  --os-border: #1a2e1a;
+  --os-green: #4ade80;
+  --os-cyan: #22d3ee;
+  --os-dim: #6b9a72;
   --background: var(--os-bg);
   --foreground: var(--os-green);
 }
@@ -45,8 +185,10 @@ html[data-magicui-theme-vt="active"]::view-transition-group(root) {
   --color-foreground: var(--foreground);
   --color-os-bg: var(--os-bg);
   --color-os-panel: var(--os-panel);
+  --color-os-surface: var(--os-surface);
   --color-os-border: var(--os-border);
   --color-os-green: var(--os-green);
+  --color-os-cyan: var(--os-cyan);
   --color-os-amber: var(--os-amber);
   --color-os-fault: var(--os-fault);
   --color-os-dim: var(--os-dim);
@@ -148,6 +290,19 @@ body {
   opacity: 0.35;
 }
 
+/* Lighter particle field (fullscreen hero only) */
+.hero-particles-lite::before {
+  background-image:
+    radial-gradient(1px 1px at 25% 35%, color-mix(in srgb, var(--hero-cyan) 35%, transparent), transparent),
+    radial-gradient(1px 1px at 70% 65%, color-mix(in srgb, var(--hero-purple) 30%, transparent), transparent);
+  background-size: 240px 240px, 300px 300px;
+  opacity: 0.4;
+}
+
+.hero-particles-lite::after {
+  content: none;
+}
+
 @keyframes hero-particles-drift {
   from {
     transform: translate(0, 0);
@@ -238,17 +393,73 @@ body {
 }
 
 /* Workspace — traveling pulses on graph edges (os:graph activity) */
+.workspace-graph-host {
+  contain: layout paint style;
+  isolation: isolate;
+}
+
+.workspace-graph-svg {
+  pointer-events: none;
+}
+
+.workspace-graph-grid {
+  pointer-events: none;
+}
+
+.workspace-graph-edge-base {
+  vector-effect: non-scaling-stroke;
+}
+
+.workspace-graph-edges-pulse {
+  mix-blend-mode: screen;
+}
+
 .workspace-graph-edge-pulse {
-  stroke-dasharray: 6 14;
-  animation: workspace-edge-travel 1.1s linear infinite;
+  stroke-dasharray: 3 22;
+  stroke-linecap: round;
+  opacity: 0.9;
+  animation: workspace-edge-travel 1.75s linear infinite;
+}
+
+.workspace-graph-edge-pulse--research {
+  animation-duration: 1.9s;
+}
+
+.workspace-graph-edge-pulse--security {
+  animation-duration: 1.65s;
+}
+
+.workspace-graph-edge-pulse--code {
+  animation-duration: 1.8s;
+}
+
+.workspace-graph-edge-pulse--default {
+  animation-duration: 2s;
+}
+
+.workspace-graph-node-halo {
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.workspace-graph-legend-swatch {
+  box-shadow: 0 0 4px color-mix(in srgb, currentColor 40%, transparent);
 }
 
 @keyframes workspace-edge-travel {
   from {
-    stroke-dashoffset: 20;
+    stroke-dashoffset: 25;
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-graph-edge-pulse {
+    animation: none;
+    opacity: 0.35;
+    stroke-dasharray: none;
   }
 }
 

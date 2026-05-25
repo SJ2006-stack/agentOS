@@ -1,15 +1,23 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "motion/react";
 import { useOsStore } from "@/store/osStore";
 
-export function HydraMemoryPanel() {
-  const { memory, hydraConfigured } = useOsStore();
+export const HydraMemoryPanel = memo(function HydraMemoryPanel({
+  showHeader = true,
+}: {
+  showHeader?: boolean;
+}) {
+  const memory = useOsStore((s) => s.memory);
+  const hydraConfigured = useOsStore((s) => s.hydraConfigured);
 
   if (!hydraConfigured) {
     return (
       <div className="flex h-full flex-col">
-        <h2 className="mb-2 text-xs text-os-amber tracking-wider">HYDRA MEMORY</h2>
+        {showHeader && (
+          <h2 className="mb-2 text-xs text-os-amber tracking-wider">HYDRA MEMORY</h2>
+        )}
         <p className="text-[10px] text-os-fault">
           HYDRADB_API_KEY missing — set in .env.local
         </p>
@@ -22,7 +30,9 @@ export function HydraMemoryPanel() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <h2 className="mb-2 text-xs text-os-amber tracking-wider">HYDRA MEMORY</h2>
+      {showHeader && (
+        <h2 className="mb-2 text-xs text-os-amber tracking-wider">HYDRA MEMORY</h2>
+      )}
       <div className="min-h-0 flex-1 overflow-y-auto space-y-1">
         {memory.slots.length === 0 && (
           <p className="text-[10px] text-os-dim">No memory slots yet</p>
@@ -71,4 +81,4 @@ export function HydraMemoryPanel() {
       )}
     </div>
   );
-}
+});

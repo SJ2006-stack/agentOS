@@ -31,15 +31,25 @@ export interface OsPanelSet {
   shell: ReactNode;
 }
 
-export function buildOsPanels(hydraConfigured: boolean): OsPanelSet {
+export interface BuildOsPanelsOptions {
+  showHeader?: boolean;
+}
+
+export function buildOsPanels(
+  hydraConfigured: boolean,
+  options?: BuildOsPanelsOptions
+): OsPanelSet {
+  const showHeader = options?.showHeader ?? true;
   return {
     kernel: <KernelBar />,
     configure: <ConfigurePanel />,
-    agentGraph: <AgentGraphPanel hydraConfigured={hydraConfigured} />,
-    cpu: <CpuScheduler />,
-    memory: <HydraMemoryPanel />,
-    io: <IoBus />,
-    gpu: <GpuHeatmap />,
+    agentGraph: (
+      <AgentGraphPanel hydraConfigured={hydraConfigured} showHeader={showHeader} />
+    ),
+    cpu: <CpuScheduler showHeader={showHeader} />,
+    memory: <HydraMemoryPanel showHeader={showHeader} />,
+    io: <IoBus showHeader={showHeader} />,
+    gpu: <GpuHeatmap showHeader={showHeader} />,
     shell: <XtermShell hydraConfigured={hydraConfigured} />,
   };
 }

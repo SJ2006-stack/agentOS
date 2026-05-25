@@ -1,0 +1,63 @@
+/* Workspace UX experiments — scoped; do not add theme presets here */
+
+.workspace-graph-pulse .workspace-node-active {
+  animation: workspace-node-pulse 2.2s ease-in-out infinite;
+}
+
+.workspace-graph-pulse .workspace-node-heartbeat {
+  animation: workspace-node-heartbeat 0.5s ease-out;
+}
+
+@keyframes workspace-node-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--os-green) 45%, transparent));
+  }
+}
+
+@keyframes workspace-node-heartbeat {
+  0% {
+    filter: drop-shadow(0 0 0 transparent);
+    stroke-width: 1.2;
+  }
+  40% {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--os-amber) 55%, transparent));
+    stroke-width: 1.6;
+  }
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+    stroke-width: 1.2;
+  }
+}
+
+.workspace-telemetry-live {
+  animation: workspace-live-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes workspace-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--os-green) 40%, transparent);
+  }
+  50% {
+    opacity: 0.75;
+    box-shadow: 0 0 6px 1px color-mix(in srgb, var(--os-green) 35%, transparent);
+  }
+}
+
+.workspace-telemetry-flash {
+  animation: workspace-telemetry-tick 0.45s ease-out;
+}
+
+@keyframes workspace-telemetry-tick {
+  0% {
+    color: var(--os-amber);
+  }
+  100% {
+    color: inherit;
+  }
+}

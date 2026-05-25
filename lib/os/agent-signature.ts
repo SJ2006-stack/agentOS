@@ -27,9 +27,9 @@ const SIGNATURE_CLASSES: Record<AgentSignature, string> = {
 };
 
 const SIGNATURE_STROKE: Record<AgentSignature, string> = {
-  research: "#38bdf8",
-  security: "#f87171",
-  code: "#34d399",
+  research: "var(--os-cyan)",
+  security: "var(--os-fault)",
+  code: "var(--os-green)",
   default: "var(--os-green)",
 };
 

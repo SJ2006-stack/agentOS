@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Terminal } from "@/components/ui/terminal";
 import { BootSequence } from "@/components/BootSequence";
 import { DevFactoryBento } from "@/components/DevFactoryBento";
@@ -40,12 +39,6 @@ export function OsLayout({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-os-bg font-mono text-os-green lg:flex-row">
-      <AnimatedThemeToggler
-        variant="star"
-        fromCenter
-        className="fixed top-3 right-3 z-[60] flex size-8 items-center justify-center rounded border border-os-border bg-os-panel/90 text-os-green shadow-sm transition-colors hover:border-os-green/50 hover:bg-os-panel hover:text-os-amber [&_svg]:size-4"
-      />
-
       {/* Layout A: bento — collapsed in terminal mode, full in workspace */}
       <section
         id="devfactory-bento"

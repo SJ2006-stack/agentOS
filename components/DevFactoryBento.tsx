@@ -24,6 +24,9 @@ const MEMORY_SLOT_IDS = [
   "hydradb.memory",
 ] as const;
 
+const BENTO_GLASS =
+  "border-os-border/65 bg-os-panel/40 shadow-lg shadow-os-bg/25 backdrop-blur-md ring-1 ring-inset ring-white/[0.04] transition-[border-color,box-shadow,background-color] duration-300 hover:border-os-green/30 hover:bg-os-panel/55 hover:shadow-[0_0_28px_color-mix(in_srgb,var(--os-green)_14%,transparent)]";
+
 const memorySlots = MEMORY_SLOT_IDS.map((id) => {
   const bodies: Record<string, string> = {
     "user.session": "Session context and user intent for the active shell.",
@@ -61,10 +64,10 @@ function LiveStatusBackground() {
           <span
             key={s}
             className={cn(
-              "rounded border px-2 py-0.5 font-mono text-[10px]",
+              "rounded-md border px-2 py-0.5 font-mono text-[10px] backdrop-blur-sm transition-[border-color,box-shadow,background-color] duration-300",
               step === s
-                ? "border-os-green/50 bg-os-green/10 text-os-green"
-                : "border-os-border bg-os-bg/60 text-os-dim"
+                ? "border-os-green/50 bg-os-green/15 text-os-green shadow-[0_0_12px_color-mix(in_srgb,var(--os-green)_25%,transparent)] ring-1 ring-os-green/30"
+                : "border-os-border/60 bg-os-bg/40 text-os-dim hover:border-os-border hover:bg-os-panel/50"
             )}
           >
             {s}
@@ -82,7 +85,7 @@ const features = [
     description: "HydraDB chunks keyed by agent template — live recall graph.",
     href: "#memory",
     cta: "Open monitor",
-    className: "sm:col-span-1 lg:col-span-1",
+    className: cn("sm:col-span-1 lg:col-span-1", BENTO_GLASS),
     background: (
       <Marquee
         pauseOnHover
@@ -92,8 +95,10 @@ const features = [
           <figure
             key={idx}
             className={cn(
-              "relative w-36 shrink-0 cursor-default overflow-hidden rounded-md border border-os-border bg-os-bg/80 p-3",
-              "transition-all duration-300 hover:border-os-green/40 hover:bg-os-panel"
+              "relative w-36 shrink-0 cursor-default overflow-hidden rounded-lg border p-3",
+              "border-os-border/60 bg-os-bg/50 backdrop-blur-sm ring-1 ring-inset ring-white/[0.03]",
+              "transition-all duration-300 hover:border-os-green/35 hover:bg-os-panel/70",
+              "hover:shadow-[0_0_14px_color-mix(in_srgb,var(--os-green)_18%,transparent)]"
             )}
           >
             <figcaption className="font-mono text-xs font-medium text-os-green">
@@ -113,7 +118,7 @@ const features = [
     description: "Realtime bus — heartbeat, dispatch, slot_write, verify.",
     href: "#events",
     cta: "View bus",
-    className: "sm:col-span-1 lg:col-span-2",
+    className: cn("sm:col-span-1 lg:col-span-2", BENTO_GLASS),
     background: (
       <AnimatedListDemo className="absolute inset-0 top-2 scale-[0.92] border-none [mask-image:linear-gradient(to_top,transparent_8%,#000_92%)] transition-transform duration-300 group-hover:scale-[0.96]" />
     ),
@@ -124,7 +129,7 @@ const features = [
     description: "Kernel orchestrates CPU, HydraDB, GPU, and shell I/O.",
     href: "#graph",
     cta: "Agent graph",
-    className: "sm:col-span-1 lg:col-span-2",
+    className: cn("sm:col-span-1 lg:col-span-2", BENTO_GLASS),
     background: (
       <AnimatedBeamMultipleOutputDemo className="absolute inset-0 top-0 border-none [mask-image:linear-gradient(to_top,transparent_5%,#000_90%)] transition-transform duration-300 group-hover:scale-[1.02]" />
     ),
@@ -135,7 +140,7 @@ const features = [
     description: "Pipeline milestones on the CPU schedule — plan → commit.",
     href: "#timeline",
     cta: "Schedule",
-    className: "sm:col-span-1 lg:col-span-1",
+    className: cn("sm:col-span-1 lg:col-span-1", BENTO_GLASS),
     background: (
       <Calendar
         mode="single"
@@ -146,7 +151,7 @@ const features = [
           ),
         }}
         modifiersClassNames={{ pipeline: "font-semibold text-os-amber" }}
-        className="absolute top-4 right-0 origin-top scale-[0.82] rounded-md border border-os-border bg-os-panel/80 [mask-image:linear-gradient(to_top,transparent_35%,#000_95%)] transition-transform duration-300 group-hover:scale-[0.88]"
+        className="absolute top-4 right-0 origin-top scale-[0.82] rounded-lg border border-os-border/60 bg-os-panel/50 shadow-md ring-1 ring-inset ring-white/[0.04] backdrop-blur-md [mask-image:linear-gradient(to_top,transparent_35%,#000_95%)] transition-[transform,box-shadow] duration-300 group-hover:scale-[0.88] group-hover:shadow-[0_0_16px_color-mix(in_srgb,var(--os-amber)_12%,transparent)]"
       />
     ),
   },
@@ -156,21 +161,21 @@ const features = [
     description: "Kernel heartbeat and CPU pipeline — synced from store.",
     href: "#status",
     cta: "Monitor",
-    className: "sm:col-span-2 lg:col-span-3",
+    className: cn("sm:col-span-2 lg:col-span-3", BENTO_GLASS),
     background: <LiveStatusBackground />,
   },
 ];
 
 export function DevFactoryBento() {
   return (
-    <div className="flex min-h-0 flex-col gap-2 pr-10">
-      <div className="flex items-baseline justify-between gap-2 px-0.5">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-os-green">
+    <div className="flex min-h-0 flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-2 rounded-lg border border-os-border/50 bg-os-panel/30 px-2.5 py-1.5 ring-1 ring-inset ring-white/[0.03] backdrop-blur-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-os-green drop-shadow-[0_0_8px_color-mix(in_srgb,var(--os-green)_35%,transparent)]">
           DevFactory overview
         </h2>
-        <span className="text-[10px] text-os-dim">scroll monitor below</span>
+        <span className="text-[10px] text-os-dim/90">scroll monitor below</span>
       </div>
-      <BentoGrid className="min-h-0 flex-1">
+      <BentoGrid className="min-h-0 flex-1 gap-3.5">
         {features.map((feature, idx) => (
           <BentoCard key={idx} {...feature} />
         ))}

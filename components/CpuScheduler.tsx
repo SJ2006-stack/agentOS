@@ -1,15 +1,22 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "motion/react";
 import { CPU_STEPS, useOsStore } from "@/store/osStore";
 
-export function CpuScheduler() {
-  const { cpu } = useOsStore();
+export const CpuScheduler = memo(function CpuScheduler({
+  showHeader = true,
+}: {
+  showHeader?: boolean;
+}) {
+  const cpu = useOsStore((s) => s.cpu);
   const { pipeline, lastMessage } = cpu;
 
   return (
     <div className="flex h-full flex-col">
-      <h2 className="mb-2 text-xs text-os-amber tracking-wider">CPU SCHEDULER</h2>
+      {showHeader && (
+        <h2 className="mb-2 text-xs text-os-amber tracking-wider">CPU SCHEDULER</h2>
+      )}
       <div className="flex flex-wrap gap-1">
         {CPU_STEPS.map((step) => {
           const isActive = pipeline.currentStep === step;
@@ -53,4 +60,4 @@ export function CpuScheduler() {
       )}
     </div>
   );
-}
+});

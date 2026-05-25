@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { broadcastOsEvent } from "@/lib/supabase/broadcast";
+import { broadcastOsEventFireAndForget } from "@/lib/supabase/broadcast";
 
 const bootTime = Date.now();
 
 export async function POST() {
   const uptimeMs = Date.now() - bootTime;
-  const ok = await broadcastOsEvent("os:kernel", "heartbeat", {
+  broadcastOsEventFireAndForget("os:kernel", "heartbeat", {
     ts: Date.now(),
     uptimeMs,
     status: "online",
   });
-  return NextResponse.json({ ok, uptimeMs });
+  return NextResponse.json({ ok: true, uptimeMs });
 }

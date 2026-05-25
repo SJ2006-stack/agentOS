@@ -312,7 +312,11 @@ export const AnimatedThemeToggler = ({
       disabled={isPending}
       aria-busy={isPending}
       className={cn(
-        "relative",
+        "group theme-toggler-pulse fixed top-3 left-1/2 z-[100] -translate-x-1/2",
+        "flex min-h-11 min-w-11 items-center justify-center rounded-full",
+        "border border-os-green bg-os-surface/90 shadow-md backdrop-blur-sm",
+        "transition-[box-shadow,ring-color,border-color] duration-200",
+        "hover:ring-2 hover:ring-os-green/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-os-green/60",
         isPending && "cursor-wait opacity-80",
         className
       )}
@@ -323,9 +327,17 @@ export const AnimatedThemeToggler = ({
           ...
         </span>
       ) : isDark ? (
-        <Sun />
+        <Sun
+          className="size-[21px] shrink-0 text-os-green"
+          strokeWidth={2.25}
+          aria-hidden
+        />
       ) : (
-        <Moon />
+        <Moon
+          className="size-[21px] shrink-0 text-os-cyan"
+          strokeWidth={2.25}
+          aria-hidden
+        />
       )}
       {isPending ? (
         <span
@@ -335,6 +347,17 @@ export const AnimatedThemeToggler = ({
           ZA WARUDO
         </span>
       ) : null}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap",
+          "rounded px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider",
+          "border border-os-border/80 bg-os-surface/95 text-os-dim opacity-0",
+          "transition-opacity duration-150 group-hover:opacity-100"
+        )}
+      >
+        Theme
+      </span>
       <span className="sr-only">
         {isPending ? "Theme change in progress" : "Toggle theme"}
       </span>

@@ -18,6 +18,15 @@ export async function broadcastOsEvent<T extends Record<string, unknown>>(
   } catch {
     return false;
   } finally {
-    await supabase.removeChannel(ch);
+    void supabase.removeChannel(ch);
   }
+}
+
+/** Heartbeat-friendly broadcast — does not block response on channel teardown. */
+export function broadcastOsEventFireAndForget<T extends Record<string, unknown>>(
+  channel: OsChannel,
+  event: string,
+  payload: T
+): void {
+  void broadcastOsEvent(channel, event, payload);
 }

@@ -85,8 +85,8 @@ function focusPanel(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  el.classList.add("ring-2", "ring-sky-400/50");
-  window.setTimeout(() => el.classList.remove("ring-2", "ring-sky-400/50"), 1200);
+  el.classList.add("ring-2", "ring-os-amber/60");
+  window.setTimeout(() => el.classList.remove("ring-2", "ring-os-amber/60"), 1200);
 }
 
 function DesktopWindow({
@@ -171,7 +171,6 @@ export function DesktopMode() {
   }, []);
 
   const setMode = useUiModeStore((s) => s.setMode);
-  const setWorkspaceLocked = useUiModeStore((s) => s.setWorkspaceLocked);
 
   const onIconClick = useCallback(
     (item: (typeof DESKTOP_ICONS)[0]) => {
@@ -183,13 +182,12 @@ export function DesktopMode() {
       }
       if (item.id === "agents" || item.id === "memory") {
         setMode("workspace");
-        setWorkspaceLocked(false);
       }
       if (item.command) dispatchShellCommand(item.command);
       if (item.focusId) focusPanel(item.focusId);
       if (item.id === "research") setResearchOpen(true);
     },
-    [setMode, setWorkspaceLocked]
+    [setMode]
   );
 
   const activeAgents = [...activeNodeIds];

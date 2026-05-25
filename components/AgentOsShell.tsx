@@ -1,26 +1,38 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { AgentOsHero } from "@/components/hero/AgentOsHero";
 import { HeroBootSequence } from "@/components/hero/BootSequence";
 import { DevFactoryDock } from "@/components/DevFactoryDock";
-import { DesktopMode } from "@/components/modes/DesktopMode";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { hydrateThemePreset, ThemePresetPicker } from "@/components/ui/theme-preset-picker";
 import { TerminalMode } from "@/components/modes/TerminalMode";
 import { WorkspaceMode } from "@/components/modes/WorkspaceMode";
 import { useKernelHeartbeat } from "@/hooks/useKernelHeartbeat";
 import { useOsRealtime } from "@/hooks/useOsRealtime";
 import { useOsStore } from "@/store/osStore";
-import { useUiModeStore } from "@/store/uiModeStore";
 import { cn } from "@/lib/utils";
+import { UI_MODE_LABELS, useUiModeStore } from "@/store/uiModeStore";
+
+const DesktopMode = dynamic(
+  () => import("@/components/modes/DesktopMode").then((m) => m.DesktopMode),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center font-mono text-[10px] text-os-dim">
+        desktop…
+      </div>
+    ),
+  }
+);
 
 const MODE_TRANSITION = { duration: 0.35, ease: "easeInOut" as const };
 
 export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) {
   const mode = useUiModeStore((s) => s.mode);
   const hydrated = useUiModeStore((s) => s.hydrated);
-  const workspaceLocked = useUiModeStore((s) => s.workspaceLocked);
-  const setWorkspaceLocked = useUiModeStore((s) => s.setWorkspaceLocked);
   const bootComplete = useOsStore((s) => s.bootComplete);
   const heroBootEnabled = useOsStore((s) => s.heroBootEnabled);
   const setBootComplete = useOsStore((s) => s.setBootComplete);
@@ -32,6 +44,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
     useOsStore.getState().hydrateModelFromStorage();
     useOsStore.getState().hydrateHeroBootFromStorage();
     useUiModeStore.getState().hydrateFromStorage();
+    hydrateThemePreset();
   }, []);
 
   useEffect(() => {
@@ -65,104 +78,82 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg font-mono text-os-green">
+      <div className="fixed top-3 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-2">
+        <ThemePresetPicker className="rounded-full border border-os-border/80 bg-os-surface/90 px-1.5 py-1 backdrop-blur-sm" />
+        <AnimatedThemeToggler
+          variant="star"
+          fromCenter
+          className={cn(
+            "!relative !left-auto !top-auto !translate-x-0",
+            mode === "hero"
+              ? "border-hero-graphite bg-hero-obsidian/90 text-hero-cyan hover:border-hero-cyan/50 hover:text-hero-purple"
+              : "border-os-border bg-os-panel/90 text-os-green hover:border-os-green/50 hover:bg-os-panel hover:text-os-amber"
+          )}
+        />
+      </div>
       {showOrchestrationStrip && <AgentOsHero variant="strip" />}
 
       {showActiveWorkspace && (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="shrink-0 border-b border-os-border/50 px-3 py-1">
-            <p className="text-center text-[9px] uppercase tracking-[0.35em] text-os-dim">
-              Active workspace
+            <p className="text-center text-[10px] font-medium uppercase tracking-widest text-os-dim">
+              {UI_MODE_LABELS[mode]}
             </p>
           </div>
 
           <div className="relative min-h-0 flex-1 overflow-hidden pb-28">
-            <motion.div
-              className="absolute inset-0"
-              initial={false}
-              animate={{
-                opacity: mode === "terminal" ? 1 : 0,
-                pointerEvents: mode === "terminal" ? "auto" : "none",
-              }}
-              transition={MODE_TRANSITION}
-              aria-hidden={mode !== "terminal"}
-            >
-              <TerminalMode hydraConfigured={hydraConfigured} />
-            </motion.div>
+            {mode === "terminal" && (
+              <motion.div
+                key="terminal"
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={MODE_TRANSITION}
+              >
+                <TerminalMode hydraConfigured={hydraConfigured} />
+              </motion.div>
+            )}
 
-            <motion.div
-              className="absolute inset-0"
-              initial={false}
-              animate={{
-                opacity: mode === "workspace" ? 1 : 0,
-                pointerEvents: mode === "workspace" ? "auto" : "none",
-              }}
-              transition={MODE_TRANSITION}
-              aria-hidden={mode !== "workspace"}
-            >
-              <WorkspaceMode hydraConfigured={hydraConfigured} />
-              {mode === "workspace" && workspaceLocked && (
-                <WorkspaceLockOverlay onUnlock={() => setWorkspaceLocked(false)} />
-              )}
-            </motion.div>
+            {mode === "workspace" && (
+              <motion.div
+                key="workspace"
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={MODE_TRANSITION}
+              >
+                <WorkspaceMode hydraConfigured={hydraConfigured} />
+              </motion.div>
+            )}
 
-            <motion.div
-              className="absolute inset-0"
-              initial={false}
-              animate={{
-                opacity: mode === "desktop" ? 1 : 0,
-                pointerEvents: mode === "desktop" ? "auto" : "none",
-              }}
-              transition={MODE_TRANSITION}
-              aria-hidden={mode !== "desktop"}
-            >
-              <DesktopMode />
-            </motion.div>
+            {mode === "desktop" && (
+              <motion.div
+                key="desktop"
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={MODE_TRANSITION}
+              >
+                <DesktopMode />
+              </motion.div>
+            )}
           </div>
         </div>
       )}
 
-      <motion.div
-        className="absolute inset-0 z-20"
-        initial={false}
-        animate={{
-          opacity: mode === "hero" ? 1 : 0,
-          pointerEvents: mode === "hero" ? "auto" : "none",
-        }}
-        transition={MODE_TRANSITION}
-        aria-hidden={mode !== "hero"}
-      >
-        <AgentOsHero variant="fullscreen" />
-      </motion.div>
+      {mode === "hero" && (
+        <motion.div
+          key="hero"
+          className="absolute inset-0 z-20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={MODE_TRANSITION}
+        >
+          <AgentOsHero variant="fullscreen" />
+        </motion.div>
+      )}
 
       <DevFactoryDock />
-    </div>
-  );
-}
-
-function WorkspaceLockOverlay({ onUnlock }: { onUnlock: () => void }) {
-  return (
-    <div
-      className={cn(
-        "pointer-events-auto absolute inset-0 z-30 flex items-center justify-center",
-        "bg-gradient-to-b from-os-bg/40 via-os-bg/70 to-os-bg/90 backdrop-blur-[2px]"
-      )}
-      role="dialog"
-      aria-label="Workspace locked"
-    >
-      <button
-        type="button"
-        onClick={onUnlock}
-        className={cn(
-          "group flex flex-col items-center gap-3 rounded-2xl border border-os-border/80 px-10 py-8",
-          "bg-gradient-to-br from-os-panel/90 via-os-panel/70 to-os-bg/80 shadow-2xl backdrop-blur-md",
-          "transition-all hover:border-os-amber/60"
-        )}
-      >
-        <span className="text-[10px] uppercase tracking-[0.35em] text-os-dim">locked</span>
-        <span className="text-lg font-medium text-os-green group-hover:text-os-amber">
-          Unlock workspace
-        </span>
-      </button>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { getSupabaseBrowser, isSupabaseConfiguredClient } from "@/lib/supabase/client";
 import type {
   CpuStep,
-  GraphNodeActiveEvent,
   GpuDispatchPayload,
   IoToolCall,
   KernelHeartbeat,
@@ -12,7 +11,61 @@ import type {
   MemoryRecallResult,
   MemorySlotWrite,
 } from "@/lib/os/types";
-import { useOsStore } from "@/store/osStore";
+import { useOsStore, type RealtimeBatch } from "@/store/osStore";
+
+const REALTIME_FLUSH_MS = 64;
+
+function mergeBatch(target: RealtimeBatch, patch: RealtimeBatch): void {
+  if (patch.kernelHeartbeat !== undefined) target.kernelHeartbeat = patch.kernelHeartbeat;
+  if (patch.kernelCommand !== undefined) target.kernelCommand = patch.kernelCommand;
+  if (patch.kernelUsage !== undefined) target.kernelUsage = patch.kernelUsage;
+  if (patch.kernelConnected !== undefined) target.kernelConnected = patch.kernelConnected;
+  if (patch.cpuStep) target.cpuStep = patch.cpuStep;
+  if (patch.cpuPipeline) {
+    target.cpuPipeline = { ...target.cpuPipeline, ...patch.cpuPipeline };
+  }
+  if (patch.memorySlots?.length) {
+    target.memorySlots = [...(target.memorySlots ?? []), ...patch.memorySlots];
+  }
+  if (patch.memoryRecall !== undefined) target.memoryRecall = patch.memoryRecall;
+  if (patch.ioEvents?.length) {
+    target.ioEvents = [...(target.ioEvents ?? []), ...patch.ioEvents];
+  }
+  if (patch.gpuDispatch) target.gpuDispatch = patch.gpuDispatch;
+  if (patch.gpuHeatUpdates?.length) {
+    target.gpuHeatUpdates = [
+      ...(target.gpuHeatUpdates ?? []),
+      ...patch.gpuHeatUpdates,
+    ];
+  }
+  if (patch.gpuWorkers !== undefined) target.gpuWorkers = patch.gpuWorkers;
+  if (patch.graphNodeActive?.length) {
+    target.graphNodeActive = [
+      ...(target.graphNodeActive ?? []),
+      ...patch.graphNodeActive,
+    ];
+  }
+}
+
+function createRealtimeFlusher() {
+  let pending: RealtimeBatch = {};
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = () => {
+    timer = null;
+    if (!Object.keys(pending).length) return;
+    const snap = pending;
+    pending = {};
+    useOsStore.getState().applyRealtimeBatch(snap);
+  };
+
+  return (patch: RealtimeBatch) => {
+    mergeBatch(pending, patch);
+    if (!timer) {
+      timer = setTimeout(flush, REALTIME_FLUSH_MS);
+    }
+  };
+}
 
 export function useOsRealtime(hydraConfigured: boolean) {
   useEffect(() => {
@@ -28,33 +81,41 @@ export function useOsRealtime(hydraConfigured: boolean) {
       return;
     }
 
+    const queue = createRealtimeFlusher();
+
     const channels = [
       {
         name: "os:kernel",
         handler: (event: string, payload: Record<string, unknown>) => {
-          const s = useOsStore.getState();
           if (event === "heartbeat" || event === "uptime") {
-            s.setKernelHeartbeat(payload as unknown as KernelHeartbeat);
+            queue({
+              kernelHeartbeat: payload as unknown as KernelHeartbeat,
+            });
           }
           if (event === "command_routed") {
-            s.setKernelCommand(
-              String((payload as { command?: string }).command ?? "")
-            );
+            queue({
+              kernelCommand: String(
+                (payload as { command?: string }).command ?? ""
+              ),
+            });
           }
           if (event === "usage_tick") {
-            s.setKernelUsage(payload as unknown as KernelUsageTick);
+            queue({ kernelUsage: payload as unknown as KernelUsageTick });
           }
         },
       },
       {
         name: "os:memory",
         handler: (event: string, payload: Record<string, unknown>) => {
-          const s = useOsStore.getState();
           if (event === "slot_write" || event === "indexing") {
-            s.addMemorySlot(payload as unknown as MemorySlotWrite);
+            queue({
+              memorySlots: [payload as unknown as MemorySlotWrite],
+            });
           }
           if (event === "recall_result") {
-            s.setMemoryRecall(payload as unknown as MemoryRecallResult);
+            queue({
+              memoryRecall: payload as unknown as MemoryRecallResult,
+            });
           }
         },
       },
@@ -62,14 +123,13 @@ export function useOsRealtime(hydraConfigured: boolean) {
         name: "os:io",
         handler: (event: string, payload: Record<string, unknown>) => {
           if (event === "tool_call") {
-            useOsStore.getState().pushIoEvent(payload as unknown as IoToolCall);
+            queue({ ioEvents: [payload as unknown as IoToolCall] });
           }
         },
       },
       {
         name: "os:cpu",
         handler: (event: string, payload: Record<string, unknown>) => {
-          const s = useOsStore.getState();
           if (event === "node_active") {
             const p = payload as {
               nodeId?: string;
@@ -77,10 +137,14 @@ export function useOsRealtime(hydraConfigured: boolean) {
               active?: boolean;
             };
             if (p.nodeId) {
-              s.setGraphNodeActive({
-                nodeId: p.nodeId,
-                taskId: String(p.taskId ?? ""),
-                active: p.active !== false,
+              queue({
+                graphNodeActive: [
+                  {
+                    nodeId: p.nodeId,
+                    taskId: String(p.taskId ?? ""),
+                    active: p.active !== false,
+                  },
+                ],
               });
             }
             return;
@@ -92,15 +156,21 @@ export function useOsRealtime(hydraConfigured: boolean) {
                 ? ("running" as const)
                 : ("complete" as const);
             if (step) {
-              s.setCpuStep(
-                step,
-                status,
-                String((payload as { message?: string }).message ?? "")
-              );
+              queue({
+                cpuStep: {
+                  step,
+                  status,
+                  message: String(
+                    (payload as { message?: string }).message ?? ""
+                  ),
+                },
+              });
             }
           }
           if (event === "pipeline_state") {
-            s.setCpuPipeline(payload as Parameters<typeof s.setCpuPipeline>[0]);
+            queue({
+              cpuPipeline: payload as RealtimeBatch["cpuPipeline"],
+            });
           }
         },
       },
@@ -114,10 +184,14 @@ export function useOsRealtime(hydraConfigured: boolean) {
               active?: boolean;
             };
             if (p.nodeId) {
-              useOsStore.getState().setGraphNodeActive({
-                nodeId: p.nodeId,
-                taskId: String(p.taskId ?? ""),
-                active: p.active !== false,
+              queue({
+                graphNodeActive: [
+                  {
+                    nodeId: p.nodeId,
+                    taskId: String(p.taskId ?? ""),
+                    active: p.active !== false,
+                  },
+                ],
               });
             }
           }
@@ -126,20 +200,27 @@ export function useOsRealtime(hydraConfigured: boolean) {
       {
         name: "os:gpu",
         handler: (event: string, payload: Record<string, unknown>) => {
-          const s = useOsStore.getState();
           if (event === "dispatch") {
-            s.setGpuDispatch(payload as unknown as GpuDispatchPayload);
+            queue({
+              gpuDispatch: payload as unknown as GpuDispatchPayload,
+            });
           }
           if (event === "worker_tick") {
             const p = payload as { zone?: { x: number; y: number }; progress?: number };
             if (p.zone) {
-              s.updateGpuHeat(p.zone.x, p.zone.y, p.progress ?? 0.5);
+              queue({
+                gpuHeatUpdates: [
+                  { x: p.zone.x, y: p.zone.y, heat: p.progress ?? 0.5 },
+                ],
+              });
             }
           }
           if (event === "batch_complete") {
-            s.setGpuWorkers(
-              Number((payload as { workersCompleted?: number }).workersCompleted ?? 0)
-            );
+            queue({
+              gpuWorkers: Number(
+                (payload as { workersCompleted?: number }).workersCompleted ?? 0
+              ),
+            });
           }
         },
       },
