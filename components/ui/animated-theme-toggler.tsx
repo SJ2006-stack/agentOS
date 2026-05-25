@@ -6,6 +6,9 @@ import { flushSync } from "react-dom";
 
 import { cn } from "@/lib/utils";
 
+const THEME_DELAY_MS = 3000;
+const ZA_WARUDO_SRC = "/sounds/za-warudo.mp3";
+
 export type TransitionVariant =
   | "circle"
   | "square"
@@ -124,6 +127,11 @@ function getThemeTransitionClipPaths(
   }
 }
 
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export const AnimatedThemeToggler = ({
   className,
   duration = 400,
@@ -133,7 +141,10 @@ export const AnimatedThemeToggler = ({
 }: AnimatedThemeTogglerProps) => {
   const shape = variant ?? "circle";
   const [isDark, setIsDark] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const pendingRef = useRef(false);
+  const delayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const updateTheme = () => {
@@ -151,9 +162,28 @@ export const AnimatedThemeToggler = ({
     return () => observer.disconnect();
   }, []);
 
-  const toggleTheme = useCallback(() => {
+  useEffect(() => {
+    return () => {
+      if (delayTimeoutRef.current !== null) {
+        clearTimeout(delayTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const applyTheme = useCallback(() => {
+    const currentlyDark = document.documentElement.classList.contains("dark");
+    const newTheme = !currentlyDark;
+    setIsDark(newTheme);
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", newTheme ? "dark" : "light");
+  }, []);
+
+  const runViewTransition = useCallback(() => {
     const button = buttonRef.current;
-    if (!button) return;
+    if (!button) {
+      applyTheme();
+      return;
+    }
 
     const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
     const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
@@ -173,13 +203,6 @@ export const AnimatedThemeToggler = ({
       Math.max(x, viewportWidth - x),
       Math.max(y, viewportHeight - y)
     );
-
-    const applyTheme = () => {
-      const newTheme = !isDark;
-      setIsDark(newTheme);
-      document.documentElement.classList.toggle("dark");
-      localStorage.setItem("theme", newTheme ? "dark" : "light");
-    };
 
     if (typeof document.startViewTransition !== "function") {
       applyTheme();
@@ -233,18 +256,67 @@ export const AnimatedThemeToggler = ({
         );
       });
     }
-  }, [shape, fromCenter, duration, isDark]);
+  }, [shape, fromCenter, duration, applyTheme]);
+
+  const toggleTheme = useCallback(() => {
+    if (pendingRef.current) return;
+
+    const button = buttonRef.current;
+    if (!button) return;
+
+    if (prefersReducedMotion()) {
+      applyTheme();
+      return;
+    }
+
+    pendingRef.current = true;
+    setIsPending(true);
+
+    const audio = new Audio(ZA_WARUDO_SRC);
+    void audio.play().catch(() => {});
+
+    delayTimeoutRef.current = setTimeout(() => {
+      delayTimeoutRef.current = null;
+      pendingRef.current = false;
+      setIsPending(false);
+      runViewTransition();
+    }, THEME_DELAY_MS);
+  }, [applyTheme, runViewTransition]);
 
   return (
     <button
       type="button"
       ref={buttonRef}
       onClick={toggleTheme}
-      className={cn(className)}
+      disabled={isPending}
+      aria-busy={isPending}
+      className={cn(
+        "relative",
+        isPending && "cursor-wait opacity-80",
+        className
+      )}
       {...props}
     >
-      {isDark ? <Sun /> : <Moon />}
-      <span className="sr-only">Toggle theme</span>
+      {isPending ? (
+        <span className="text-[9px] font-bold tracking-widest text-os-amber/70">
+          ...
+        </span>
+      ) : isDark ? (
+        <Sun />
+      ) : (
+        <Moon />
+      )}
+      {isPending ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 flex items-center justify-center text-[7px] font-bold uppercase tracking-[0.2em] text-os-amber/25"
+        >
+          ZA WARUDO
+        </span>
+      ) : null}
+      <span className="sr-only">
+        {isPending ? "Theme change in progress" : "Toggle theme"}
+      </span>
     </button>
   );
 };

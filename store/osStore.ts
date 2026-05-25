@@ -19,7 +19,12 @@ import {
   emptyHeatmap,
 } from "@/lib/os/types";
 
+export type OsViewMode = "hero" | "os";
+
 interface OsState {
+  viewMode: OsViewMode;
+  bootComplete: boolean;
+  heroBootEnabled: boolean;
   kernel: {
     heartbeat: KernelHeartbeat | null;
     lastCommand: string | null;

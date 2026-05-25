@@ -46,6 +46,8 @@ html[data-magicui-theme-vt="active"]::view-transition-group(root) {
   --color-os-dim: var(--os-dim);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-jetbrains-mono), var(--font-geist-mono);
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
 }
 
 body {
@@ -53,6 +55,30 @@ body {
   color: var(--os-green);
   font-family: var(--font-jetbrains-mono), var(--font-geist-mono), ui-monospace, monospace;
   overflow: hidden;
+}
+
+/* react-day-picker base (minimal) */
+.rdp-root {
+  --rdp-accent-color: var(--os-green);
+  --rdp-accent-background-color: color-mix(in srgb, var(--os-green) 12%, transparent);
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

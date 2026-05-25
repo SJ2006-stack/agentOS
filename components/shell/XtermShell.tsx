@@ -7,6 +7,13 @@ import "xterm/css/xterm.css";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "@/lib/ai/models-client";
 import { MODEL_CHANGE_EVENT } from "@/components/ConfigurePanel";
 import { useOsStore } from "@/store/osStore";
+import {
+  SHELL_COMMAND_EVENT,
+  type ShellCommandDetail,
+} from "@/lib/os/shell-events";
+
+const SHELL_HELP =
+  "Commands: submit <task> | spawn agent <id> | agents | agent status | create agent <name> \"<role>\" | recall <q> | memory stream | show memory | status | spawn <n> | kill <id>";
 
 type WriteFn = (text: string, prefix?: string) => void;
 
@@ -165,14 +172,23 @@ export function XtermShell({
     };
     window.addEventListener(MODEL_CHANGE_EVENT, onModelChange);
 
-    const runCommand = async (line: string) => {
+    const runCommand = async (line: string, echoInTerminal = false) => {
       const gen = ++commandGenRef.current;
       const activeTerm = term;
+      if (echoInTerminal) {
+        term.write("\r\n\x1b[32m$ \x1b[0m");
+        term.writeln(line);
+      }
       term.write("\r\n");
       historyRef.current = [line, ...historyRef.current.filter((h) => h !== line)].slice(0, 50);
       historyIdxRef.current = -1;
 
       const lower = line.trim().toLowerCase();
+      if (lower === "help") {
+        writeln(SHELL_HELP, "32");
+        prompt();
+        return;
+      }
       if (lower.startsWith("config model")) {
         const id = line.trim().slice("config model".length).trim();
         if (!id || id === DEFAULT_OPENROUTER_MODEL_ID) {
@@ -308,8 +324,16 @@ export function XtermShell({
       }
     });
 
+    const onExternalCommand = (ev: Event) => {
+      const { command } = (ev as CustomEvent<ShellCommandDetail>).detail;
+      if (!command?.trim()) return;
+      void runCommand(command.trim(), true);
+    };
+    window.addEventListener(SHELL_COMMAND_EVENT, onExternalCommand);
+
     return () => {
       commandGenRef.current += 1;
+      window.removeEventListener(SHELL_COMMAND_EVENT, onExternalCommand);
       window.removeEventListener(MODEL_CHANGE_EVENT, onModelChange);
       themeObserver.disconnect();
       ro.disconnect();
