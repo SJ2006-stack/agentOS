@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --os-bg: #e8f0e8;
+  --os-panel: #f4faf4;
+  --os-border: #a8c8a8;
+  --os-green: #166534;
+  --os-amber: #b45309;
+  --os-fault: #b91c1c;
+  --os-dim: #4d7c0f;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+html.dark {
+  --os-bg: #0a0f0a;
+  --os-panel: #0f1810;
+  --os-border: #1a2e1a;
+  --os-green: #4ade80;
+  --os-amber: #fbbf24;
+  --os-fault: #f87171;
+  --os-dim: #3f6212;
+  --background: var(--os-bg);
+  --foreground: var(--os-green);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-magicui-theme-vt="active"]::view-transition-group(root) {
+  animation-duration: var(--magicui-theme-toggle-vt-duration);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-os-bg: var(--os-bg);
+  --color-os-panel: var(--os-panel);
+  --color-os-border: var(--os-border);
+  --color-os-green: var(--os-green);
+  --color-os-amber: var(--os-amber);
+  --color-os-fault: var(--os-fault);
+  --color-os-dim: var(--os-dim);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-jetbrains-mono), var(--font-geist-mono);
+}
+
+body {
+  background: var(--os-bg);
+  color: var(--os-green);
+  font-family: var(--font-jetbrains-mono), var(--font-geist-mono), ui-monospace, monospace;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
