@@ -19,10 +19,7 @@ import {
   emptyHeatmap,
 } from "@/lib/os/types";
 
-export type OsViewMode = "hero" | "os";
-
 interface OsState {
-  viewMode: OsViewMode;
   bootComplete: boolean;
   heroBootEnabled: boolean;
   kernel: {
@@ -76,9 +73,33 @@ interface OsState {
   setSelectedModelId: (id: string) => void;
   hydrateModelFromStorage: () => void;
   resetGpuHeat: () => void;
+  setBootComplete: (v: boolean) => void;
+  setHeroBootEnabled: (v: boolean) => void;
+  hydrateHeroBootFromStorage: () => void;
 }
 
 const MODEL_STORAGE_KEY = "devfactory-os-model";
+const HERO_BOOT_STORAGE_KEY = "agentos-hero-boot";
+
+function readHeroBootEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const stored = localStorage.getItem(HERO_BOOT_STORAGE_KEY);
+    if (stored === "0" || stored === "false") return false;
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
+function persistHeroBootEnabled(v: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(HERO_BOOT_STORAGE_KEY, v ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
 
 function readStoredModelId(): string {
   if (typeof window === "undefined") return DEFAULT_OPENROUTER_MODEL_ID;
@@ -107,6 +128,8 @@ const initialPipeline: CpuPipelineState = {
 };
 
 export const useOsStore = create<OsState>((set) => ({
+  bootComplete: false,
+  heroBootEnabled: true,
   kernel: { heartbeat: null, lastCommand: null, lastUsage: null, connected: false },
   cpu: { pipeline: initialPipeline, lastMessage: null },
   memory: { slots: [], lastRecall: null, connected: false },
@@ -208,6 +231,15 @@ export const useOsStore = create<OsState>((set) => ({
     set((s) => ({
       gpu: { ...s.gpu, heatmap: emptyHeatmap(), activeWorkers: 0 },
     })),
+  setBootComplete: (v) => set({ bootComplete: v }),
+  setHeroBootEnabled: (v) => {
+    persistHeroBootEnabled(v);
+    set({ heroBootEnabled: v, bootComplete: v ? false : true });
+  },
+  hydrateHeroBootFromStorage: () => {
+    const enabled = readHeroBootEnabled();
+    set({ heroBootEnabled: enabled, bootComplete: !enabled });
+  },
 }));
 
 export { CPU_STEPS };

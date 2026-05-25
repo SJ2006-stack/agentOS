@@ -145,6 +145,19 @@ export const AnimatedThemeToggler = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pendingRef = useRef(false);
   const delayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const zaWarudoRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(ZA_WARUDO_SRC);
+    audio.volume = 1;
+    audio.preload = "auto";
+    void audio.load();
+    zaWarudoRef.current = audio;
+    return () => {
+      audio.pause();
+      zaWarudoRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const updateTheme = () => {
@@ -264,22 +277,30 @@ export const AnimatedThemeToggler = ({
     const button = buttonRef.current;
     if (!button) return;
 
-    if (prefersReducedMotion()) {
-      applyTheme();
-      return;
-    }
+    const reducedMotion = prefersReducedMotion();
 
     pendingRef.current = true;
     setIsPending(true);
 
-    const audio = new Audio(ZA_WARUDO_SRC);
-    void audio.play().catch(() => {});
+    const audio = zaWarudoRef.current;
+    if (audio) {
+      audio.currentTime = 0;
+      void audio.play().catch((err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[ZA WARUDO] playback failed:", err);
+        }
+      });
+    }
 
     delayTimeoutRef.current = setTimeout(() => {
       delayTimeoutRef.current = null;
       pendingRef.current = false;
       setIsPending(false);
-      runViewTransition();
+      if (reducedMotion) {
+        applyTheme();
+      } else {
+        runViewTransition();
+      }
     }, THEME_DELAY_MS);
   }, [applyTheme, runViewTransition]);
 

@@ -85,3 +85,5 @@
 {"sessionId":"464b73","location":"GpuHeatmap.tsx:setMounted","message":"GpuHeatmap setMounted called","data":{"reduced":true,"dispatchSeq":0},"timestamp":1779691080184,"hypothesisId":"H-A"}
 {"sessionId":"464b73","location":"GpuHeatmap.tsx:mount","message":"GpuHeatmap mounted - reduced value","data":{"reduced":true,"typeof_reduced":"boolean","dispatchSeq":0},"timestamp":1779692092739,"hypothesisId":"H-A"}
 {"sessionId":"464b73","location":"GpuHeatmap.tsx:setMounted","message":"GpuHeatmap setMounted called","data":{"reduced":true,"dispatchSeq":0},"timestamp":1779692092743,"hypothesisId":"H-A"}
+{"sessionId":"464b73","location":"GpuHeatmap.tsx:mount","message":"GpuHeatmap mounted - reduced value","data":{"reduced":true,"typeof_reduced":"boolean","dispatchSeq":0},"timestamp":1779693713746,"hypothesisId":"H-A"}
+{"sessionId":"464b73","location":"GpuHeatmap.tsx:setMounted","message":"GpuHeatmap setMounted called","data":{"reduced":true,"dispatchSeq":0},"timestamp":1779693713752,"hypothesisId":"H-A"}

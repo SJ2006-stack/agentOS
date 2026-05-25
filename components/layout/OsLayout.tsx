@@ -8,6 +8,8 @@ import { BootSequence } from "@/components/BootSequence";
 import { DevFactoryBento } from "@/components/DevFactoryBento";
 import { cn } from "@/lib/utils";
 
+export type OsLayoutVariant = "terminal" | "workspace";
+
 interface OsLayoutProps {
   kernel: ReactNode;
   configure: ReactNode;
@@ -18,6 +20,8 @@ interface OsLayoutProps {
   gpu: ReactNode;
   shell: ReactNode;
   hydraConfigured?: boolean;
+  /** terminal: shell-forward; workspace: full panel grid + bento */
+  variant?: OsLayoutVariant;
 }
 
 export function OsLayout({
@@ -30,21 +34,26 @@ export function OsLayout({
   gpu,
   shell,
   hydraConfigured = false,
+  variant = "workspace",
 }: OsLayoutProps) {
+  const isTerminal = variant === "terminal";
+
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg font-mono text-os-green lg:flex-row">
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-os-bg font-mono text-os-green lg:flex-row">
       <AnimatedThemeToggler
         variant="star"
         fromCenter
         className="fixed top-3 right-3 z-[60] flex size-8 items-center justify-center rounded border border-os-border bg-os-panel/90 text-os-green shadow-sm transition-colors hover:border-os-green/50 hover:bg-os-panel hover:text-os-amber [&_svg]:size-4"
       />
 
-      {/* Layout A: bento overview — top ~40vh mobile, left column lg */}
+      {/* Layout A: bento — collapsed in terminal mode, full in workspace */}
       <section
         id="devfactory-bento"
         className={cn(
-          "shrink-0 scroll-mt-4 overflow-y-auto border-os-border bg-os-bg p-2 sm:p-3",
-          "max-h-[42vh] border-b lg:max-h-none lg:w-[min(44%,540px)] lg:shrink-0 lg:border-b-0 lg:border-r"
+          "shrink-0 scroll-mt-4 overflow-y-auto border-os-border bg-os-bg transition-all duration-400 ease-in-out",
+          isTerminal
+            ? "max-h-0 overflow-hidden border-b-0 p-0 opacity-0 lg:max-w-0 lg:w-0 lg:border-r-0 lg:p-0"
+            : "max-h-[42vh] border-b p-2 sm:p-3 lg:max-h-none lg:w-[min(44%,540px)] lg:shrink-0 lg:border-b-0 lg:border-r"
         )}
       >
         <DevFactoryBento />
@@ -71,7 +80,14 @@ export function OsLayout({
             <header className="shrink-0 border-b border-os-border px-3 py-1.5">
               {kernel}
             </header>
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto p-2 sm:grid-cols-3 sm:grid-rows-[auto_auto_1fr_auto_auto]">
+            <div
+              className={cn(
+                "grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto p-2 transition-all duration-400 ease-in-out sm:grid-cols-3",
+                isTerminal
+                  ? "sm:grid-rows-[0fr_0fr_0fr_0fr_0fr] [&>section]:max-h-0 [&>section]:overflow-hidden [&>section]:border-0 [&>section]:p-0 [&>section]:opacity-0"
+                  : "sm:grid-rows-[auto_auto_1fr_auto_auto]"
+              )}
+            >
               <motion.section
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -125,12 +141,22 @@ export function OsLayout({
             </div>
             <footer
               id="devfactory-shell"
-              className="shrink-0 scroll-mt-24 border-t border-os-border bg-os-panel/30 p-1.5"
+              className={cn(
+                "shrink-0 scroll-mt-24 border-t border-os-border bg-os-panel/30 p-1.5 transition-all duration-400",
+                isTerminal && "flex min-h-0 flex-1 flex-col border-t-os-green/30"
+              )}
             >
               <div className="mb-1 px-1 text-[10px] uppercase tracking-wider text-os-dim">
                 shell — xterm
               </div>
-              <div className="h-[22vh] min-h-[160px] overflow-hidden rounded border border-os-border bg-os-bg lg:h-[24vh]">
+              <div
+                className={cn(
+                  "overflow-hidden rounded border border-os-border bg-os-bg",
+                  isTerminal
+                    ? "min-h-[280px] flex-1 lg:min-h-0"
+                    : "h-[22vh] min-h-[160px] lg:h-[24vh]"
+                )}
+              >
                 {shell}
               </div>
             </footer>
