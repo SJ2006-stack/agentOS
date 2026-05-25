@@ -413,3 +413,285 @@
   overflow-y: auto !important;
   overflow-x: hidden !important;
 }
+
+/* ────────────────────────────────────────────────────────────
+   v2 workspace — Active Agents · Mission Pipeline · Agent Feed
+   ──────────────────────────────────────────────────────────── */
+
+.workspace-mode {
+  --workspace-accent: #00ffb2;
+}
+
+.workspace-card {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 4%, transparent),
+    0 1px 0 color-mix(in srgb, black 25%, transparent);
+}
+
+/* Status dot — pulsing green when an agent or stage is active */
+.workspace-dot-active {
+  animation: workspace-dot-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--workspace-accent) 70%, transparent);
+}
+
+@keyframes workspace-dot-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.78);
+  }
+}
+
+/* Agent card — subtle glow + outline when active */
+.workspace-agent-card {
+  transition:
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.workspace-agent-card:hover {
+  border-color: color-mix(in srgb, white 18%, transparent);
+  background-color: color-mix(in srgb, white 7%, transparent);
+}
+
+.workspace-agent-card--active {
+  border-color: color-mix(in srgb, var(--workspace-accent) 45%, transparent);
+  background-color: color-mix(in srgb, var(--workspace-accent) 8%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--workspace-accent) 18%, transparent),
+    0 0 14px color-mix(in srgb, var(--workspace-accent) 15%, transparent);
+}
+
+/* Spawn button — accent-glowing border */
+.workspace-spawn-btn {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--workspace-accent) 30%, transparent),
+    0 0 12px color-mix(in srgb, var(--workspace-accent) 18%, transparent);
+}
+
+.workspace-spawn-btn:hover {
+  background-color: color-mix(in srgb, var(--workspace-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--workspace-accent) 70%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--workspace-accent) 45%, transparent),
+    0 0 22px color-mix(in srgb, var(--workspace-accent) 30%, transparent);
+}
+
+.workspace-spawn-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--workspace-accent) 65%, transparent);
+  outline-offset: 2px;
+}
+
+/* ── Mission pipeline track ── */
+
+.workspace-pipeline-track {
+  align-items: center;
+}
+
+.workspace-stage {
+  position: relative;
+  padding: 0 0.25rem;
+}
+
+.workspace-stage-node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, white 14%, transparent);
+  background: color-mix(in srgb, white 4%, transparent);
+  color: color-mix(in srgb, var(--os-green) 75%, white 5%);
+  transition:
+    transform 220ms ease,
+    background-color 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    color 220ms ease;
+}
+
+.workspace-stage--future .workspace-stage-node {
+  opacity: 0.55;
+}
+
+.workspace-stage--done .workspace-stage-node {
+  border-color: color-mix(in srgb, var(--workspace-accent) 55%, transparent);
+  background-color: color-mix(in srgb, var(--workspace-accent) 14%, transparent);
+  color: var(--workspace-accent);
+}
+
+.workspace-stage--active .workspace-stage-node {
+  border-color: color-mix(in srgb, var(--workspace-accent) 80%, transparent);
+  background-color: color-mix(in srgb, var(--workspace-accent) 16%, transparent);
+  color: var(--workspace-accent);
+  transform: scale(1.12);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--workspace-accent) 35%, transparent),
+    0 0 18px 2px color-mix(in srgb, var(--workspace-accent) 25%, transparent);
+}
+
+.workspace-stage-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, var(--workspace-accent) 60%, transparent);
+  pointer-events: none;
+  animation: workspace-stage-ring 1.6s ease-in-out infinite;
+}
+
+@keyframes workspace-stage-ring {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+.workspace-stage--future {
+  color: color-mix(in srgb, var(--os-dim) 80%, transparent);
+}
+
+.workspace-stage--active {
+  color: var(--workspace-accent);
+}
+
+.workspace-stage--done {
+  color: color-mix(in srgb, var(--workspace-accent) 80%, transparent);
+}
+
+.workspace-connector {
+  position: absolute;
+  top: 1rem;
+  left: calc(50% + 1rem);
+  right: calc(-50% + 1rem);
+  height: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, white 10%, transparent);
+  transform: translateY(-50%);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.workspace-connector--filled {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--workspace-accent) 55%, transparent),
+    color-mix(in srgb, var(--workspace-accent) 35%, transparent)
+  );
+}
+
+.workspace-connector--pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--workspace-accent) 90%, transparent),
+    transparent
+  );
+  animation: workspace-connector-flow 1.4s ease-in-out infinite;
+}
+
+@keyframes workspace-connector-flow {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* ── Stage detail card (live pulse) ── */
+
+.workspace-stage-card--live {
+  animation: workspace-stage-card-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes workspace-stage-card-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--workspace-accent) 28%, transparent),
+      0 0 16px color-mix(in srgb, var(--workspace-accent) 18%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--workspace-accent) 55%, transparent),
+      0 0 26px color-mix(in srgb, var(--workspace-accent) 30%, transparent);
+  }
+}
+
+/* Thinking indicator (three pulsing dots) */
+.workspace-thinking {
+  height: 0.55rem;
+}
+
+.workspace-thinking-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: color-mix(in srgb, var(--os-amber) 85%, transparent);
+  animation: workspace-thinking-bounce 1.05s ease-in-out infinite;
+}
+
+.workspace-thinking-dot:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.workspace-thinking-dot:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes workspace-thinking-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+/* ── Feed row hover ── */
+.workspace-feed-row {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.workspace-feed-row:hover {
+  background-color: color-mix(in srgb, white 7%, transparent);
+  border-color: color-mix(in srgb, white 18%, transparent);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .workspace-dot-active,
+  .workspace-stage-ring,
+  .workspace-connector--pulse::after,
+  .workspace-stage-card--live,
+  .workspace-thinking-dot {
+    animation: none !important;
+  }
+
+  .workspace-stage--active .workspace-stage-node {
+    transform: none;
+  }
+}
+

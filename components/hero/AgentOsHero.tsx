@@ -1,51 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { HeroGraphMini } from "@/components/hero/HeroGraphMini";
-import { AGENT_SPAWNED_EVENT, type AgentSpawnedDetail } from "@/lib/os/shell-events";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  AGENT_SPAWNED_EVENT,
+  dispatchShellCommand,
+  type AgentSpawnedDetail,
+} from "@/lib/os/shell-events";
 import { cn } from "@/lib/utils";
 import { useOsStore } from "@/store/osStore";
 import { type UiMode, useUiModeStore } from "@/store/uiModeStore";
 
-const SUBCOPY = ["Spawn agents", "Deploy workflows", "Observe intelligence"] as const;
+/* —— Strict palette per spec —— */
+const PALETTE = {
+  bg: "#080C14",
+  surface: "#0D1520",
+  accent: "#00FFB2",
+  purple: "#8B5CF6",
+  muted: "#1E2D3D",
+  text: "#94A3B8",
+} as const;
 
-function TelemetryChip({
-  label,
-  value,
-  style,
-  alert,
-}: {
-  label: string;
-  value: string;
-  style: React.CSSProperties;
-  alert?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "hero-telemetry-chip pointer-events-none absolute rounded-md border px-2 py-1 font-mono text-[10px] backdrop-blur-sm",
-        alert
-          ? "border-hero-crimson/40 bg-hero-crimson/10 text-hero-crimson"
-          : "border-hero-graphite/60 bg-hero-obsidian/70 text-hero-muted"
-      )}
-      style={style}
-    >
-      <span className="text-hero-cyan/80">{label}</span>{" "}
-      <span className={alert ? "text-hero-crimson" : "text-hero-cyan"}>{value}</span>
-    </div>
-  );
-}
+const FEATURE_PILLS = [
+  { icon: "⚡", label: "Multi-agent orchestration" },
+  { icon: "🧠", label: "Memory fabric" },
+  { icon: "⚙️", label: "Realtime execution" },
+] as const;
 
-function formatLastUsageTokens(
-  usage: { promptTokens: number; completionTokens: number } | null
-): string {
-  if (!usage) return "—";
-  const total = usage.promptTokens + usage.completionTokens;
-  if (total <= 0) return "—";
-  if (total >= 1000) return `${(total / 1000).toFixed(2)}k`;
-  return String(total);
-}
+/* ——————————————————————————————————————— */
+/*  Strip variant (unchanged behavior)       */
+/* ——————————————————————————————————————— */
 
 function truncateStatus(value: string, max = 48): string {
   const trimmed = value.trim();
@@ -153,6 +137,247 @@ function OrchestrationStatusStrip({
   );
 }
 
+/* ——————————————————————————————————————— */
+/*  Fullscreen hero (revamp)                 */
+/* ——————————————————————————————————————— */
+
+function FullscreenHero({ className }: { className?: string }) {
+  const setMode = useUiModeStore((s) => s.setMode);
+  const reduce = useReducedMotion();
+  const [commandValue, setCommandValue] = useState("");
+  const [commandFocused, setCommandFocused] = useState(false);
+
+  const stagger = (i: number) => 0.06 + i * 0.08;
+
+  const fadeUp = (i: number) =>
+    reduce
+      ? {
+          initial: { opacity: 0 },
+          animate: { opacity: 1 },
+          transition: { duration: 0.3, delay: stagger(i) },
+        }
+      : {
+          initial: { y: 20, opacity: 0 },
+          animate: { y: 0, opacity: 1 },
+          transition: { duration: 0.6, delay: stagger(i), ease: "easeOut" as const },
+        };
+
+  const handlePrimaryCta = () => {
+    dispatchShellCommand("spawn agent kernel.orchestrator");
+    setMode("terminal");
+  };
+
+  const handleSecondaryCta = () => {
+    dispatchShellCommand("submit demo workflow");
+  };
+
+  const handleCommandSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const value = commandValue.trim();
+    if (!value) return;
+    dispatchShellCommand(value);
+    setMode("terminal");
+    setCommandValue("");
+  };
+
+  return (
+    <section
+      className={cn(
+        "agentos-hero-v2 relative flex h-screen w-screen flex-col overflow-hidden",
+        className
+      )}
+      style={{ backgroundColor: PALETTE.bg, color: PALETTE.text }}
+      aria-label="AgentOS landing"
+    >
+      {/* animated background grid + dots */}
+      <div className="agentos-hero-grid" aria-hidden />
+      <div className="agentos-hero-dots" aria-hidden />
+      {/* soft accent glows */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 55% 40% at 50% 30%, rgba(0,255,178,0.08), transparent 60%), " +
+            "radial-gradient(ellipse 50% 40% at 75% 85%, rgba(139,92,246,0.10), transparent 60%), " +
+            "radial-gradient(ellipse 40% 35% at 15% 85%, rgba(0,255,178,0.04), transparent 60%)",
+        }}
+      />
+
+      {/* centered content */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-40 text-center sm:pb-44">
+        <motion.div
+          {...fadeUp(0)}
+          className="mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.28em] sm:text-[11px]"
+          style={{
+            borderColor: "rgba(0,255,178,0.28)",
+            backgroundColor: "rgba(0,255,178,0.06)",
+            color: PALETTE.accent,
+          }}
+        >
+          <span
+            className="agentos-pulse-dot inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+            style={{ backgroundColor: PALETTE.accent }}
+            aria-hidden
+          />
+          <span>Live agent orchestration</span>
+        </motion.div>
+
+        <motion.h1
+          {...fadeUp(1)}
+          className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl md:text-7xl"
+          style={{ lineHeight: 1.05 }}
+        >
+          AgentOS
+        </motion.h1>
+
+        <motion.p
+          {...fadeUp(2)}
+          className="mt-5 max-w-2xl text-base sm:text-lg md:text-xl"
+          style={{ color: PALETTE.text }}
+        >
+          Spawn agents. Deploy workflows. Watch them think.
+        </motion.p>
+
+        <motion.div
+          {...fadeUp(3)}
+          className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3"
+        >
+          {FEATURE_PILLS.map((pill) => (
+            <span
+              key={pill.label}
+              className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] tracking-wide sm:text-xs"
+              style={{
+                borderColor: PALETTE.muted,
+                backgroundColor: "rgba(13,21,32,0.65)",
+                color: PALETTE.text,
+              }}
+            >
+              <span aria-hidden>{pill.icon}</span>
+              <span>{pill.label}</span>
+            </span>
+          ))}
+        </motion.div>
+
+        <motion.div
+          {...fadeUp(4)}
+          className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
+        >
+          <button
+            type="button"
+            onClick={handlePrimaryCta}
+            className={cn(
+              "agentos-cta-glow group relative inline-flex items-center justify-center gap-2 rounded-lg border px-7 py-3 font-mono text-sm font-medium tracking-wide transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+              reduce ? "agentos-cta-glow-static" : undefined
+            )}
+            style={
+              {
+                borderColor: PALETTE.accent,
+                backgroundColor: PALETTE.surface,
+                color: PALETTE.accent,
+                "--tw-ring-color": PALETTE.accent,
+                "--tw-ring-offset-color": PALETTE.bg,
+              } as CSSProperties
+            }
+          >
+            <span>Spawn your first agent</span>
+            <span
+              aria-hidden
+              className="transition-transform duration-200 group-hover:translate-x-0.5"
+            >
+              →
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSecondaryCta}
+            className="inline-flex items-center justify-center rounded-lg border bg-transparent px-6 py-3 font-mono text-sm tracking-wide transition-colors duration-200 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2"
+            style={
+              {
+                borderColor: PALETTE.muted,
+                color: PALETTE.text,
+                "--tw-ring-color": PALETTE.muted,
+              } as CSSProperties
+            }
+          >
+            Watch demo
+          </button>
+        </motion.div>
+      </div>
+
+      {/* persistent command bar — positioned above dock */}
+      <motion.form
+        {...fadeUp(5)}
+        onSubmit={handleCommandSubmit}
+        className="pointer-events-auto absolute bottom-32 left-1/2 z-10 w-[min(92vw,640px)] -translate-x-1/2 sm:bottom-36"
+        role="search"
+        aria-label="Command bar"
+      >
+        <div
+          className={cn(
+            "flex items-center gap-2 rounded-xl border px-3 py-2 font-mono text-sm shadow-lg backdrop-blur-md transition-colors",
+          )}
+          style={{
+            borderColor: commandFocused ? PALETTE.accent : PALETTE.muted,
+            backgroundColor: "rgba(13,21,32,0.85)",
+            boxShadow: commandFocused
+              ? "0 0 0 1px rgba(0,255,178,0.25), 0 10px 40px -10px rgba(0,255,178,0.25)"
+              : "0 8px 30px -12px rgba(0,0,0,0.6)",
+          }}
+        >
+          <span
+            aria-hidden
+            className="select-none font-mono text-xs"
+            style={{ color: PALETTE.accent }}
+          >
+            ❯
+          </span>
+          <input
+            type="text"
+            value={commandValue}
+            onChange={(e) => setCommandValue(e.target.value)}
+            onFocus={() => setCommandFocused(true)}
+            onBlur={() => setCommandFocused(false)}
+            placeholder="submit task · spawn agent · recall memory..."
+            spellCheck={false}
+            autoComplete="off"
+            className="flex-1 bg-transparent text-[13px] outline-none placeholder:opacity-70"
+            style={{ color: PALETTE.text, caretColor: PALETTE.accent }}
+            aria-label="Type a command"
+          />
+          <button
+            type="submit"
+            className="agentos-run-glow inline-flex shrink-0 items-center gap-1 rounded-md border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] transition-transform duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+            style={
+              {
+                borderColor: PALETTE.accent,
+                backgroundColor: "rgba(0,255,178,0.10)",
+                color: PALETTE.accent,
+                "--tw-ring-color": PALETTE.accent,
+              } as CSSProperties
+            }
+            aria-label="Run command"
+          >
+            Run
+            <span aria-hidden>↵</span>
+          </button>
+        </div>
+        <p
+          className="mt-2 text-center font-mono text-[10px] tracking-[0.18em]"
+          style={{ color: PALETTE.text, opacity: 0.55 }}
+        >
+          press <span style={{ color: PALETTE.accent }}>enter</span> to dispatch · routed through kernel shell
+        </p>
+      </motion.form>
+    </section>
+  );
+}
+
+/* ——————————————————————————————————————— */
+/*  Public component                          */
+/* ——————————————————————————————————————— */
+
 export type AgentOsHeroVariant = "fullscreen" | "strip";
 
 interface AgentOsHeroProps {
@@ -161,135 +386,15 @@ interface AgentOsHeroProps {
   className?: string;
 }
 
-export function AgentOsHero({ variant = "fullscreen", uiMode = "terminal", className }: AgentOsHeroProps) {
-  const setMode = useUiModeStore((s) => s.setMode);
-  const lastUsage = useOsStore((s) => s.kernel.lastUsage);
-  const hydraConfigured = useOsStore((s) => s.hydraConfigured);
-  const activeCount = useOsStore((s) => s.graph.activeNodeIds.size);
-  const [spawnFlash, setSpawnFlash] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (variant === "strip") return;
-    let clearId: ReturnType<typeof setTimeout> | undefined;
-    const onSpawn = (e: Event) => {
-      const detail = (e as CustomEvent<AgentSpawnedDetail>).detail;
-      const label = detail?.templateId?.split(".").pop() ?? "agent";
-      setSpawnFlash(`spawn · ${label}`);
-      if (clearId) clearTimeout(clearId);
-      clearId = setTimeout(() => setSpawnFlash(null), 2200);
-    };
-    window.addEventListener(AGENT_SPAWNED_EVENT, onSpawn);
-    return () => {
-      window.removeEventListener(AGENT_SPAWNED_EVENT, onSpawn);
-      if (clearId) clearTimeout(clearId);
-    };
-  }, [variant]);
-
-  const lastUsageTokens = formatLastUsageTokens(lastUsage);
-
-  const telemetryChips = [
-    { label: "tokens", value: lastUsageTokens, top: "12%", left: "8%", alert: false },
-    { label: "agents", value: String(activeCount), top: "22%", right: "10%", alert: false },
-    { label: "latency", value: "—", bottom: "28%", left: "6%", alert: false },
-    {
-      label: "memory",
-      value: hydraConfigured ? "live" : "offline",
-      bottom: "18%",
-      right: "8%",
-      alert: !hydraConfigured,
-    },
-  ];
-
+export function AgentOsHero({
+  variant = "fullscreen",
+  uiMode = "terminal",
+  className,
+}: AgentOsHeroProps) {
   if (variant === "strip") {
     return <OrchestrationStatusStrip uiMode={uiMode} className={className} />;
   }
-
-  return (
-    <section
-      className={cn(
-        "agentos-hero relative flex h-screen w-screen flex-col items-center justify-center overflow-hidden",
-        className
-      )}
-    >
-      <div className="hero-gradient-bg" aria-hidden />
-      <div className="hero-particles hero-particles-lite" aria-hidden />
-      <div className="hero-network-lines" aria-hidden />
-
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.22]">
-        <div className="h-[min(52vh,420px)] w-[min(90vw,720px)]">
-          <HeroGraphMini className="h-full w-full" />
-        </div>
-      </div>
-
-      {telemetryChips.map((chip) => (
-        <TelemetryChip
-          key={chip.label}
-          label={chip.label}
-          value={chip.value}
-          alert={chip.alert}
-          style={{
-            top: chip.top,
-            left: chip.left,
-            right: chip.right,
-            bottom: chip.bottom,
-          }}
-        />
-      ))}
-
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        className="relative z-10 flex max-w-2xl flex-col items-center px-6 text-center"
-      >
-        <p className="mb-3 text-[10px] uppercase tracking-[0.35em] text-hero-purple/90">
-          Live agent orchestration
-        </p>
-        <h1 className="bg-gradient-to-b from-hero-cyan via-white/95 to-hero-purple/80 bg-clip-text text-5xl font-semibold tracking-tight text-transparent sm:text-6xl md:text-7xl">
-          AgentOS
-        </h1>
-        <p className="mt-4 text-base text-hero-muted sm:text-lg">
-          The Operating System for Autonomous Intelligence
-        </p>
-        <p className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-hero-muted/90 sm:text-sm">
-          {SUBCOPY.map((item, i) => (
-            <span key={item} className="inline-flex items-center gap-3">
-              {i > 0 && (
-                <span className="text-hero-graphite" aria-hidden>
-                  /
-                </span>
-              )}
-              <span className="text-hero-cyan/90">{item}</span>
-            </span>
-          ))}
-        </p>
-        <motion.button
-          type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setMode("terminal")}
-          className="mt-10 rounded-lg border border-hero-cyan/40 bg-hero-graphite/40 px-8 py-3 text-sm font-medium tracking-wide text-hero-cyan shadow-lg shadow-hero-cyan/10 transition-colors hover:border-hero-cyan/70 hover:bg-hero-cyan/10 hover:text-white"
-        >
-          Enter active workspace
-        </motion.button>
-        <p className="mt-4 text-[10px] text-hero-muted/60">
-          Orchestration · Memory fabric · Realtime agents
-        </p>
-      </motion.div>
-
-      <AnimatePresence>
-        {spawnFlash && (
-          <motion.p
-            key={spawnFlash}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="pointer-events-none absolute top-[38%] z-20 text-sm uppercase tracking-[0.35em] text-hero-cyan/90"
-          >
-            {spawnFlash}
-          </motion.p>
-        )}
-      </AnimatePresence>
-    </section>
-  );
+  return <FullscreenHero className={className} />;
 }
+
+export default AgentOsHero;
