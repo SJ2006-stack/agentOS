@@ -15,9 +15,9 @@ function IoBusEventRow({ event }: { event: IoToolCall }) {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="border-b border-os-border/50 py-1"
+      className="border-b border-os-border/50 py-2"
     >
-      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="shrink-0 text-os-amber">[{event.layer}]</span>
         <span className="shrink-0 text-os-green">{event.tool}</span>
       </div>

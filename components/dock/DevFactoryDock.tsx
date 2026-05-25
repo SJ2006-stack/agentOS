@@ -203,7 +203,7 @@ export function DevFactoryDock({
     <TooltipProvider delayDuration={200}>
       <div
         className={cn(
-          "pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 px-3 pb-4 pt-2",
+          "pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-3 px-4 pb-5 pt-3",
           "bg-gradient-to-t from-os-bg via-os-bg/90 to-transparent",
           "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-32 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_100%,color-mix(in_srgb,var(--os-green)_8%,transparent),transparent)]"
         )}
@@ -218,7 +218,7 @@ export function DevFactoryDock({
           {spawnOpen && (
             <div
               ref={spawnRef}
-              className="absolute bottom-full left-1/2 z-[60] mb-2 w-48 -translate-x-1/2 rounded-xl border border-os-border/70 bg-os-panel/80 p-1 shadow-2xl shadow-os-bg/50 ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl"
+              className="absolute bottom-full left-1/2 z-[60] mb-3 w-48 -translate-x-1/2 rounded-xl border border-os-border/70 bg-os-panel/80 p-1.5 shadow-2xl shadow-os-bg/50 ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl"
             >
               {[
                 {
@@ -261,7 +261,7 @@ export function DevFactoryDock({
                 <Button
                   key={item.label}
                   type="button"
-                  className="block w-full rounded-md px-2 py-1.5 text-left text-xs leading-snug text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
+                  className="block w-full rounded-md px-3 py-2 text-left text-xs leading-snug text-os-green transition-colors hover:bg-os-green/10 hover:text-os-amber"
                   onClick={item.action}
                 >
                   <span className="text-left text-os-green">
@@ -276,7 +276,7 @@ export function DevFactoryDock({
             direction="bottom"
             iconSize={36}
             iconMagnification={52}
-            className="group/dock gap-1.5 px-2.5"
+            className="group/dock gap-2 px-3.5"
           >
             <ModeDockItem
               mode="hero"

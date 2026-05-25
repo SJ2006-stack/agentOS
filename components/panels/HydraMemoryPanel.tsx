@@ -108,7 +108,7 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
   return (
     <div className="flex h-full flex-col overflow-hidden font-mono">
       {showHeader && (
-        <span className="mb-2 text-left text-os-amber">
+        <span className="mb-3 text-left text-os-amber">
           HYDRA MEMORY
         </span>
       )}
@@ -116,10 +116,10 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
       <div
         className={cn(
           "flex min-h-[2.5rem] flex-col justify-center",
-          compact ? "gap-0.5" : "gap-1"
+          compact ? "gap-1" : "gap-2"
         )}
       >
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <span className={cn(
                 "text-left leading-snug",
@@ -128,11 +128,11 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
               {summaryLine}
             </span>
             {isActive && agents.length > 0 && !showDetails && (
-              <div className="mt-1 flex flex-wrap gap-1">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {agents.slice(0, 4).map((a) => (
                   <span
                     key={a.agentId}
-                    className="inline-flex items-center gap-1 rounded border border-os-border/40 px-1.5 py-0.5 text-[9px] text-os-dim"
+                    className="inline-flex items-center gap-1.5 rounded border border-os-border/40 px-2 py-1 text-[9px] text-os-dim"
                   >
                     <span className={statusTone(a.latest.status)} aria-hidden>
                       ●
@@ -188,11 +188,11 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
             transition={{ duration: 0.2 }}
             className="min-h-0 overflow-hidden"
           >
-            <div className="mt-1.5 max-h-32 space-y-1 overflow-y-auto border-t border-os-border/40 pt-1.5">
+            <div className="mt-2 max-h-32 space-y-1.5 overflow-y-auto border-t border-os-border/40 pt-2">
               {agents.map((a) => (
                 <div
                   key={a.agentId}
-                  className="rounded border border-os-border/50 px-2 py-1 text-[10px]"
+                  className="rounded border border-os-border/50 px-3 py-1.5 text-[10px]"
                 >
                   <div className="flex items-center gap-2">
                     <span className={statusTone(a.latest.status)}>
@@ -217,7 +217,7 @@ export const HydraMemoryPanel = memo(function HydraMemoryPanel({
             </div>
 
             {memory.lastRecall && (
-              <div className="mt-2 border-t border-os-border/40 pt-2 text-[10px]">
+              <div className="mt-3 border-t border-os-border/40 pt-3 text-[10px]">
                 <ExpandableText
                   text={`recall: ${memory.lastRecall.query}`}
                   maxLines={2}

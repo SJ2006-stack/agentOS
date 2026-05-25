@@ -6,8 +6,8 @@ export const MODEL_CHANGE_EVENT = "devfactory:model-change";
 
 export function ConfigurePanel() {
   return (
-    <div className="flex h-full min-w-0 flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-2">
+    <div className="flex h-full min-w-0 flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-3">
         <span className="text-left text-os-amber">
           CONFIGURE
         </span>
@@ -15,10 +15,10 @@ export function ConfigurePanel() {
           OpenRouter
         </span>
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <span className="text-[10px] text-os-dim">Model</span>
         <p
-          className="rounded border border-os-border bg-os-panel px-2 py-1.5 font-mono text-[11px] text-os-green"
+          className="rounded border border-os-border bg-os-panel px-3 py-2 font-mono text-[11px] text-os-green"
           title={DEFAULT_OPENROUTER_MODEL_ID}
         >
           {DEFAULT_OPENROUTER_MODEL_ID}

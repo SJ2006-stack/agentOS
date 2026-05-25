@@ -41,7 +41,7 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
 
   if (variant === "hero") {
     return (
-      <div className="w-full max-w-2xl px-2">
+      <div className="w-full max-w-2xl px-3">
         <span className="text-center text-white/95">
           What should we build?
         </span>
@@ -49,13 +49,13 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
           Natural language commands — submit builds, spawn agents, check status
         </span>
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           {DESKTOP_COMMAND_SUGGESTIONS.map(({ label, command }) => (
             <Button
               key={command}
               type="button"
               onClick={() => submitCommand(command)}
-              className="rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur-md transition-[background-color,box-shadow,transform] hover:scale-[1.02] hover:border-white/35 hover:bg-white/15 hover:shadow-[0_0_16px_rgba(255,255,255,0.08)] active:scale-[0.98]"
+              className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-medium text-white/85 backdrop-blur-md transition-[background-color,box-shadow,transform] hover:scale-[1.02] hover:border-white/35 hover:bg-white/15 hover:shadow-[0_0_16px_rgba(255,255,255,0.08)] active:scale-[0.98]"
             >
               <span className="text-center text-white/85">
                 {label}
@@ -67,7 +67,7 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
         <form
           onSubmit={onSubmit}
           className={cn(
-            "mt-5 flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4",
+            "mt-6 flex w-full items-center gap-4 rounded-2xl px-5 py-4 sm:px-6 sm:py-5",
             "border border-white/25 bg-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl",
             "ring-1 ring-inset ring-white/10",
             "transition-[box-shadow,border-color] duration-300",
@@ -107,7 +107,7 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
     <form
       onSubmit={onSubmit}
       className={cn(
-        "pointer-events-auto flex w-full max-w-xl items-center gap-2 rounded-xl px-3 py-2",
+        "pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-xl px-4 py-2.5",
         "border border-os-border/60 bg-os-panel/50 shadow-xl shadow-os-bg/40 backdrop-blur-xl",
         "ring-1 ring-inset ring-white/[0.05]",
         "transition-[box-shadow,border-color] duration-300",
@@ -132,7 +132,7 @@ export function DevFactoryCommandBar({ variant = "compact" }: { variant?: Comman
       </span>
       <Button
         type="submit"
-        className="rounded-md border border-os-border/70 bg-os-bg/30 px-2 py-1 text-[10px] uppercase tracking-wide text-os-amber transition-[background-color,box-shadow] hover:border-os-amber/40 hover:bg-os-amber/10 hover:shadow-[0_0_10px_color-mix(in_srgb,var(--os-amber)_25%,transparent)]"
+        className="rounded-md border border-os-border/70 bg-os-bg/30 px-3 py-1.5 text-[10px] uppercase tracking-wide text-os-amber transition-[background-color,box-shadow] hover:border-os-amber/40 hover:bg-os-amber/10 hover:shadow-[0_0_10px_color-mix(in_srgb,var(--os-amber)_25%,transparent)]"
       >
         <span className="text-center text-os-amber">
           Run

@@ -110,6 +110,29 @@ export function DoomGameCanvas({
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
+    let logicalW = 0;
+    let logicalH = 0;
+    let dpr = 1;
+
+    const syncCanvasSize = () => {
+      const rect = canvas.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      logicalW = Math.max(1, Math.floor(rect.width));
+      logicalH = Math.max(1, Math.floor(rect.height));
+      const bufferW = Math.max(1, Math.floor(logicalW * dpr));
+      const bufferH = Math.max(1, Math.floor(logicalH * dpr));
+      if (canvas.width !== bufferW || canvas.height !== bufferH) {
+        canvas.width = bufferW;
+        canvas.height = bufferH;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { w: logicalW, h: logicalH };
+    };
+
+    syncCanvasSize();
+    const ro = new ResizeObserver(() => syncCanvasSize());
+    ro.observe(canvas);
+
     const loop = (now: number) => {
       const frameDt = Math.min(0.05, (now - lastRef.current) / 1000);
       lastRef.current = now;
@@ -141,20 +164,22 @@ export function DoomGameCanvas({
         }
 
         const rect = canvas.getBoundingClientRect();
-        const w = Math.floor(rect.width);
-        const h = Math.floor(rect.height);
-        if (canvas.width !== w || canvas.height !== h) {
-          canvas.width = w;
-          canvas.height = h;
+        const nextW = Math.max(1, Math.floor(rect.width));
+        const nextH = Math.max(1, Math.floor(rect.height));
+        if (nextW !== logicalW || nextH !== logicalH) {
+          syncCanvasSize();
         }
-        renderFrame(ctx, state, w, h);
+        renderFrame(ctx, state, logicalW, logicalH);
       }
 
       rafRef.current = requestAnimationFrame(loop);
     };
 
     rafRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafRef.current);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      ro.disconnect();
+    };
   }, [mode, mobileBlocked, onNarration, template]);
 
   if (mobileBlocked) {

@@ -56,7 +56,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
   }, []);
 
   return (
-    <div className="workspace-demo-bar shrink-0 space-y-2">
+    <div className="workspace-demo-bar shrink-0 space-y-3">
       <AnimatePresence initial={false}>
         {showFirstRun && !compact && (
           <motion.aside
@@ -64,17 +64,17 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.22 }}
-            className="overflow-hidden rounded-xl border border-os-amber/30 bg-gradient-to-r from-os-amber/10 via-os-panel/50 to-os-green/5 p-2.5"
+            className="overflow-hidden rounded-xl border border-os-amber/30 bg-gradient-to-r from-os-amber/10 via-os-panel/50 to-os-green/5 p-3.5"
             aria-label="First run guide"
           >
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <span className="text-left text-os-amber">
                   First run — watch an agent work
                 </span>
-                <ol className="mt-1.5 space-y-1 text-[11px] leading-snug text-os-green/90">
+                <ol className="mt-2 space-y-1.5 text-[11px] leading-snug text-os-green/90">
                   {FIRST_RUN_STEPS.map((step, i) => (
-                    <li key={step} className="flex gap-2">
+                    <li key={step} className="flex gap-2.5">
                       <span className="shrink-0 font-mono text-os-amber/90">{i + 1}.</span>
                       <span>{step}</span>
                     </li>
@@ -84,7 +84,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
               <Button
                 type="button"
                 onClick={dismissFirstRun}
-                className="shrink-0 rounded-md border border-os-border/60 p-1 text-os-dim transition-colors hover:border-os-amber/40 hover:text-os-amber"
+                className="shrink-0 rounded-md border border-os-border/60 p-1.5 text-os-dim transition-colors hover:border-os-amber/40 hover:text-os-amber"
                 aria-label="Dismiss first run guide"
               >
                 <X className="size-3.5" aria-hidden />
@@ -97,7 +97,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
       <div
         className={cn(
           "flex flex-wrap items-center gap-2 rounded-xl border border-os-border/70 bg-os-panel/40 backdrop-blur-sm",
-          compact ? "px-2 py-1" : "px-2.5 py-2"
+          compact ? "px-3 py-1.5" : "px-3.5 py-2.5"
         )}
       >
         <span className="inline-flex items-center gap-1.5 text-os-dim">
@@ -111,7 +111,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
             One click — watch graph, pipeline, and feed react
           </p>
         )}
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           {DEMO_CHIPS.map((chip) => {
             const isRunning = runningCommand === chip.command;
             return (
@@ -122,7 +122,7 @@ export const WorkspaceDemoBar = memo(function WorkspaceDemoBar({
                 disabled={isRunning}
                 onClick={() => onRunDemo(chip.command)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] transition-[background-color,border-color,box-shadow,opacity]",
+                  "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[11px] transition-[background-color,border-color,box-shadow,opacity]",
                   isRunning
                     ? "workspace-demo-chip-running border-os-amber/60 bg-os-amber/15 text-os-amber"
                     : "border-os-green/35 bg-os-bg/40 text-os-green hover:border-os-amber/45 hover:bg-os-amber/10 hover:text-os-amber"

@@ -177,10 +177,10 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div
         className={cn(
-          "workspace-graph-host relative min-h-[220px] flex-1 overflow-auto rounded-lg border border-os-border/60 bg-os-bg/40 p-3",
+          "workspace-graph-host relative min-h-[220px] flex-1 overflow-auto rounded-lg border border-os-border/60 bg-os-bg/40 p-4",
           activeNodeIds.size > 0 && "workspace-graph-host--live",
           spawnPulseIds.size > 0 && "workspace-graph-pulse"
         )}
@@ -428,7 +428,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
 
       {activeRoutes.length > 0 && (
         <div
-          className="workspace-graph-active-route shrink-0 rounded border border-os-cyan/30 bg-os-cyan/5 px-2.5 py-1.5 text-[11px] text-os-cyan"
+          className="workspace-graph-active-route shrink-0 rounded border border-os-cyan/30 bg-os-cyan/5 px-3 py-2 text-[11px] text-os-cyan"
           aria-live="polite"
         >
           <span className="inline text-left">
@@ -439,7 +439,7 @@ function WorkspaceAgentGraphInner({ templates }: { templates: GraphTemplate[] })
         </div>
       )}
 
-      <div className="workspace-graph-legend flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-os-dim">
+      <div className="workspace-graph-legend flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2 px-0.5 py-1 text-[11px] text-os-dim">
         {LEGEND_ITEMS.map(({ label, sig }) => (
           <span key={label} className="inline-flex items-center gap-2">
             <span

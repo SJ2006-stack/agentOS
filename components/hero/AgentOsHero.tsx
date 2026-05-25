@@ -109,7 +109,7 @@ function OrchestrationStatusStrip({
       <Button
         type="button"
         onClick={openWorkspace}
-        className="flex w-full min-h-[2.25rem] items-center gap-2 px-3 py-2 text-left leading-normal transition-colors hover:bg-os-panel/70 sm:gap-3 sm:px-4"
+        className="flex w-full min-h-[2.25rem] items-center gap-3 px-4 py-3 text-left leading-normal transition-colors hover:bg-os-panel/70 sm:gap-3 sm:px-5"
         title="Open agents workspace"
       >
         <span className="shrink-0 text-left text-[11px] leading-none text-os-dim">
@@ -390,10 +390,10 @@ function FullscreenHero({ className }: { className?: string }) {
       />
 
       {/* centered content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-40 text-center sm:pb-44">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-8 pb-40 text-center sm:pb-44">
         <motion.div
           {...fadeUp(0)}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.28em] sm:text-[11px]"
+          className="mb-7 inline-flex items-center gap-2.5 rounded-full border px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.28em] sm:text-[11px]"
           style={{
             borderColor: "rgba(0,255,178,0.28)",
             backgroundColor: "rgba(0,255,178,0.06)",
@@ -427,12 +427,12 @@ function FullscreenHero({ className }: { className?: string }) {
 
         <motion.div
           {...fadeUp(3)}
-          className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3"
+          className="mt-9 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
         >
           {FEATURE_PILLS.map((pill) => (
             <span
               key={pill.label}
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] tracking-wide sm:text-xs"
+              className="inline-flex items-center gap-2.5 rounded-full border px-4 py-2 font-mono text-[11px] tracking-wide sm:text-xs"
               style={{
                 borderColor: PALETTE.muted,
                 backgroundColor: "rgba(13,21,32,0.65)",
@@ -449,14 +449,14 @@ function FullscreenHero({ className }: { className?: string }) {
 
         <motion.div
           {...fadeUp(4)}
-          className="mt-10 grid w-full max-w-3xl grid-cols-1 items-center gap-8 lg:max-w-5xl lg:grid-cols-2 lg:gap-12"
+          className="mt-11 grid w-full max-w-3xl grid-cols-1 items-center gap-10 lg:max-w-5xl lg:grid-cols-2 lg:gap-14"
         >
-          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-end">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5 lg:justify-end">
             <Button
               type="button"
               onClick={handlePrimaryCta}
               className={cn(
-                "agentos-cta-glow group relative inline-flex items-center justify-center gap-2 rounded-lg border px-7 py-3 font-mono text-sm font-medium tracking-wide transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+                "agentos-cta-glow group relative inline-flex items-center justify-center gap-2.5 rounded-lg border px-8 py-3.5 font-mono text-sm font-medium tracking-wide transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                 reduce ? "agentos-cta-glow-static" : undefined
               )}
               style={
@@ -483,7 +483,7 @@ function FullscreenHero({ className }: { className?: string }) {
             <Button
               type="button"
               onClick={handleSecondaryCta}
-              className="inline-flex items-center justify-center rounded-lg border bg-transparent px-6 py-3 font-mono text-sm tracking-wide transition-colors duration-200 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2"
+              className="inline-flex items-center justify-center rounded-lg border bg-transparent px-7 py-3.5 font-mono text-sm tracking-wide transition-colors duration-200 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2"
               style={
                 {
                   borderColor: PALETTE.muted,
@@ -505,7 +505,7 @@ function FullscreenHero({ className }: { className?: string }) {
 
         <motion.div
           {...fadeUp(5)}
-          className="agentos-hero-stats mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-2 py-1 font-mono text-[11px] leading-normal sm:gap-x-6 sm:text-xs"
+          className="agentos-hero-stats mt-9 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 px-4 py-2 font-mono text-[11px] leading-normal sm:gap-x-7 sm:text-xs"
           aria-label="Platform stats"
         >
           <StatNumber to={2847} format={formatAgents} reduce={reduce} />
@@ -530,7 +530,7 @@ function FullscreenHero({ className }: { className?: string }) {
       >
         <div
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-3 py-2 font-mono text-sm shadow-lg backdrop-blur-md transition-colors",
+            "flex items-center gap-3 rounded-xl border px-4 py-2.5 font-mono text-sm shadow-lg backdrop-blur-md transition-colors",
           )}
           style={{
             borderColor: commandFocused ? PALETTE.accent : PALETTE.muted,
@@ -562,7 +562,7 @@ function FullscreenHero({ className }: { className?: string }) {
           />
           <Button
             type="submit"
-            className="agentos-run-glow inline-flex shrink-0 items-center gap-1 rounded-md border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] transition-transform duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+            className="agentos-run-glow inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] transition-transform duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
             style={
               {
                 borderColor: PALETTE.accent,

@@ -23,11 +23,11 @@ export function AgentGraphControls({
   return (
     <>
       {!hideCreateAgent && (section === "create" || section === "all") && (
-        <div className="workspace-graph-create shrink-0 rounded-lg border border-os-amber/35 bg-os-amber/5 p-2.5">
+        <div className="workspace-graph-create shrink-0 rounded-lg border border-os-amber/35 bg-os-amber/5 p-3.5">
           <Button
             type="button"
             onClick={() => dispatchCreateAgentOpen()}
-            className="workspace-graph-create-cta flex w-full items-center justify-center gap-2 rounded-md border border-os-amber/60 bg-os-amber/15 px-3 py-2 text-[12px] font-semibold uppercase tracking-wider text-os-amber transition-colors hover:border-os-amber hover:bg-os-amber/25"
+            className="workspace-graph-create-cta flex w-full items-center justify-center gap-2.5 rounded-md border border-os-amber/60 bg-os-amber/15 px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wider text-os-amber transition-colors hover:border-os-amber hover:bg-os-amber/25"
           >
             <span className="text-center text-os-amber">+ Create agent</span>
           </Button>
@@ -35,11 +35,11 @@ export function AgentGraphControls({
       )}
 
       {templates.length > 0 && (section === "list" || section === "all") && (
-        <div className="shrink-0 border-t border-os-border/50 pt-1.5">
+        <div className="shrink-0 border-t border-os-border/50 pt-2.5">
           <Button
             type="button"
             onClick={() => setListExpanded((open) => !open)}
-            className="flex w-full items-center justify-between gap-2 text-left text-[10px] text-os-dim transition-colors hover:text-os-green"
+            className="flex w-full items-center justify-between gap-2.5 px-0.5 py-1 text-left text-[10px] text-os-dim transition-colors hover:text-os-green"
             aria-expanded={listExpanded}
           >
             <span className="text-left text-os-dim">
@@ -50,7 +50,7 @@ export function AgentGraphControls({
             </span>
           </Button>
           {listExpanded && (
-            <div className="mt-1 max-h-24 space-y-0.5 overflow-y-auto text-os-dim">
+            <div className="mt-2 max-h-24 space-y-1 overflow-y-auto px-0.5 py-1 text-os-dim">
               {templates.slice(0, 8).map((t) => (
                 <div
                   key={t.id}

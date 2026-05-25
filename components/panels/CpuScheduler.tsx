@@ -11,7 +11,7 @@ export const CpuScheduler = memo(function CpuScheduler({
   return (
     <div className="cpu-scheduler flex h-full min-h-0 flex-col">
       {showHeader && (
-        <span className="mb-2 text-left text-os-amber">
+        <span className="mb-3 text-left text-os-amber">
           CPU SCHEDULER
         </span>
       )}

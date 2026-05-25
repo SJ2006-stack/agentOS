@@ -31,10 +31,10 @@ export function KernelBar() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col gap-1 text-xs"
+      className="flex flex-col gap-2 text-xs"
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-1.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="text-left text-os-amber">
             DEVFACTORY OS
           </span>
@@ -55,7 +55,7 @@ export function KernelBar() {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-os-dim">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-os-dim">
           <span title={selectedModelId}>
             <span className="inline text-left text-os-dim">
               {`Model ${truncateModelId(selectedModelId)}`}
@@ -72,7 +72,7 @@ export function KernelBar() {
       </div>
 
       {integrations.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 text-[10px] text-os-dim/70">
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[10px] text-os-dim/70">
           {integrations.map(({ label, value }) => (
             <span key={label}>
               <span className="inline text-left text-os-dim">

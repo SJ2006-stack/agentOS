@@ -243,7 +243,7 @@
   align-items: center;
   gap: 0.2rem;
   width: 100%;
-  padding: 0.15rem 0.25rem 0;
+  padding: 0.25rem 0.35rem 0;
   border: none;
   background: transparent;
   cursor: default;
@@ -385,7 +385,7 @@
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--os-border) 55%, transparent);
   background: color-mix(in srgb, var(--os-panel) 45%, transparent);
-  padding: 0.65rem 0.75rem;
+  padding: 0.85rem 1rem;
 }
 
 .pipeline-detail--live {
@@ -521,7 +521,7 @@
 
 .workspace-stage {
   position: relative;
-  padding: 0 0.25rem;
+  padding: 0 0.35rem;
 }
 
 .workspace-stage-node {

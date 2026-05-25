@@ -307,7 +307,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
       aria-label="Agent feed"
       className="workspace-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur"
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
+      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
         <span className="text-left text-os-dim">
           Agent Feed
         </span>
@@ -317,7 +317,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
       </header>
 
       <ul
-        className="min-h-0 flex-1 list-none space-y-1 overflow-y-auto px-2.5 py-2"
+        className="min-h-0 flex-1 list-none space-y-2 overflow-y-auto px-3 py-3"
         aria-live="polite"
         aria-atomic="false"
       >
@@ -328,7 +328,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-4 text-center text-[11px] text-os-dim"
+              className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-4 py-5 text-center text-[11px] text-os-dim"
             >
               <span className="text-center text-os-dim">
                 Waiting for agent activity…
@@ -344,7 +344,7 @@ export const WorkspaceAgentFeed = memo(function WorkspaceAgentFeed() {
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
               className={cn(
-                "workspace-feed-row flex items-start gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5",
+                "workspace-feed-row flex items-start gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2",
                 entry.kind === "spawn" && "workspace-feed-row--spawn"
               )}
             >

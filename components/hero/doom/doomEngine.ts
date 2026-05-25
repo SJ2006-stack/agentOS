@@ -307,7 +307,27 @@ export function getSprites(state: GameState): SpriteDraw[] {
 
 const FOV = Math.PI / 3;
 const MAX_DEPTH = 18;
-const HUD_H = 42;
+
+/** Bottom status bar height in logical canvas pixels. */
+export const HUD_HEIGHT = 42;
+export const GAME_ASPECT = 4 / 3;
+const LETTERBOX = "#0a0a08";
+
+export interface GameViewport {
+  gameX: number;
+  gameW: number;
+  viewH: number;
+}
+
+/** Centered 4:3 world band above the HUD strip. */
+export function computeGameViewport(w: number, h: number): GameViewport {
+  const viewH = Math.max(1, h - HUD_HEIGHT);
+  const idealW = Math.floor(viewH * GAME_ASPECT);
+  if (w >= idealW) {
+    return { gameX: Math.floor((w - idealW) / 2), gameW: idealW, viewH };
+  }
+  return { gameX: 0, gameW: w, viewH };
+}
 
 // Classic DOOM palette (procedural — no WAD assets)
 const CEIL_TOP = [42, 36, 28];
@@ -387,9 +407,20 @@ export function renderFrame(
   w: number,
   h: number
 ): void {
-  const viewH = h - HUD_H;
+  const vp = computeGameViewport(w, h);
+  const { gameX, gameW, viewH } = vp;
   const halfH = Math.floor(viewH / 2);
-  const img = ctx.createImageData(w, viewH);
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#2a2a1e";
+  ctx.fillRect(0, viewH, w, h - viewH);
+  if (gameX > 0) {
+    ctx.fillStyle = LETTERBOX;
+    ctx.fillRect(0, 0, gameX, viewH);
+    ctx.fillRect(gameX + gameW, 0, w - gameX - gameW, viewH);
+  }
+
+  const img = ctx.createImageData(gameW, viewH);
   const data = img.data;
 
   const horizonBand = Math.max(2, Math.floor(halfH * 0.06));
@@ -414,8 +445,8 @@ export function renderFrame(
       g *= 0.55 + bandT * 0.2;
       b *= 0.55 + bandT * 0.2;
     }
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
+    for (let x = 0; x < gameW; x++) {
+      const i = (y * gameW + x) * 4;
       data[i] = r;
       data[i + 1] = g;
       data[i + 2] = b;
@@ -423,12 +454,12 @@ export function renderFrame(
     }
   }
 
-  const zBuffer = new Float32Array(w);
+  const zBuffer = new Float32Array(gameW);
   const sin = Math.sin(state.playerAngle);
   const cos = Math.cos(state.playerAngle);
 
-  for (let col = 0; col < w; col++) {
-    const cameraX = (2 * col) / w - 1;
+  for (let col = 0; col < gameW; col++) {
+    const cameraX = (2 * col) / gameW - 1;
     const rayAngle = state.playerAngle + Math.atan(cameraX * Math.tan(FOV / 2));
     const raySin = Math.sin(rayAngle);
     const rayCos = Math.cos(rayAngle);
@@ -518,7 +549,7 @@ export function renderFrame(
         side,
         depth
       );
-      const i = (y * w + col) * 4;
+      const i = (y * gameW + col) * 4;
       data[i] = wr * stripe;
       data[i + 1] = wg * stripe;
       data[i + 2] = wb * stripe;
@@ -535,7 +566,7 @@ export function renderFrame(
         Math.floor(floorY),
         rowDist
       );
-      const i = (y * w + col) * 4;
+      const i = (y * gameW + col) * 4;
       data[i] = fr;
       data[i + 1] = fg;
       data[i + 2] = fb;
@@ -543,9 +574,12 @@ export function renderFrame(
     }
   }
 
-  ctx.fillStyle = "#0a0a08";
-  ctx.fillRect(0, 0, w, h);
-  ctx.putImageData(img, 0, 0);
+  ctx.putImageData(img, gameX, 0);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(gameX, 0, gameW, viewH);
+  ctx.clip();
 
   const dirX = cos;
   const dirY = sin;
@@ -554,34 +588,62 @@ export function renderFrame(
 
   const sprites = getSprites(state);
   for (const sp of sprites) {
-    drawEnemySprite(ctx, state, sp, w, viewH, zBuffer, dirX, dirY, planeX, planeY);
+    drawEnemySprite(
+      ctx,
+      state,
+      sp,
+      gameX,
+      gameW,
+      viewH,
+      zBuffer,
+      dirX,
+      dirY,
+      planeX,
+      planeY
+    );
   }
 
   if (state.hitscanTracer && state.hitscanTracer.life > 0) {
-    drawHitscanTracer(ctx, state, w, viewH);
+    drawHitscanTracer(ctx, state, gameX, gameW, viewH);
   }
 
   if (state.muzzleFlash > 0) {
-    const alpha = state.muzzleFlash * 0.55;
-    ctx.fillStyle = `rgba(255,200,80,${alpha})`;
-    ctx.fillRect(0, 0, w, viewH);
-    ctx.fillStyle = `rgba(255,255,220,${alpha * 0.4})`;
-    const cx = w / 2;
-    const cy = viewH * 0.72;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 18 + state.muzzleFlash * 12, 0, Math.PI * 2);
-    ctx.fill();
+    drawMuzzleFlash(ctx, gameX, gameW, viewH, state.muzzleFlash);
   }
 
-  drawWeapon(ctx, w, viewH, state.muzzleFlash);
-  drawMinimap(ctx, state, w);
+  drawWeapon(ctx, gameX, gameW, viewH, state.muzzleFlash);
+  ctx.restore();
+
   drawHud(ctx, state, w, h, viewH);
+  drawMinimap(ctx, state, vp);
+}
+
+function drawMuzzleFlash(
+  ctx: CanvasRenderingContext2D,
+  gameX: number,
+  gameW: number,
+  viewH: number,
+  flash: number
+): void {
+  const alpha = flash * 0.55;
+  const cx = gameX + gameW / 2;
+  const cy = viewH * 0.72;
+  const r = 14 + flash * 10;
+  ctx.fillStyle = `rgba(255,200,80,${alpha})`;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = `rgba(255,255,220,${alpha * 0.35})`;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawHitscanTracer(
   ctx: CanvasRenderingContext2D,
   state: GameState,
-  w: number,
+  gameX: number,
+  gameW: number,
   viewH: number
 ): void {
   const tr = state.hitscanTracer;
@@ -594,15 +656,17 @@ function drawHitscanTracer(
   if (dist < 0.1) return;
 
   const angle = Math.atan2(dy, dx) - state.playerAngle;
-  const screenX = w / 2 + Math.tan(angle) * (w / (2 * Math.tan(FOV / 2)));
+  const screenX =
+    gameX + gameW / 2 + Math.tan(angle) * (gameW / (2 * Math.tan(FOV / 2)));
   const lineH = Math.min(viewH, Math.floor(viewH / dist));
   const endY = halfH - lineH / 4;
   const alpha = tr.life * 0.85;
+  const muzzleY = viewH * 0.72;
 
   ctx.strokeStyle = `rgba(255,220,80,${alpha})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(w / 2, viewH * 0.72);
+  ctx.moveTo(gameX + gameW / 2, muzzleY);
   ctx.lineTo(screenX, endY);
   ctx.stroke();
   ctx.strokeStyle = `rgba(255,255,200,${alpha * 0.35})`;
@@ -613,18 +677,28 @@ function drawHitscanTracer(
 function drawMinimap(
   ctx: CanvasRenderingContext2D,
   state: GameState,
-  w: number
+  vp: GameViewport
 ): void {
   const size = 56;
   const pad = 8;
-  const mx = w - size - pad;
+  const mx = vp.gameX + vp.gameW - size - pad;
   const my = pad;
   const scale = size / Math.max(state.width, state.height);
+  const boxPad = 3;
 
-  ctx.fillStyle = "rgba(8,8,6,0.72)";
-  ctx.fillRect(mx - 2, my - 2, size + 4, size + 4);
-  ctx.strokeStyle = "rgba(100,90,60,0.6)";
-  ctx.strokeRect(mx - 2, my - 2, size + 4, size + 4);
+  ctx.fillStyle = "#080806";
+  ctx.fillRect(mx - boxPad, my - boxPad, size + boxPad * 2, size + boxPad * 2);
+  ctx.strokeStyle = "#1a1814";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(mx - boxPad + 0.5, my - boxPad + 0.5, size + boxPad * 2 - 1, size + boxPad * 2 - 1);
+  ctx.strokeStyle = "#4a4038";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(mx - 1, my - 1, size + 2, size + 2);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(mx - 1, my - 1, size + 2, size + 2);
+  ctx.clip();
 
   for (let y = 0; y < state.height; y++) {
     for (let x = 0; x < state.width; x++) {
@@ -662,13 +736,15 @@ function drawMinimap(
     my + (state.playerY + Math.sin(state.playerAngle) * 0.8) * scale
   );
   ctx.stroke();
+  ctx.restore();
 }
 
 function drawEnemySprite(
   ctx: CanvasRenderingContext2D,
   state: GameState,
   sp: SpriteDraw,
-  w: number,
+  gameX: number,
+  gameW: number,
   viewH: number,
   zBuffer: Float32Array,
   dirX: number,
@@ -683,14 +759,14 @@ function drawEnemySprite(
   const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
   if (transformY <= 0.25) return;
 
-  const spriteScreenX = Math.floor((w / 2) * (1 + transformX / transformY));
+  const spriteScreenX = Math.floor((gameW / 2) * (1 + transformX / transformY));
   const distScale = Math.min(2.4, 1.15 / Math.max(0.35, transformY));
   const spriteH = Math.abs(Math.floor((viewH / transformY) * distScale));
   const spriteW = Math.floor(spriteH * 0.72);
-  const drawStartY = Math.max(0, -spriteH / 2 + viewH / 2);
-  const drawEndY = Math.min(viewH, spriteH / 2 + viewH / 2);
-  const drawStartX = Math.max(0, -spriteW / 2 + spriteScreenX);
-  const drawEndX = Math.min(w, spriteW / 2 + spriteScreenX);
+  const drawStartY = Math.max(0, Math.floor(-spriteH / 2 + viewH / 2));
+  const drawEndY = Math.min(viewH, Math.ceil(spriteH / 2 + viewH / 2));
+  const drawStartX = Math.max(0, Math.floor(-spriteW / 2 + spriteScreenX));
+  const drawEndX = Math.min(gameW, Math.ceil(spriteW / 2 + spriteScreenX));
   const shade = Math.max(0.28, 1 - transformY / MAX_DEPTH);
   const isEnemy = sp.kind === "enemy";
   const imp = sp.id % 2 === 0;
@@ -759,18 +835,19 @@ function drawEnemySprite(
       }
 
       ctx.fillStyle = `rgb(${Math.floor(r * shade)},${Math.floor(g * shade)},${Math.floor(b * shade)})`;
-      ctx.fillRect(stripe, y, 1, 1);
+      ctx.fillRect(gameX + stripe, y, 1, 1);
     }
   }
 }
 
 function drawWeapon(
   ctx: CanvasRenderingContext2D,
-  w: number,
+  gameX: number,
+  gameW: number,
   viewH: number,
   flash: number
 ): void {
-  const gunX = w / 2 - 28;
+  const gunX = gameX + gameW / 2 - 28;
   const gunY = viewH - 52;
   const barrel = flash > 0 ? "#c8a050" : "#4a4038";
 
@@ -790,8 +867,8 @@ function drawWeapon(
 
   ctx.strokeStyle = "rgba(180,160,120,0.5)";
   ctx.beginPath();
-  ctx.moveTo(w / 2, viewH / 2);
-  ctx.lineTo(w / 2, viewH / 2 + 6);
+  ctx.moveTo(gameX + gameW / 2, viewH / 2);
+  ctx.lineTo(gameX + gameW / 2, viewH / 2 + 6);
   ctx.stroke();
 }
 

@@ -192,7 +192,7 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="mt-2 rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 font-mono text-[11px] leading-relaxed text-os-green/90"
+                    className="mt-3 rounded-md border border-white/10 bg-white/5 px-3 py-2 font-mono text-[11px] leading-relaxed text-os-green/90"
                   >
                     {preview}
                   </motion.p>
@@ -200,7 +200,7 @@ export const WorkspacePipeline = memo(function WorkspacePipeline() {
               </AnimatePresence>
             </>
           ) : (
-            <div className="flex flex-col items-start gap-1">
+            <div className="flex flex-col items-start gap-2">
               <span className="text-left text-os-dim">
                 Idle
               </span>

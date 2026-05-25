@@ -79,10 +79,10 @@ export function AgentGraphPanel({
   }, [loadCustomTemplates]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 text-[11px]">
+    <div className="flex h-full min-h-0 flex-col gap-3 text-[11px]">
       <div
         className={cn(
-          "flex shrink-0 items-center gap-2",
+          "flex shrink-0 items-center gap-3 px-0.5 py-0.5",
           showHeader ? "justify-between" : "justify-end"
         )}
       >
@@ -96,7 +96,7 @@ export function AgentGraphPanel({
           </span>
         )}
         {activeNodeIds.size > 0 && (
-          <span className="rounded border border-os-green/30 bg-os-green/5 px-1.5 py-0.5 text-left text-os-green">
+          <span className="rounded border border-os-green/30 bg-os-green/5 px-2 py-1 text-left text-os-green">
             {`${activeNodeIds.size} active`}
           </span>
         )}

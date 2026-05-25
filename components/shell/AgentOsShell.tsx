@@ -141,8 +141,8 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-os-bg/75 font-mono text-os-green">
-      <div className="fixed top-3 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-2">
-        <ThemePresetPicker className="rounded-full border border-os-border/80 bg-os-surface/90 px-1.5 py-1 backdrop-blur-sm" />
+      <div className="fixed top-4 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3">
+        <ThemePresetPicker className="rounded-full border border-os-border/80 bg-os-surface/90 px-2 py-1.5 backdrop-blur-sm" />
         <AnimatedThemeToggler
           variant="star"
           fromCenter
@@ -159,7 +159,7 @@ export function AgentOsShell({ hydraConfigured }: { hydraConfigured: boolean }) 
       {showActiveWorkspace && (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           {mode !== "desktop" && (
-            <div className="shrink-0 border-b border-os-border/50 px-3 py-1">
+            <div className="shrink-0 border-b border-os-border/50 px-4 py-2">
               <span className="text-center text-os-dim">
                 {UI_MODE_LABELS[mode]}
               </span>
